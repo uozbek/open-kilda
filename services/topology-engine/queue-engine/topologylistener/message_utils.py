@@ -21,7 +21,7 @@ import logging
 
 import config
 
-producer = KafkaProducer(bootstrap_servers=config.KAFKA_BOOTSTRAP_SERVERS)
+producer = KafkaProducer(bootstrap_servers=config.KAFKA_BOOTSTRAP_SERVERS,max_request_size=config.KAFKA_MAX_REQUEST_SIZE)
 logger = logging.getLogger(__name__)
 
 MT_ERROR = "org.openkilda.messaging.error.ErrorMessage"

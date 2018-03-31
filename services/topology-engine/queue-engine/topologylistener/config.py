@@ -42,5 +42,6 @@ KAFKA_CACHE_TOPIC = config.get('kafka', 'cache.topic')
 KAFKA_SPEAKER_TOPIC = config.get('kafka', 'speaker.topic')
 KAFKA_TOPO_ENG_TOPIC = config.get('kafka', 'topo.eng.topic')
 KAFKA_NORTHBOUND_TOPIC = config.get('kafka', 'northbound.topic')
+KAFKA_MAX_REQUEST_SIZE = config.get('kafka', 'max_request_size')
 
 ZOOKEEPER_HOSTS = config.get('zookeeper', 'hosts')
