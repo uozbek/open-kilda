@@ -3,14 +3,14 @@
 # --> services/src/pom.xml
 # --> services/wfm/pom.xml
 OPENFLOWJ_VERSION := 3.2.0-kilda-2
-FLOODLIGHT_VERSION := 1.2-kilda-2
+FLOODLIGHT_VERSION := 1.2-kilda-4
 
-GIT_HEAD := .git/refs/heads/STABLE
+GIT_HEAD := .git/refs/heads/
 
-FLOODLIGHT_REPO_URL := https://github.com/kilda/floodlight.git
+FLOODLIGHT_REPO_URL := https://github.com/surabujin/floodlight.git
 FLOODLIGHT_DIR := floodlight
-FLOODLIGHT_SOURCES := $(FLOODLIGHT_DIR)/$(GIT_HEAD)
-FLOODLIGHT_JAR := $(FLOODLIGHT_DIR)/target/floodlight-1.2-kilda-2.jar
+FLOODLIGHT_SOURCES := $(FLOODLIGHT_DIR)/.git/refs/heads/kilda-upstream-migration
+FLOODLIGHT_JAR := $(FLOODLIGHT_DIR)/target/floodlight-$(FLOODLIGHT_VERSION).jar
 FLOODLIGHT_JAR += $(FLOODLIGHT_DIR)/target/floodlight.jar
 
 LOXIGEN_REPO_URL := https://github.com/kilda/loxigen.git
@@ -63,7 +63,7 @@ clean-loxigen:
 	if [ -d "$(LOXIGEN_DIR)" ]; then $(MAKE) -C $(LOXIGEN_DIR) clean; fi
 
 $(FLOODLIGHT_SOURCES):
-	git clone -b STABLE --single-branch $(FLOODLIGHT_REPO_URL) $(FLOODLIGHT_DIR)
+	git clone -b kilda-upstream-migration --single-branch $(FLOODLIGHT_REPO_URL) $(FLOODLIGHT_DIR)
 
 $(FLOODLIGHT_JAR): $(FLOODLIGHT_SOURCES)
 	mvn -B -f $(FLOODLIGHT_DIR)/pom.xml clean package -DskipTests
@@ -78,7 +78,7 @@ clean-floodlight:
 
 git-pull: $(LOXIGEN_SOURCES) $(FLOODLIGHT_SOURCES)
 	cd "$(LOXIGEN_DIR)" && git fetch origin && git checkout STABLE && git pull -r
-	cd "$(FLOODLIGHT_DIR)" && git fetch origin && git checkout STABLE && git pull -r
+	cd "$(FLOODLIGHT_DIR)" && git fetch origin && git checkout kilda-upstream-migration && git pull -r
 
 git-validate-repo: $(LOXIGEN_SOURCES) $(FLOODLIGHT_SOURCES)
 	[ "$$(cd $(LOXIGEN_DIR) && git remote get-url origin)" = "$(LOXIGEN_REPO_URL)" ]
