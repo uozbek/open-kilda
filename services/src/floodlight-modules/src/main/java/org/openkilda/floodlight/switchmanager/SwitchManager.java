@@ -76,6 +76,7 @@ import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 import org.projectfloodlight.openflow.protocol.OFPortConfig;
 import org.projectfloodlight.openflow.protocol.OFPortDesc;
+import org.projectfloodlight.openflow.protocol.OFPortFeatures;
 import org.projectfloodlight.openflow.protocol.OFPortMod;
 import org.projectfloodlight.openflow.protocol.OFType;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
@@ -1502,7 +1503,7 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         boolean makeChanges = false;
         if (portAdminDown != null) {
             makeChanges = true;
-            updatePortStatus(sw, portNumber, portAdminDown);
+            updatePort(sw, portNumber, portAdminDown, null);
         }
 
         if (makeChanges) {
@@ -1520,7 +1521,29 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         return new ArrayList<>(sw.getPorts());
     }
 
-    private void updatePortStatus(IOFSwitch sw, int portNumber, boolean isAdminDown) throws SwitchOperationException {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void configurePortSpeed(DatapathId dpId, int portNumber, OFPortFeatures ofPortFeatures) 
+            throws SwitchOperationException {
+        IOFSwitch sw = lookupSwitch(dpId);
+
+        updatePort(sw, portNumber, true, null);
+        sendBarrierRequest(sw);
+
+        updatePort(sw, portNumber, false, ofPortFeatures);
+        sendBarrierRequest(sw);
+    }
+
+    @Override
+    public OFPortDesc getPort(DatapathId dpId, int portNumber) throws SwitchOperationException {
+        IOFSwitch sw = lookupSwitch(dpId);
+        return getPortDesc(sw, portNumber);
+    }
+    
+    private void updatePort(IOFSwitch sw, int portNumber, boolean isAdminDown, OFPortFeatures ofPortFeatures) 
+            throws SwitchOperationException {
         Set<OFPortConfig> config = new HashSet<>(1);
         if (isAdminDown) {
             config.add(OFPortConfig.PORT_DOWN);
@@ -1529,29 +1552,36 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         Set<OFPortConfig> portMask = ImmutableSet.of(OFPortConfig.PORT_DOWN);
 
         final OFFactory ofFactory = sw.getOFFactory();
-        OFPortMod ofPortMod = ofFactory.buildPortMod()
+        OFPortMod.Builder builder = ofFactory.buildPortMod()
                 .setPortNo(OFPort.of(portNumber))
                 // switch can argue against empty HWAddress (BAD_HW_ADDR) :(
                 .setHwAddr(getPortHwAddress(sw, portNumber))
                 .setConfig(config)
-                .setMask(portMask)
-                .build();
+                .setMask(portMask);
 
+        if (ofPortFeatures != null) {
+            builder.setAdvertise(ofPortFeatures.getPortSpeed().getSpeedBps() / (1000L * 1000L));
+        }
+
+        OFPortMod ofPortMod = builder.build();
         if (!sw.write(ofPortMod)) {
             throw new SwitchOperationException(sw.getId(),
                     String.format("Unable to update port configuration: %s", ofPortMod));
         }
-
-        logger.debug("Successfully updated port status {}", ofPortMod);
     }
 
     private MacAddress getPortHwAddress(IOFSwitch sw, int portNumber) throws SwitchOperationException {
+        OFPortDesc portDesc = getPortDesc(sw, portNumber);
+        return portDesc.getHwAddr();
+    }
+
+    private OFPortDesc getPortDesc(IOFSwitch sw, int portNumber) throws SwitchOperationException {
         OFPortDesc portDesc = sw.getPort(OFPort.of(portNumber));
         if (portDesc == null) {
             throw new SwitchOperationException(sw.getId(),
                     String.format("Unable to get port by number %d on the switch %s",
                             portNumber, sw.getId()));
         }
-        return portDesc.getHwAddr();
+        return portDesc;
     }
 }

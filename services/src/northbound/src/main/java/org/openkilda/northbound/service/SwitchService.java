@@ -24,6 +24,7 @@ import org.openkilda.messaging.info.switches.PortDescription;
 import org.openkilda.messaging.info.switches.SwitchPortsDescription;
 import org.openkilda.messaging.model.SwitchId;
 import org.openkilda.messaging.payload.switches.PortConfigurationPayload;
+import org.openkilda.messaging.payload.switches.PortSpeedConfigurationPayload;
 import org.openkilda.northbound.dto.switches.DeleteMeterResult;
 import org.openkilda.northbound.dto.switches.PortDto;
 import org.openkilda.northbound.dto.switches.RulesSyncResult;
@@ -116,12 +117,7 @@ public interface SwitchService extends BasicService {
     DeleteMeterResult deleteMeter(SwitchId switchId, long meterId);
     
     /**
-     * Configure switch port. <br>
-     * Configurations
-     * <ul>
-     * <li> UP/DOWN port </li>
-     * <li> Change port speed </li>
-     * </ul>
+     * Configure UP/DOWN switch port. <br>
      *  
      * @param switchId switch whose port is to configure
      * @param port port to configure
@@ -146,4 +142,14 @@ public interface SwitchService extends BasicService {
      * @return the port description.
      */
     PortDescription getPortDescription(SwitchId switchId, int port);
+
+    /**
+     * Configure switch port speed. <br>
+     *  
+     * @param switchId switch whose port is to configure
+     * @param port port to configure
+     * @param portConfig port configuration that needs to apply on port 
+     * @return portDto 
+     */
+    PortDto configurePortSpeed(SwitchId switchId,  int port, PortSpeedConfigurationPayload portConfig);
 }

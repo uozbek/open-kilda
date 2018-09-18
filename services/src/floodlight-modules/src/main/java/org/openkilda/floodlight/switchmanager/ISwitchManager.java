@@ -24,6 +24,7 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFMeterConfig;
 import org.projectfloodlight.openflow.protocol.OFPortDesc;
+import org.projectfloodlight.openflow.protocol.OFPortFeatures;
 import org.projectfloodlight.openflow.types.DatapathId;
 
 import java.util.List;
@@ -241,12 +242,7 @@ public interface ISwitchManager extends IFloodlightService {
     void sendPortUpEvents(final IOFSwitch sw) throws SwitchOperationException;
 
     /**
-     * Configure switch port. <br>
-     * Configurations
-     * <ul>
-     * <li> UP/DOWN port </li>
-     * <li> Change port speed </li>
-     * </ul>
+     * Configure port UP/DOWN on switch.
      *
      * @param dpId datapath ID of the switch.
      * @param portNumber the port to configure.
@@ -263,4 +259,25 @@ public interface ISwitchManager extends IFloodlightService {
      * @throws SwitchOperationException Switch not found.
      */
     List<OFPortDesc> dumpPortsDescription(DatapathId dpid) throws SwitchOperationException;
+
+    /**
+     * Configure port speed on switch.
+     * 
+     * @param dpId datapath ID of the switch.
+     * @param portNumber the port to configure.
+     * @param ofPortFeatures speed that requested to configure on port
+     * @throws SwitchOperationException Switch not found, Port not found or invalid speed
+     */
+    void configurePortSpeed(DatapathId dpId, int portNumber, OFPortFeatures ofPortFeatures) 
+            throws SwitchOperationException;
+    
+    /**
+     * Return port of switch whose data path id and port number is provided.
+     * 
+     * @param dpId datapath ID of the switch.
+     * @param portNumber the port to configure.
+     * @return port information
+     * @throws SwitchOperationException Switch not found or Port not found
+     */
+    OFPortDesc getPort(DatapathId dpId, int portNumber) throws SwitchOperationException;
 }

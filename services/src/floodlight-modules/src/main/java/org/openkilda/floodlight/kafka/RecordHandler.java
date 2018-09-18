@@ -54,6 +54,7 @@ import org.openkilda.messaging.command.switches.DumpRulesRequest;
 import org.openkilda.messaging.command.switches.DumpSwitchPortsDescriptionRequest;
 import org.openkilda.messaging.command.switches.InstallRulesAction;
 import org.openkilda.messaging.command.switches.PortConfigurationRequest;
+import org.openkilda.messaging.command.switches.PortSpeedConfigurationRequest;
 import org.openkilda.messaging.command.switches.SwitchRulesDeleteRequest;
 import org.openkilda.messaging.command.switches.SwitchRulesInstallRequest;
 import org.openkilda.messaging.error.ErrorData;
@@ -86,6 +87,7 @@ import net.floodlightcontroller.core.IOFSwitch;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFPortDesc;
+import org.projectfloodlight.openflow.protocol.OFPortFeatures;
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
@@ -182,6 +184,8 @@ class RecordHandler implements Runnable {
             doDumpSwitchPortsDescriptionRequest(message, replyToTopic, replyDestination);
         } else if (data instanceof DumpPortDescriptionRequest) {
             doDumpPortDescriptionRequest(message, replyToTopic, replyDestination);
+        } else if (data instanceof PortSpeedConfigurationRequest) {
+            doConfigurePortSpeed(message, replyToTopic, replyDestination);
         } else {
             logger.error("unknown data type: {}", data.toString());
         }
@@ -832,6 +836,35 @@ class RecordHandler implements Runnable {
             context.getKafkaProducer().postMessage(replyToTopic, error);
         }
     }
+    
+    private void doConfigurePortSpeed(final CommandMessage message, final String replyToTopic, 
+            final Destination replyDestination) {
+        PortSpeedConfigurationRequest request = (PortSpeedConfigurationRequest) message.getData();
+        
+        logger.info("Port speed configuration request. Switch '{}', Port '{}'", request.getSwitchId(), 
+                request.getPortNumber());
+        try {
+            ISwitchManager switchManager = context.getSwitchManager();
+
+            DatapathId dpId = DatapathId.of(request.getSwitchId().toLong());
+            OFPortFeatures ofPortFeatures = validateAndGetSpeed(dpId, request.getPortNumber(), 
+                    request.getPortSpeed());
+            switchManager.configurePortSpeed(dpId, request.getPortNumber(), ofPortFeatures);
+
+            InfoMessage infoMessage = new InfoMessage(
+                    new PortConfigurationResponse(request.getSwitchId(), request.getPortNumber()),
+                    message.getTimestamp(),
+                    message.getCorrelationId());
+            context.getKafkaProducer().postMessage(replyToTopic, infoMessage);
+        } catch (SwitchOperationException e) {
+            logger.error("Port speed configuration request failed. " + e.getMessage(), e);
+            ErrorData errorData = new ErrorData(ErrorType.DATA_INVALID, e.getMessage(), 
+                    "Port speed configuration request failed");
+            ErrorMessage error = new ErrorMessage(errorData,
+                    System.currentTimeMillis(), message.getCorrelationId(), replyDestination);
+            context.getKafkaProducer().postMessage(replyToTopic, error);
+        }
+    }
 
     private long allocateMeterId(Long meterId, SwitchId switchId, String flowId, Long cookie) {
         long allocatedId;
@@ -866,6 +899,29 @@ class RecordHandler implements Runnable {
         } catch (Exception exception) {
             logger.error("error processing message={}", message, exception);
         }
+    }
+
+    private OFPortFeatures validateAndGetSpeed(final DatapathId dpId, final int portNumber, final String speed)
+            throws SwitchOperationException {
+        ISwitchManager switchManager = context.getSwitchManager();
+        OFPortDesc portDesc = switchManager.getPort(dpId, portNumber);
+        
+        if (!portDesc.isEnabled()) {
+            throw new SwitchOperationException(dpId, "Port is in disable state, "
+                    + "configure speed operation can't be performed");
+        }
+        
+        OFPortFeatures ofPortFeatures = null;
+        for (OFPortFeatures portFeatures : portDesc.getSupported()) {
+            if (portFeatures.toString().equalsIgnoreCase(speed)) {
+                ofPortFeatures = portFeatures;
+            }
+        }
+        
+        if (ofPortFeatures == null) {
+            throw new SwitchOperationException(dpId, "Provided speed " + speed + " is invalid");
+        }
+        return ofPortFeatures;
     }
 
     @Override

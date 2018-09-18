@@ -31,6 +31,7 @@ import org.openkilda.messaging.command.switches.DumpRulesRequest;
 import org.openkilda.messaging.command.switches.DumpSwitchPortsDescriptionRequest;
 import org.openkilda.messaging.command.switches.InstallRulesAction;
 import org.openkilda.messaging.command.switches.PortConfigurationRequest;
+import org.openkilda.messaging.command.switches.PortSpeedConfigurationRequest;
 import org.openkilda.messaging.command.switches.PortStatus;
 import org.openkilda.messaging.command.switches.SwitchRulesDeleteRequest;
 import org.openkilda.messaging.command.switches.SwitchRulesInstallRequest;
@@ -49,6 +50,7 @@ import org.openkilda.messaging.info.switches.SyncRulesResponse;
 import org.openkilda.messaging.model.SwitchId;
 import org.openkilda.messaging.nbtopology.request.GetSwitchesRequest;
 import org.openkilda.messaging.payload.switches.PortConfigurationPayload;
+import org.openkilda.messaging.payload.switches.PortSpeedConfigurationPayload;
 import org.openkilda.northbound.converter.SwitchMapper;
 import org.openkilda.northbound.dto.switches.DeleteMeterResult;
 import org.openkilda.northbound.dto.switches.PortDto;
@@ -318,6 +320,24 @@ public class SwitchServiceImpl implements SwitchService {
         Message message = messageConsumer.poll(correlationId);
 
         return (PortDescription) validateInfoMessage(commandMessage, message, correlationId);
+    }
+
+    @Override
+    public PortDto configurePortSpeed(SwitchId switchId, int port, PortSpeedConfigurationPayload portConfig) {
+        String correlationId = RequestCorrelationId.getId();
+
+        PortSpeedConfigurationRequest request = new PortSpeedConfigurationRequest(switchId, 
+                port, portConfig.getPortSpeed());
+        CommandWithReplyToMessage updateStatusCommand = new CommandWithReplyToMessage(
+                request, System.currentTimeMillis(), correlationId, 
+                Destination.CONTROLLER, northboundTopic);
+        messageProducer.send(floodlightTopic, updateStatusCommand);
+
+        Message response = messageConsumer.poll(correlationId);
+        PortConfigurationResponse switchPortResponse = (PortConfigurationResponse) validateInfoMessage(
+                updateStatusCommand, response, correlationId);
+
+        return new PortDto(switchPortResponse.getSwitchId().toString(), switchPortResponse.getPortNo());
     }
 
     private Boolean toPortAdminDown(PortStatus status) {

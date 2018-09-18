@@ -29,6 +29,7 @@ import org.openkilda.messaging.info.switches.PortDescription;
 import org.openkilda.messaging.info.switches.SwitchPortsDescription;
 import org.openkilda.messaging.model.SwitchId;
 import org.openkilda.messaging.payload.switches.PortConfigurationPayload;
+import org.openkilda.messaging.payload.switches.PortSpeedConfigurationPayload;
 import org.openkilda.northbound.dto.switches.DeleteMeterResult;
 import org.openkilda.northbound.dto.switches.PortDto;
 import org.openkilda.northbound.dto.switches.RulesSyncResult;
@@ -308,5 +309,25 @@ public class SwitchController {
             @PathVariable("switch-id") SwitchId switchId,
             @PathVariable("port") int port) {
         return switchService.getPortDescription(switchId, port);
+    }
+
+    /**
+     * Configure port speed.
+     *
+     * @param switchId the switch id
+     * @param portNo the port no
+     * @param portConfig the port configuration payload
+     * @return the response entity
+     */
+    @ApiOperation(value = "Configure port on the switch", response = PortDto.class)
+    @ApiResponse(code = 200, response = PortDto.class, message = "Operation is successful")
+    @PutMapping(value = "/switches/{switch_id}/port/{port_no}/configspeed",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public PortDto configurePortSpeed(
+            @PathVariable(name = "switch_id") SwitchId switchId,
+            @PathVariable(name = "port_no") int portNo,
+            @RequestBody PortSpeedConfigurationPayload portConfig) {
+        LOGGER.info("Port Configuration '{}' request for port {} of switch {}", portConfig, portNo, switchId);
+        return switchService.configurePortSpeed(switchId, portNo, portConfig);
     }
 }
