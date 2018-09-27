@@ -1,0 +1,49 @@
+@startuml
+title Change port speed
+
+participant NB
+
+control kilda.northbound
+control kilda.speaker
+
+participant Floodlight
+participant Switch
+
+activate NB
+NB -> kilda.speaker: CommandWithReplyToMessage \nPortConfigurationRequest
+
+kilda.speaker -> Floodlight: CommandWithReplyToMessage \nPortConfigurationRequest
+
+alt switch does not exist
+    Floodlight -> kilda.northbound: ErrorMessage
+end
+
+alt port does not exist
+    Floodlight -> kilda.northbound: ErrorMessage
+end
+
+alt Port not enabled (port down/link down)
+    Floodlight -> kilda.northbound: ErrorMessage
+end
+
+alt Requested speed not matched with supported speed
+    Floodlight -> kilda.northbound: ErrorMessage
+end
+
+alt normal flow
+    Floodlight -> Switch: OfPortMod message with configuration as port status down 
+    note right of Switch: Port Down
+    Floodlight -> Switch: OfPortMod message with configuration as port status up and advertise as request speed
+note right of Switch: Port up with desire speed
+
+alt On Exception (Switch Unavailable or any other issue)
+    Switch-> kilda.northbound: ErrorMessage
+end
+
+
+Switch -> Floodlight: transaction id
+
+Floodlight-> kilda.northbound: InfoMessage\nPortConfigurationResponse
+end
+kilda.northbound-> NB: InfoMessage\nPortConfigurationResponse
+@enduml

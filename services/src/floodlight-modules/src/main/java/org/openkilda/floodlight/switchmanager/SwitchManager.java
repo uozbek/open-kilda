@@ -89,6 +89,7 @@ import org.projectfloodlight.openflow.protocol.match.Match.Builder;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.meterband.OFMeterBandDrop;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
+import org.projectfloodlight.openflow.protocol.ver13.OFPortFeaturesSerializerVer13;
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.MacAddress;
@@ -1560,7 +1561,7 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
                 .setMask(portMask);
 
         if (ofPortFeatures != null) {
-            builder.setAdvertise(ofPortFeatures.getPortSpeed().getSpeedBps() / (1000L * 1000L));
+            builder.setAdvertise(OFPortFeaturesSerializerVer13.toWireValue(ImmutableSet.of(ofPortFeatures)));
         }
 
         OFPortMod ofPortMod = builder.build();
