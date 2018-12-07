@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
+import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.threadpool.IThreadPoolService;
@@ -74,7 +75,7 @@ public class KildaCore implements IFloodlightModule {
     }
 
     @Override
-    public void startUp(FloodlightModuleContext moduleContext) {
+    public void startUp(FloodlightModuleContext moduleContext) throws FloodlightModuleException {
         commandContextFactory.init(moduleContext);
 
         for (IFloodlightService entry : services.values()) {

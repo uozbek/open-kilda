@@ -15,7 +15,6 @@
 
 package org.openkilda.messaging.model;
 
-import com.esotericsoftware.kryo.NotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -33,7 +32,7 @@ public class SwitchPort implements Serializable {
     @JsonProperty(value = "number", required = true)
     private int number;
 
-    @NotNull
+    @NonNull
     @JsonProperty(value = "state", required = true)
     private State state;
 

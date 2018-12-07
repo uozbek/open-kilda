@@ -22,9 +22,9 @@ import org.openkilda.model.SwitchId;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import lombok.Value;
 
 /**
  * Defines the payload of a Message representing a switch info.
@@ -32,7 +32,7 @@ import lombok.Value;
  * TODO: it doesn't look correct that we utilize SwitchInfo DTO class as cache entiries
  * and also injected cache related fields there.
  */
-@Value
+@Data
 @ToString
 @EqualsAndHashCode(callSuper = false)
 public class SwitchInfoData extends CacheTimeTag {
@@ -100,5 +100,9 @@ public class SwitchInfoData extends CacheTimeTag {
         this.description = description;
         this.controller = controller;
         this.switchRecord = switchRecord;
+    }
+
+    public void setState(final SwitchChangeType state) {
+        this.state = state;
     }
 }
