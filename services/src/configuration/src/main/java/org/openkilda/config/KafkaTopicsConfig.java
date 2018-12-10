@@ -84,6 +84,10 @@ public interface KafkaTopicsConfig {
     @Default("kilda.stats")
     String getStatsTopic();
 
+    @Key("flrouter.topic")
+    @Default("kafka.flrouter.topic")
+    String getFlRouterTopic();
+
     /**
      * TE incoming topic name.
      *
