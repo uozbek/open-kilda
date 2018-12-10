@@ -20,11 +20,13 @@ import org.openkilda.floodlight.service.CommandProcessorService;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.IService;
 import org.openkilda.floodlight.service.of.InputService;
+import org.openkilda.floodlight.service.session.SessionService;
 import org.openkilda.floodlight.utils.CommandContextFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.floodlightcontroller.core.IFloodlightProviderService;
+import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
@@ -48,6 +50,7 @@ public class KildaCore implements IFloodlightModule {
                 .put(CommandProcessorService.class, new CommandProcessorService(this, commandContextFactory))
                 .put(InputService.class, new InputService(commandContextFactory))
                 .put(FeatureDetectorService.class, new FeatureDetectorService())
+                .put(SessionService.class, new SessionService())
                 .build();
     }
 
@@ -65,7 +68,8 @@ public class KildaCore implements IFloodlightModule {
     public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
         return ImmutableList.of(
                 IThreadPoolService.class,
-                IFloodlightProviderService.class);
+                IFloodlightProviderService.class,
+                IOFSwitchService.class);
     }
 
     @Override
