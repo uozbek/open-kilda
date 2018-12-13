@@ -95,6 +95,9 @@ public class SwitchServiceImpl implements SwitchService {
     @Value("#{kafkaTopicsConfig.getTopoNbTopic()}")
     private String nbworkerTopic;
 
+    @Value("#{kafkaTopicsConfig.getFlRouterTopic()}")
+    private String flRouterTopic;
+
     /**
      * {@inheritDoc}
      */
@@ -121,7 +124,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandWithReplyToMessage commandMessage = new CommandWithReplyToMessage(request, System.currentTimeMillis(),
                 correlationId, Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, commandMessage)
+        return messagingChannel.sendAndGet(flRouterTopic, commandMessage)
                 .thenApply(SwitchFlowEntries.class::cast)
                 .thenApply(data -> cookie > NumberUtils.LONG_ZERO ? findByCookie(cookie, data) : data);
     }
@@ -140,7 +143,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandMessage request = new CommandWithReplyToMessage(data, System.currentTimeMillis(), correlationId,
                 Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, request)
+        return messagingChannel.sendAndGet(flRouterTopic, request)
                 .thenApply(SwitchRulesResponse.class::cast)
                 .thenApply(SwitchRulesResponse::getRuleIds);
     }
@@ -154,7 +157,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandMessage request = new CommandWithReplyToMessage(data, System.currentTimeMillis(), correlationId,
                 Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, request)
+        return messagingChannel.sendAndGet(flRouterTopic, request)
                 .thenApply(SwitchRulesResponse.class::cast)
                 .thenApply(SwitchRulesResponse::getRuleIds);
     }
@@ -171,7 +174,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandMessage request = new CommandWithReplyToMessage(data, System.currentTimeMillis(), correlationId,
                 Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, request)
+        return messagingChannel.sendAndGet(flRouterTopic, request)
                 .thenApply(SwitchRulesResponse.class::cast)
                 .thenApply(SwitchRulesResponse::getRuleIds);
     }
@@ -188,7 +191,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandMessage request = new CommandWithReplyToMessage(data, System.currentTimeMillis(), correlationId,
                 Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, request)
+        return messagingChannel.sendAndGet(flRouterTopic, request)
                 .thenApply(ConnectModeResponse.class::cast)
                 .thenApply(ConnectModeResponse::getMode);
     }
@@ -236,7 +239,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandWithReplyToMessage dumpCommand = new CommandWithReplyToMessage(
                 new DumpMetersRequest(switchId),
                 System.currentTimeMillis(), requestId, Destination.CONTROLLER, northboundTopic);
-        return messagingChannel.sendAndGet(floodlightTopic, dumpCommand)
+        return messagingChannel.sendAndGet(flRouterTopic, dumpCommand)
                 .thenApply(SwitchMeterEntries.class::cast);
     }
 
@@ -247,7 +250,7 @@ public class SwitchServiceImpl implements SwitchService {
                 new DeleteMeterRequest(switchId, meterId),
                 System.currentTimeMillis(), requestId, Destination.TOPOLOGY_ENGINE, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, deleteCommand)
+        return messagingChannel.sendAndGet(flRouterTopic, deleteCommand)
                 .thenApply(DeleteMeterResponse.class::cast)
                 .thenApply(response -> new DeleteMeterResult(response.isDeleted()));
     }
@@ -265,7 +268,7 @@ public class SwitchServiceImpl implements SwitchService {
                 request, System.currentTimeMillis(), correlationId, 
                 Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, updateStatusCommand)
+        return messagingChannel.sendAndGet(flRouterTopic, updateStatusCommand)
                 .thenApply(PortConfigurationResponse.class::cast)
                 .thenApply(response -> new PortDto(response.getSwitchId().toString(), response.getPortNo()));
     }
@@ -280,7 +283,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandWithReplyToMessage commandMessage = new CommandWithReplyToMessage(request, System.currentTimeMillis(),
                 correlationId, Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, commandMessage)
+        return messagingChannel.sendAndGet(flRouterTopic, commandMessage)
                 .thenApply(SwitchPortsDescription.class::cast);
     }
 
@@ -294,7 +297,7 @@ public class SwitchServiceImpl implements SwitchService {
         CommandWithReplyToMessage commandMessage = new CommandWithReplyToMessage(request, System.currentTimeMillis(),
                 correlationId, Destination.CONTROLLER, northboundTopic);
 
-        return messagingChannel.sendAndGet(floodlightTopic, commandMessage)
+        return messagingChannel.sendAndGet(flRouterTopic, commandMessage)
                 .thenApply(PortDescription.class::cast);
     }
 

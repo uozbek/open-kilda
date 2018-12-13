@@ -85,7 +85,7 @@ public interface KafkaTopicsConfig {
     String getStatsTopic();
 
     @Key("flrouter.topic")
-    @Default("kafka.flrouter.topic")
+    @Default("kilda.flrouter.topic")
     String getFlRouterTopic();
 
     /**
