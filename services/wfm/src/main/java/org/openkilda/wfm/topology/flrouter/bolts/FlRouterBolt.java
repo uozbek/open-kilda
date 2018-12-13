@@ -21,8 +21,11 @@ import org.openkilda.messaging.Destination;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.Utils;
 import org.openkilda.messaging.command.CommandMessage;
+import org.openkilda.messaging.error.ErrorMessage;
+import org.openkilda.messaging.info.InfoMessage;
 import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.topology.AbstractTopology;
+import org.openkilda.wfm.topology.flrouter.StreamType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.storm.state.KeyValueState;
@@ -69,8 +72,12 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
 
         if (message instanceof CommandMessage) {
             processRequest(tuple, message);
+        } else if (message instanceof InfoMessage) {
+            processResponse(tuple, message);
+        } else if (message instanceof ErrorMessage) {
+            processErrorResponse(tuple, message);
         }
-
+        // todo: implement unhandled input logic
     }
 
     /**
@@ -108,20 +115,60 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
      */
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.REQUEST.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.RESPONSE.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.ERROR.toString(), AbstractTopology.fieldMessage);
     }
 
     /**
      * Process request to destination FL instance.
      *
+     * @param input a tuple.
      * @param message a command message.
      */
     private void processRequest(Tuple input, Message message) {
         message.setDestination(Destination.CONTROLLER);
         CommandMessage command = (CommandMessage) message;
         try {
-            collector.emit(input, new Values(MAPPER.writeValueAsString(command)));
+            collector.emit(StreamType.REQUEST.toString(), input, new Values(MAPPER.writeValueAsString(command)));
         } catch (JsonProcessingException e) {
+            // todo: resolve catch cause
+            logger.error("JSON processing error: {}", e);
+        } finally {
+            collector.ack(input);
+        }
+    }
+
+    /**
+     * Process response from Floodlight.
+     *
+     * @param input a tuple.
+     * @param message a response message.
+     */
+    private void processResponse(Tuple input, Message message) {
+        InfoMessage infoMessage = (InfoMessage) message;
+        try {
+            collector.emit(StreamType.RESPONSE.toString(), input, new Values(MAPPER.writeValueAsString(infoMessage)));
+        } catch (JsonProcessingException e) {
+            // todo: resolve catch cause
+            logger.error("JSON processing error: {}", e);
+        } finally {
+            collector.ack(input);
+        }
+    }
+
+    /**
+     * Process error response from floodlight.
+     *
+     * @param input a tuple.
+     * @param message an error message.
+     */
+    private void processErrorResponse(Tuple input, Message message) {
+        ErrorMessage errorMessage = (ErrorMessage) message;
+        try {
+            collector.emit(StreamType.ERROR.toString(), input, new Values(MAPPER.writeValueAsString(errorMessage)));
+        } catch (JsonProcessingException e) {
+            // todo: resolve catch cause
             logger.error("JSON processing error: {}", e);
         } finally {
             collector.ack(input);

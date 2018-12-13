@@ -64,4 +64,8 @@ public class ConsumerContext {
     public String getKafkaNorthboundTopic() {
         return kafkaTopics.getNorthboundTopic();
     }
+
+    public String getKafkaFlRouterTopic() {
+        return kafkaTopics.getFlRouterTopic();
+    }
 }

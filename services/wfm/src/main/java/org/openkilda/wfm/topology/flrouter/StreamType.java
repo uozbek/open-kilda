@@ -15,22 +15,23 @@
 
 package org.openkilda.wfm.topology.flrouter;
 
-import org.openkilda.wfm.topology.AbstractTopologyConfig;
+/**
+ * Stream types for FL Router topology.
+ */
+public enum StreamType {
 
-import com.sabre.oss.conf4j.annotation.Configuration;
+    /**
+     * Request message.
+     */
+    REQUEST,
 
-@Configuration
-public interface FlRouterTopologyConfig extends AbstractTopologyConfig {
+    /**
+     * Response message.
+     */
+    RESPONSE,
 
-    default String getKafkaSpeakerTopic() {
-        return getKafkaTopics().getSpeakerTopic();
-    }
-
-    default String getKafkaFlRouterTopic() {
-        return getKafkaTopics().getFlRouterTopic();
-    }
-
-    default String getKafkaNorthboundTopic() {
-        return getKafkaTopics().getNorthboundTopic();
-    }
+    /**
+     * Error message.
+     */
+    ERROR;
 }

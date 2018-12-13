@@ -1,4 +1,4 @@
-/* Copyright 2017 Telstra Open Source
+/* Copyright 2018 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -453,6 +453,7 @@ class RecordHandler implements Runnable {
     }
 
     private void doInstallSwitchRules(final CommandMessage message, String replyToTopic, Destination replyDestination) {
+        replyToTopic = context.getKafkaFlRouterTopic();
         SwitchRulesInstallRequest request = (SwitchRulesInstallRequest) message.getData();
         logger.debug("Installing rules on '{}' switch: action={}",
                 request.getSwitchId(), request.getInstallRulesAction());
@@ -499,6 +500,7 @@ class RecordHandler implements Runnable {
     }
 
     private void doDeleteSwitchRules(final CommandMessage message, String replyToTopic, Destination replyDestination) {
+        replyToTopic = context.getKafkaFlRouterTopic();
         SwitchRulesDeleteRequest request = (SwitchRulesDeleteRequest) message.getData();
         logger.debug("Deleting rules from '{}' switch: action={}, criteria={}", request.getSwitchId(),
                 request.getDeleteRulesAction(), request.getCriteria());
@@ -579,6 +581,7 @@ class RecordHandler implements Runnable {
     }
 
     private void doConnectMode(final CommandMessage message, String replyToTopic, Destination replyDestination) {
+        replyToTopic = context.getKafkaFlRouterTopic();
         ConnectModeRequest request = (ConnectModeRequest) message.getData();
         if (request.getMode() != null) {
             logger.debug("Setting CONNECT MODE to '{}'", request.getMode());
@@ -598,6 +601,7 @@ class RecordHandler implements Runnable {
     }
 
     private void doDumpRulesRequest(final CommandMessage message,  String replyToTopic, Destination replyDestination) {
+        replyToTopic = context.getKafkaFlRouterTopic();
         DumpRulesRequest request = (DumpRulesRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();
@@ -697,6 +701,7 @@ class RecordHandler implements Runnable {
     }
 
     private void doDeleteMeter(CommandMessage message, String replyToTopic, Destination replyDestination) {
+        replyToTopic = context.getKafkaFlRouterTopic();
         DeleteMeterRequest request = (DeleteMeterRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();
@@ -755,6 +760,7 @@ class RecordHandler implements Runnable {
 
     private void doDumpSwitchPortsDescriptionRequest(
             CommandMessage message, String replyToTopic, Destination replyDestination) {
+        replyToTopic = context.getKafkaFlRouterTopic();
         DumpSwitchPortsDescriptionRequest request = (DumpSwitchPortsDescriptionRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();
@@ -795,6 +801,7 @@ class RecordHandler implements Runnable {
 
     private void doDumpPortDescriptionRequest(
             CommandMessage message, String replyToTopic, Destination replyDestination) {
+        replyToTopic = context.getKafkaFlRouterTopic();
         DumpPortDescriptionRequest request = (DumpPortDescriptionRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();

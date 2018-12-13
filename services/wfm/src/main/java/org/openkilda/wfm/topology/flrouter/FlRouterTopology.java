@@ -20,6 +20,7 @@ import org.openkilda.wfm.topology.AbstractTopology;
 import org.openkilda.wfm.topology.flrouter.bolts.FlRouterBolt;
 
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.topology.TopologyBuilder;
 
@@ -30,7 +31,8 @@ public class FlRouterTopology extends AbstractTopology<FlRouterTopologyConfig> {
 
     private static final String FLR_SPOUT_ID = "flr-spout";
     private static final String FLR_BOLT_NAME = "flr-bolt";
-    private static final String FLR_KAFKA_BOLT_NAME = "flr-kafka-bolt";
+    private static final String FL_KAFKA_BOLT = "speaker-kafka-bolt";
+    private static final String NB_KAFKA_BOLT = "nb-kafka-bolt";
 
     public FlRouterTopology(LaunchEnvironment env) {
         super(env, FlRouterTopologyConfig.class);
@@ -49,8 +51,14 @@ public class FlRouterTopology extends AbstractTopology<FlRouterTopologyConfig> {
         builder.setBolt(FLR_BOLT_NAME, flRouterBolt)
                 .shuffleGrouping(FLR_SPOUT_ID);
 
-        builder.setBolt(FLR_KAFKA_BOLT_NAME, createKafkaBolt(topologyConfig.getKafkaSpeakerTopic()),
-                topologyConfig.getParallelism()).shuffleGrouping(FLR_BOLT_NAME);
+        KafkaBolt speakerKafkaBolt = createKafkaBolt(topologyConfig.getKafkaSpeakerTopic());
+        builder.setBolt(FL_KAFKA_BOLT, speakerKafkaBolt, topologyConfig.getParallelism())
+                .shuffleGrouping(FLR_BOLT_NAME, StreamType.REQUEST.toString());
+
+        KafkaBolt nbKafkaBolt = createKafkaBolt(topologyConfig.getKafkaNorthboundTopic());
+        builder.setBolt(NB_KAFKA_BOLT, nbKafkaBolt, topologyConfig.getParallelism())
+                .shuffleGrouping(FLR_BOLT_NAME, StreamType.RESPONSE.toString())
+                .shuffleGrouping(FLR_BOLT_NAME, StreamType.ERROR.toString());
 
         return builder.createTopology();
     }
