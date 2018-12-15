@@ -38,6 +38,11 @@ public enum Destination {
     CONTROLLER("CONTROLLER"),
 
     /**
+     * Floodlight router component.
+     */
+    FL_ROUTER("FL_ROUTER"),
+
+    /**
      * WorkFlow Manager component.
      */
     WFM("WFM"),

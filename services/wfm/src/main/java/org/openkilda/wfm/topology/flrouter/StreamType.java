@@ -21,9 +21,14 @@ package org.openkilda.wfm.topology.flrouter;
 public enum StreamType {
 
     /**
-     * Request message.
+     * Request message for FL speaker topic.
      */
-    REQUEST,
+    REQUEST_SPEAKER,
+
+    /**
+     * Request message for FL speaker flow topic.
+     */
+    REQUEST_SPEAKER_FLOW,
 
     /**
      * Response message.
@@ -33,5 +38,10 @@ public enum StreamType {
     /**
      * Error message.
      */
-    ERROR;
+    ERROR,
+
+    /**
+     * Response for topology engine.
+     */
+    TPE_RESPONSE;
 }

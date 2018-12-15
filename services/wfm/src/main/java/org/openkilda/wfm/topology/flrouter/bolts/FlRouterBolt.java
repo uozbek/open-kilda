@@ -115,9 +115,12 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
      */
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declareStream(StreamType.REQUEST.toString(), AbstractTopology.fieldMessage);
-        outputFieldsDeclarer.declareStream(StreamType.RESPONSE.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.REQUEST_SPEAKER.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.REQUEST_SPEAKER_FLOW.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(Destination.NORTHBOUND.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(Destination.TOPOLOGY_ENGINE.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.ERROR.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.TPE_RESPONSE.toString(), AbstractTopology.fieldMessage);
     }
 
     /**
@@ -127,10 +130,9 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
      * @param message a command message.
      */
     private void processRequest(Tuple input, Message message) {
-        message.setDestination(Destination.CONTROLLER);
         CommandMessage command = (CommandMessage) message;
         try {
-            collector.emit(StreamType.REQUEST.toString(), input, new Values(MAPPER.writeValueAsString(command)));
+            collector.emit(StreamType.REQUEST_SPEAKER.toString(), input, new Values(MAPPER.writeValueAsString(command)));
         } catch (JsonProcessingException e) {
             // todo: resolve catch cause
             logger.error("JSON processing error: {}", e);
@@ -148,7 +150,18 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
     private void processResponse(Tuple input, Message message) {
         InfoMessage infoMessage = (InfoMessage) message;
         try {
-            collector.emit(StreamType.RESPONSE.toString(), input, new Values(MAPPER.writeValueAsString(infoMessage)));
+            switch (infoMessage.getDestination()) {
+                case NORTHBOUND:
+                    collector.emit(Destination.NORTHBOUND.toString(), input,
+                            new Values(MAPPER.writeValueAsString(infoMessage)));
+                    break;
+                case TOPOLOGY_ENGINE:
+                    collector.emit(Destination.TOPOLOGY_ENGINE.toString(), input,
+                            new Values(MAPPER.writeValueAsString(infoMessage)));
+                    break;
+                default:
+                    break;
+            }
         } catch (JsonProcessingException e) {
             // todo: resolve catch cause
             logger.error("JSON processing error: {}", e);

@@ -122,7 +122,7 @@ public class SwitchServiceImpl implements SwitchService {
     public CompletableFuture<SwitchFlowEntries> getRules(SwitchId switchId, Long cookie, String correlationId) {
         DumpRulesRequest request = new DumpRulesRequest(switchId);
         CommandWithReplyToMessage commandMessage = new CommandWithReplyToMessage(request, System.currentTimeMillis(),
-                correlationId, Destination.CONTROLLER, northboundTopic);
+                correlationId, Destination.NORTHBOUND, northboundTopic);
 
         return messagingChannel.sendAndGet(flRouterTopic, commandMessage)
                 .thenApply(SwitchFlowEntries.class::cast)
@@ -141,7 +141,7 @@ public class SwitchServiceImpl implements SwitchService {
 
         SwitchRulesDeleteRequest data = new SwitchRulesDeleteRequest(switchId, deleteAction, null);
         CommandMessage request = new CommandWithReplyToMessage(data, System.currentTimeMillis(), correlationId,
-                Destination.CONTROLLER, northboundTopic);
+                Destination.NORTHBOUND, northboundTopic);
 
         return messagingChannel.sendAndGet(flRouterTopic, request)
                 .thenApply(SwitchRulesResponse.class::cast)
@@ -172,7 +172,7 @@ public class SwitchServiceImpl implements SwitchService {
 
         SwitchRulesInstallRequest data = new SwitchRulesInstallRequest(switchId, installAction);
         CommandMessage request = new CommandWithReplyToMessage(data, System.currentTimeMillis(), correlationId,
-                Destination.CONTROLLER, northboundTopic);
+                Destination.NORTHBOUND, northboundTopic);
 
         return messagingChannel.sendAndGet(flRouterTopic, request)
                 .thenApply(SwitchRulesResponse.class::cast)
@@ -189,7 +189,7 @@ public class SwitchServiceImpl implements SwitchService {
 
         ConnectModeRequest data = new ConnectModeRequest(mode);
         CommandMessage request = new CommandWithReplyToMessage(data, System.currentTimeMillis(), correlationId,
-                Destination.CONTROLLER, northboundTopic);
+                Destination.NORTHBOUND, northboundTopic);
 
         return messagingChannel.sendAndGet(flRouterTopic, request)
                 .thenApply(ConnectModeResponse.class::cast)
@@ -238,7 +238,7 @@ public class SwitchServiceImpl implements SwitchService {
         String requestId = RequestCorrelationId.getId();
         CommandWithReplyToMessage dumpCommand = new CommandWithReplyToMessage(
                 new DumpMetersRequest(switchId),
-                System.currentTimeMillis(), requestId, Destination.CONTROLLER, northboundTopic);
+                System.currentTimeMillis(), requestId, Destination.NORTHBOUND, northboundTopic);
         return messagingChannel.sendAndGet(flRouterTopic, dumpCommand)
                 .thenApply(SwitchMeterEntries.class::cast);
     }
@@ -266,7 +266,7 @@ public class SwitchServiceImpl implements SwitchService {
                 port, toPortAdminDown(config.getStatus()));
         CommandWithReplyToMessage updateStatusCommand = new CommandWithReplyToMessage(
                 request, System.currentTimeMillis(), correlationId, 
-                Destination.CONTROLLER, northboundTopic);
+                Destination.NORTHBOUND, northboundTopic);
 
         return messagingChannel.sendAndGet(flRouterTopic, updateStatusCommand)
                 .thenApply(PortConfigurationResponse.class::cast)
@@ -281,7 +281,7 @@ public class SwitchServiceImpl implements SwitchService {
         String correlationId = RequestCorrelationId.getId();
         DumpSwitchPortsDescriptionRequest request = new DumpSwitchPortsDescriptionRequest(switchId);
         CommandWithReplyToMessage commandMessage = new CommandWithReplyToMessage(request, System.currentTimeMillis(),
-                correlationId, Destination.CONTROLLER, northboundTopic);
+                correlationId, Destination.NORTHBOUND, northboundTopic);
 
         return messagingChannel.sendAndGet(flRouterTopic, commandMessage)
                 .thenApply(SwitchPortsDescription.class::cast);
@@ -295,7 +295,7 @@ public class SwitchServiceImpl implements SwitchService {
         String correlationId = RequestCorrelationId.getId();
         DumpPortDescriptionRequest request = new DumpPortDescriptionRequest(switchId, port);
         CommandWithReplyToMessage commandMessage = new CommandWithReplyToMessage(request, System.currentTimeMillis(),
-                correlationId, Destination.CONTROLLER, northboundTopic);
+                correlationId, Destination.NORTHBOUND, northboundTopic);
 
         return messagingChannel.sendAndGet(flRouterTopic, commandMessage)
                 .thenApply(PortDescription.class::cast);
