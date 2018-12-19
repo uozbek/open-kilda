@@ -13,24 +13,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.flow;
+package org.openkilda.wfm.topology.flrouter;
 
-import org.openkilda.wfm.topology.AbstractTopologyConfig;
+public enum ComponentType {
 
-import com.sabre.oss.conf4j.annotation.Configuration;
+    FLR_SPEAKER_SPOUT_ID,
 
-@Configuration
-public interface FlowTopologyConfig extends AbstractTopologyConfig {
+    FLR_SPEAKER_FLOW_SPOUT_ID,
 
-    default String getKafkaFlowTopic() {
-        return getKafkaTopics().getFlowTopic();
-    }
+    FLR_BOLT_NAME,
 
-    default String getKafkaNorthboundTopic() {
-        return getKafkaTopics().getNorthboundTopic();
-    }
+    FL_KAFKA_BOLT,
 
-    default String getKafkaFlRouterSpeakerFlowTopic() {
-        return getKafkaTopics().getFlRouterSpeakerTopic();
-    }
+    FL_FLOW_KAFKA_BOLT,
+
+    NB_KAFKA_BOLT,
+
+    TPE_KAFKA_BOLT;
 }

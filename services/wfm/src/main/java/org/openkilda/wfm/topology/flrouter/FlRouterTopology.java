@@ -15,7 +15,6 @@
 
 package org.openkilda.wfm.topology.flrouter;
 
-import org.openkilda.messaging.Destination;
 import org.openkilda.wfm.LaunchEnvironment;
 import org.openkilda.wfm.topology.AbstractTopology;
 import org.openkilda.wfm.topology.flrouter.bolts.FlRouterBolt;
@@ -30,13 +29,6 @@ import org.apache.storm.topology.TopologyBuilder;
  */
 public class FlRouterTopology extends AbstractTopology<FlRouterTopologyConfig> {
 
-    private static final String FLR_SPOUT_ID = "flr-spout";
-    private static final String FLR_BOLT_NAME = "flr-bolt";
-    private static final String FL_KAFKA_BOLT = "speaker-kafka-bolt";
-    private static final String FL_FLOW_KAFKA_BOLT = "speaker-flow-kafka-bolt";
-    private static final String NB_KAFKA_BOLT = "nb-kafka-bolt";
-    private static final String TPE_KAFKA_BOLT = "tpe-kafka-bolt";
-
     public FlRouterTopology(LaunchEnvironment env) {
         super(env, FlRouterTopologyConfig.class);
     }
@@ -47,28 +39,41 @@ public class FlRouterTopology extends AbstractTopology<FlRouterTopologyConfig> {
 
         TopologyBuilder builder = new TopologyBuilder();
 
-        KafkaSpout kafkaSpout = createKafkaSpout(topologyConfig.getKafkaFlRouterTopic(), FLR_SPOUT_ID);
-        builder.setSpout(FLR_SPOUT_ID, kafkaSpout);
+        // Spout reads FLRouter speaker topic
+        KafkaSpout kafkaSpeakerSpout = createKafkaSpout(topologyConfig.getKafkaFlRouterSpeakerTopic(),
+                ComponentType.FLR_SPEAKER_SPOUT_ID.toString());
+        builder.setSpout(ComponentType.FLR_SPEAKER_SPOUT_ID.toString(), kafkaSpeakerSpout);
 
+        // Spout reads FLRouter speaker flow topic
+        KafkaSpout kafkaSpeakerFlowSpout = createKafkaSpout(topologyConfig.getKafkaFlRouterSpeakerFlowTopic(),
+                ComponentType.FLR_SPEAKER_FLOW_SPOUT_ID.toString());
+        builder.setSpout(ComponentType.FLR_SPEAKER_FLOW_SPOUT_ID.toString(), kafkaSpeakerFlowSpout);
+
+        // Floodlight Router bolt
         FlRouterBolt flRouterBolt = new FlRouterBolt();
-        builder.setBolt(FLR_BOLT_NAME, flRouterBolt)
-                .shuffleGrouping(FLR_SPOUT_ID);
+        builder.setBolt(ComponentType.FLR_BOLT_NAME.toString(), flRouterBolt)
+                .shuffleGrouping(ComponentType.FLR_SPEAKER_SPOUT_ID.toString())
+                .shuffleGrouping(ComponentType.FLR_SPEAKER_FLOW_SPOUT_ID.toString());
 
+        // Sends message to FL Speaker topic
         KafkaBolt speakerKafkaBolt = createKafkaBolt(topologyConfig.getKafkaSpeakerTopic());
-        builder.setBolt(FL_KAFKA_BOLT, speakerKafkaBolt, topologyConfig.getParallelism())
-                .shuffleGrouping(FLR_BOLT_NAME, StreamType.REQUEST_SPEAKER.toString());
+        builder.setBolt(ComponentType.FL_KAFKA_BOLT.toString(), speakerKafkaBolt, topologyConfig.getParallelism())
+                .shuffleGrouping(ComponentType.FLR_BOLT_NAME.toString(), StreamType.REQUEST_SPEAKER.toString());
 
+        // Sends message to FL Speaker flow topic
         KafkaBolt speakerFlowBolt = createKafkaBolt(topologyConfig.getKafkaSpeakerFlowTopic());
-        builder.setBolt(FL_FLOW_KAFKA_BOLT, speakerFlowBolt, topologyConfig.getParallelism())
-                .shuffleGrouping(FLR_BOLT_NAME, StreamType.REQUEST_SPEAKER_FLOW.toString());
+        builder.setBolt(ComponentType.FL_FLOW_KAFKA_BOLT.toString(), speakerFlowBolt, topologyConfig.getParallelism())
+                .shuffleGrouping(ComponentType.FLR_BOLT_NAME.toString(), StreamType.REQUEST_SPEAKER_FLOW.toString());
 
+        // Sends responses to Northbound
         KafkaBolt nbKafkaBolt = createKafkaBolt(topologyConfig.getKafkaNorthboundTopic());
-        builder.setBolt(NB_KAFKA_BOLT, nbKafkaBolt, topologyConfig.getParallelism())
-                .shuffleGrouping(FLR_BOLT_NAME, Destination.NORTHBOUND.toString());
+        builder.setBolt(ComponentType.NB_KAFKA_BOLT.toString(), nbKafkaBolt, topologyConfig.getParallelism())
+                .shuffleGrouping(ComponentType.FLR_BOLT_NAME.toString(), StreamType.NB_RESPONSE.toString());
 
+        // Sends responses to TPE
         KafkaBolt tpeKafkaBolt = createKafkaBolt(topologyConfig.getKafkaTopoEngTopic());
-        builder.setBolt(TPE_KAFKA_BOLT, tpeKafkaBolt, topologyConfig.getParallelism())
-                .shuffleGrouping(FLR_BOLT_NAME, Destination.TOPOLOGY_ENGINE.toString());
+        builder.setBolt(ComponentType.TPE_KAFKA_BOLT.toString(), tpeKafkaBolt, topologyConfig.getParallelism())
+                .shuffleGrouping(ComponentType.FLR_BOLT_NAME.toString(), StreamType.TPE_RESPONSE.toString());
         return builder.createTopology();
     }
 

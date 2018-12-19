@@ -143,10 +143,10 @@ public class FlowTopology extends AbstractTopology<FlowTopologyConfig> {
         ctrlTargets.add(new CtrlBoltRef(ComponentType.TRANSACTION_BOLT.toString(), transactionBolt, boltSetup));
 
         /*
-         * Bolt sends Speaker requests
+         * Bolt sends Speaker requests to FL Router
          */
-        KafkaBolt speakerKafkaBolt = createKafkaBolt(topologyConfig.getKafkaSpeakerFlowTopic());
-        builder.setBolt(ComponentType.SPEAKER_KAFKA_BOLT.toString(), speakerKafkaBolt, parallelism)
+        KafkaBolt flRouterKafkaBolt = createKafkaBolt(topologyConfig.getKafkaFlRouterSpeakerFlowTopic());
+        builder.setBolt(ComponentType.FL_ROUTER_BOLT.toString(), flRouterKafkaBolt, parallelism)
                 .shuffleGrouping(ComponentType.TRANSACTION_BOLT.toString(), StreamType.CREATE.toString())
                 .shuffleGrouping(ComponentType.CRUD_BOLT.toString(), StreamType.DELETE.toString());
 

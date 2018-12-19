@@ -86,16 +86,13 @@ public class SwitchServiceImpl implements SwitchService {
     @Autowired
     private SwitchMapper switchMapper;
 
-    @Value("#{kafkaTopicsConfig.getSpeakerTopic()}")
-    private String floodlightTopic;
-
     @Value("#{kafkaTopicsConfig.getNorthboundTopic()}")
     private String northboundTopic;
 
     @Value("#{kafkaTopicsConfig.getTopoNbTopic()}")
     private String nbworkerTopic;
 
-    @Value("#{kafkaTopicsConfig.getFlRouterTopic()}")
+    @Value("#{kafkaTopicsConfig.getFlRouterSpeakerTopic()}")
     private String flRouterTopic;
 
     /**

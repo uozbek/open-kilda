@@ -230,7 +230,7 @@ def send_dump_rules_request(switch_id, correlation_id):
     reply_to = {"reply_to": config.KAFKA_TOPO_ENG_TOPIC }
     send_to_topic(message, correlation_id, MT_COMMAND_REPLY,
                   destination="TOPOLOGY_ENGINE",
-                  topic=config.KAFKA_FLROUTER_TOPIC,
+                  topic=config.KAFKA_FLROUTER_SPEAKER_TOPIC,
                   extra=reply_to)
 
 
@@ -271,7 +271,7 @@ def send_force_install_commands(switch_id, flow_commands, correlation_id):
     message.flow_commands = flow_commands
     send_to_topic(message, correlation_id, MT_COMMAND,
                   destination="TOPOLOGY_ENGINE",
-                  topic=config.KAFKA_FLROUTER_TOPIC)
+                  topic=config.KAFKA_FLROUTER_SPEAKER_FLOW_TOPIC)
 
 
 class Message(Abstract):

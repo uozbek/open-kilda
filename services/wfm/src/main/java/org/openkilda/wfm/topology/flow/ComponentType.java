@@ -97,5 +97,10 @@ public enum ComponentType {
     /**
      * Error bolt. Processes errors.
      */
-    ERROR_BOLT
+    ERROR_BOLT,
+
+    /**
+     * Floodlight Router bolt. Sends OpenFlow Speaker requests.
+     */
+    FL_ROUTER_BOLT
 }

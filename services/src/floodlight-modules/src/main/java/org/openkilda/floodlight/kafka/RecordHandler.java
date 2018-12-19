@@ -169,27 +169,27 @@ class RecordHandler implements Runnable {
         } else if (data instanceof NetworkCommandData) {
             doNetworkDump(message);
         } else if (data instanceof SwitchRulesDeleteRequest) {
-            doDeleteSwitchRules(message, replyToTopic, replyDestination);
+            doDeleteSwitchRules(message);
         } else if (data instanceof SwitchRulesInstallRequest) {
-            doInstallSwitchRules(message, replyToTopic, replyDestination);
+            doInstallSwitchRules(message);
         } else if (data instanceof ConnectModeRequest) {
-            doConnectMode(message, replyToTopic, replyDestination);
+            doConnectMode(message);
         } else if (data instanceof DumpRulesRequest) {
-            doDumpRulesRequest(message, replyToTopic, replyDestination);
+            doDumpRulesRequest(message);
         } else if (data instanceof BatchInstallRequest) {
             doBatchInstall(message);
         } else if (data instanceof PortsCommandData) {
             doPortsCommandDataRequest(message);
         } else if (data instanceof DeleteMeterRequest) {
-            doDeleteMeter(message, replyToTopic, replyDestination);
+            doDeleteMeter(message);
         } else if (data instanceof PortConfigurationRequest) {
-            doConfigurePort(message, replyToTopic, replyDestination);
+            doConfigurePort(message);
         } else if (data instanceof DumpSwitchPortsDescriptionRequest) {
-            doDumpSwitchPortsDescriptionRequest(message, replyToTopic, replyDestination);
+            doDumpSwitchPortsDescriptionRequest(message);
         } else if (data instanceof DumpPortDescriptionRequest) {
-            doDumpPortDescriptionRequest(message, replyToTopic, replyDestination);
+            doDumpPortDescriptionRequest(message);
         } else if (data instanceof DumpMetersRequest) {
-            doDumpMetersRequest(message, replyToTopic, replyDestination);
+            doDumpMetersRequest(message);
         } else {
             logger.error("unknown data type: {}", data.toString());
         }
@@ -452,9 +452,9 @@ class RecordHandler implements Runnable {
         switchTracking.dumpAllSwitches(message.getCorrelationId());
     }
 
-    private void doInstallSwitchRules(final CommandMessage message, String replyToTopic, Destination replyDestination) {
-        replyToTopic = context.getKafkaFlRouterTopic();
-        replyDestination = message.getDestination();
+    private void doInstallSwitchRules(final CommandMessage message) {
+        String replyToTopic = context.getKafkaFlRouterSpeakerTopic();
+        Destination replyDestination = message.getDestination();
         SwitchRulesInstallRequest request = (SwitchRulesInstallRequest) message.getData();
         logger.debug("Installing rules on '{}' switch: action={}",
                 request.getSwitchId(), request.getInstallRulesAction());
@@ -500,9 +500,9 @@ class RecordHandler implements Runnable {
         }
     }
 
-    private void doDeleteSwitchRules(final CommandMessage message, String replyToTopic, Destination replyDestination) {
-        replyToTopic = context.getKafkaFlRouterTopic();
-        replyDestination = message.getDestination();
+    private void doDeleteSwitchRules(final CommandMessage message) {
+        String replyToTopic = context.getKafkaFlRouterSpeakerTopic();
+        Destination replyDestination = message.getDestination();
         SwitchRulesDeleteRequest request = (SwitchRulesDeleteRequest) message.getData();
         logger.debug("Deleting rules from '{}' switch: action={}, criteria={}", request.getSwitchId(),
                 request.getDeleteRulesAction(), request.getCriteria());
@@ -582,9 +582,9 @@ class RecordHandler implements Runnable {
         }
     }
 
-    private void doConnectMode(final CommandMessage message, String replyToTopic, Destination replyDestination) {
-        replyToTopic = context.getKafkaFlRouterTopic();
-        replyDestination = message.getDestination();
+    private void doConnectMode(final CommandMessage message) {
+        String replyToTopic = context.getKafkaFlRouterSpeakerTopic();
+        Destination replyDestination = message.getDestination();
         ConnectModeRequest request = (ConnectModeRequest) message.getData();
         if (request.getMode() != null) {
             logger.debug("Setting CONNECT MODE to '{}'", request.getMode());
@@ -603,9 +603,9 @@ class RecordHandler implements Runnable {
 
     }
 
-    private void doDumpRulesRequest(final CommandMessage message,  String replyToTopic, Destination replyDestination) {
-        replyToTopic = context.getKafkaFlRouterTopic();
-        replyDestination = message.getDestination();
+    private void doDumpRulesRequest(final CommandMessage message) {
+        String replyToTopic = context.getKafkaFlRouterSpeakerTopic();
+        Destination replyDestination = message.getDestination();
         DumpRulesRequest request = (DumpRulesRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();
@@ -704,9 +704,9 @@ class RecordHandler implements Runnable {
         }
     }
 
-    private void doDeleteMeter(CommandMessage message, String replyToTopic, Destination replyDestination) {
-        replyToTopic = context.getKafkaFlRouterTopic();
-        replyDestination = message.getDestination();
+    private void doDeleteMeter(CommandMessage message) {
+        String replyToTopic = context.getKafkaFlRouterSpeakerTopic();
+        Destination replyDestination = message.getDestination();
         DeleteMeterRequest request = (DeleteMeterRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();
@@ -733,10 +733,10 @@ class RecordHandler implements Runnable {
         }
     }
 
-    private void doConfigurePort(final CommandMessage message, final String replyToTopic, 
-            Destination replyDestination) {
+    private void doConfigurePort(final CommandMessage message) {
         PortConfigurationRequest request = (PortConfigurationRequest) message.getData();
-        replyDestination = message.getDestination();
+        String replyToTopic = context.getKafkaNorthboundTopic();
+        Destination replyDestination = message.getDestination();
         
         logger.info("Port configuration request. Switch '{}', Port '{}'", request.getSwitchId(), 
                 request.getPortNumber());
@@ -765,10 +765,9 @@ class RecordHandler implements Runnable {
         }
     }
 
-    private void doDumpSwitchPortsDescriptionRequest(
-            CommandMessage message, String replyToTopic, Destination replyDestination) {
-        replyToTopic = context.getKafkaFlRouterTopic();
-        replyDestination = message.getDestination();
+    private void doDumpSwitchPortsDescriptionRequest(CommandMessage message) {
+        String replyToTopic = context.getKafkaFlRouterSpeakerTopic();
+        Destination replyDestination = message.getDestination();
         DumpSwitchPortsDescriptionRequest request = (DumpSwitchPortsDescriptionRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();
@@ -808,10 +807,9 @@ class RecordHandler implements Runnable {
                 .build();
     }
 
-    private void doDumpPortDescriptionRequest(
-            CommandMessage message, String replyToTopic, Destination replyDestination) {
-        replyToTopic = context.getKafkaFlRouterTopic();
-        replyDestination = message.getDestination();
+    private void doDumpPortDescriptionRequest(CommandMessage message) {
+        String replyToTopic = context.getKafkaFlRouterSpeakerTopic();
+        Destination replyDestination = message.getDestination();
         DumpPortDescriptionRequest request = (DumpPortDescriptionRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();
@@ -844,9 +842,9 @@ class RecordHandler implements Runnable {
         }
     }
 
-    private void doDumpMetersRequest(
-            CommandMessage message, String replyToTopic, Destination replyDestination) {
-        replyDestination = message.getDestination();
+    private void doDumpMetersRequest(CommandMessage message) {
+        String replyToTopic = context.getKafkaNorthboundTopic();
+        Destination replyDestination = message.getDestination();
         DumpMetersRequest request = (DumpMetersRequest) message.getData();
 
         final IKafkaProducerService producerService = getKafkaProducer();

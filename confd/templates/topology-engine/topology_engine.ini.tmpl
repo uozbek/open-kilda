@@ -5,7 +5,8 @@ speaker.topic={{ getv "/kilda_kafka_topic_speaker" }}
 speaker.flow.topic={{ getv "/kilda_kafka_topic_speaker_flow" }}
 topo.eng.topic={{ getv "/kilda_kafka_topic_topo_eng" }}
 northbound.topic={{ getv "/kilda_kafka_topic_northbound" }}
-flrouter.topic={{ getv "/kilda_kafka_topic_flrouter" }}
+flrouter.speaker.topic={{ getv "/kilda_kafka_topic_flrouter_speaker" }}
+flrouter.speaker.flow.topic={{ getv "/kilda_kafka_topic_flrouter_speaker_flow" }}
 bootstrap.servers={{ getv "/kilda_kafka_hosts" }}
 environment.naming.prefix = {{ getv "/kilda_environment_naming_prefix" }}
 

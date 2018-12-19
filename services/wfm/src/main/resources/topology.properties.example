@@ -22,7 +22,8 @@ kafka.topic.topo.disco = kilda.topo.disco
 kafka.topic.topo.eng = kilda.topo.eng
 kafka.topic.topo.nbworker = kilda.topo.nb
 kafka.topic.topo.reroute = kilda.topo.reroute
-kafka.topic.flrouter = kilda.flrouter.topic
+kafka.topic.flrouter.speaker = kilda.flrouter.speaker.topic
+kafka.topic.flrouter.speaker.flow = kilda.flrouter.speaker.flow.topic
 
 reroute.throttling.delay.min = 10
 reroute.throttling.delay.max = 600

@@ -43,5 +43,10 @@ public enum StreamType {
     /**
      * Response for topology engine.
      */
-    TPE_RESPONSE;
+    TPE_RESPONSE,
+
+    /**
+     * Response for Northbound.
+     */
+    NB_RESPONSE;
 }

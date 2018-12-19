@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.flrouter.bolts;
 
+import static java.lang.String.format;
 import static org.openkilda.messaging.Utils.MAPPER;
 
 import org.openkilda.messaging.Destination;
@@ -22,9 +23,12 @@ import org.openkilda.messaging.Message;
 import org.openkilda.messaging.Utils;
 import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.messaging.error.ErrorMessage;
+import org.openkilda.messaging.error.ErrorType;
+import org.openkilda.messaging.error.MessageException;
 import org.openkilda.messaging.info.InfoMessage;
 import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.topology.AbstractTopology;
+import org.openkilda.wfm.topology.flrouter.ComponentType;
 import org.openkilda.wfm.topology.flrouter.StreamType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,8 +55,15 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
 
     private static final Logger logger = LoggerFactory.getLogger(FlRouterBolt.class);
     private static final String FL_INSTANCE_DATA = "FL_INSTANCE_DATA";
+    private static final String ROUTED_MESSAGES_DATA = "ROUTED_MESSAGES_DATA";
 
     private Map<String, Set<SwitchId>> flInstanceData;
+
+    /**
+     * Map with correlation ids of messages and destinations floodlight instances.
+     */
+    private Map<String, String> routedMessagesData;
+
     private OutputCollector collector;
 
     /**
@@ -61,23 +72,26 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
     @Override
     public void execute(Tuple tuple) {
         String request = tuple.getString(0);
-
+        ComponentType componentType = ComponentType.valueOf(tuple.getSourceComponent());
         Message message;
+
         try {
             message = Utils.MAPPER.readValue(request, Message.class);
         } catch (IOException e) {
-            logger.error("Error during parsing request for FLRouter topology", e);
+            logger.error(String.format("Unhandled exception in %s", getClass().getName()), e);
             return;
         }
 
         if (message instanceof CommandMessage) {
-            processRequest(tuple, message);
+            processRequest(tuple, message, componentType);
         } else if (message instanceof InfoMessage) {
-            processResponse(tuple, message);
+            processSuccessResponse(tuple, message);
         } else if (message instanceof ErrorMessage) {
             processErrorResponse(tuple, message);
+        } else {
+            logger.debug("Unexpected message type: correlation_id={}",
+                    message.getCorrelationId());
         }
-        // todo: implement unhandled input logic
     }
 
     /**
@@ -90,6 +104,11 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
         if (flInstanceData == null) {
             flInstanceData = new HashMap<>();
             entries.put(FL_INSTANCE_DATA, flInstanceData);
+        }
+        routedMessagesData = (Map<String, String>) entries.get(ROUTED_MESSAGES_DATA);
+        if (routedMessagesData == null) {
+            routedMessagesData = new HashMap<>();
+            entries.put(ROUTED_MESSAGES_DATA, routedMessagesData);
         }
     }
 
@@ -117,10 +136,9 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         outputFieldsDeclarer.declareStream(StreamType.REQUEST_SPEAKER.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.REQUEST_SPEAKER_FLOW.toString(), AbstractTopology.fieldMessage);
-        outputFieldsDeclarer.declareStream(Destination.NORTHBOUND.toString(), AbstractTopology.fieldMessage);
-        outputFieldsDeclarer.declareStream(Destination.TOPOLOGY_ENGINE.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.ERROR.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.TPE_RESPONSE.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.NB_RESPONSE.toString(), AbstractTopology.fieldMessage);
     }
 
     /**
@@ -129,13 +147,24 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
      * @param input a tuple.
      * @param message a command message.
      */
-    private void processRequest(Tuple input, Message message) {
+    private void processRequest(Tuple input, Message message, ComponentType componentType) {
         CommandMessage command = (CommandMessage) message;
         try {
-            collector.emit(StreamType.REQUEST_SPEAKER.toString(), input, new Values(MAPPER.writeValueAsString(command)));
+            Values values = new Values(MAPPER.writeValueAsString(command));
+            switch (componentType) {
+                case FLR_SPEAKER_SPOUT_ID:
+                    collector.emit(StreamType.REQUEST_SPEAKER.toString(), input, values);
+                    break;
+                case FLR_SPEAKER_FLOW_SPOUT_ID:
+                    collector.emit(StreamType.REQUEST_SPEAKER_FLOW.toString(), input, values);
+                    break;
+                default:
+                    break;
+            }
         } catch (JsonProcessingException e) {
-            // todo: resolve catch cause
-            logger.error("JSON processing error: {}", e);
+            throw new MessageException(message.getCorrelationId(), System.currentTimeMillis(),
+                    ErrorType.INTERNAL_ERROR, format("Unable to serialize message: %s", command),
+                    e.getMessage());
         } finally {
             collector.ack(input);
         }
@@ -145,28 +174,41 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
      * Process response from Floodlight.
      *
      * @param input a tuple.
-     * @param message a response message.
+     * @param destination a response destination.
+     * @param values a values for emit.
      */
-    private void processResponse(Tuple input, Message message) {
-        InfoMessage infoMessage = (InfoMessage) message;
+    private void processResponse(Tuple input, Destination destination, Values values) {
         try {
-            switch (infoMessage.getDestination()) {
+            switch (destination) {
                 case NORTHBOUND:
-                    collector.emit(Destination.NORTHBOUND.toString(), input,
-                            new Values(MAPPER.writeValueAsString(infoMessage)));
+                    collector.emit(StreamType.NB_RESPONSE.toString(), input, values);
                     break;
                 case TOPOLOGY_ENGINE:
-                    collector.emit(Destination.TOPOLOGY_ENGINE.toString(), input,
-                            new Values(MAPPER.writeValueAsString(infoMessage)));
+                    collector.emit(StreamType.TPE_RESPONSE.toString(), input, values);
                     break;
                 default:
                     break;
             }
-        } catch (JsonProcessingException e) {
-            // todo: resolve catch cause
-            logger.error("JSON processing error: {}", e);
         } finally {
             collector.ack(input);
+        }
+    }
+
+    /**
+     * Process success response from floodlight.
+     *
+     * @param input a tuple.
+     * @param message an info message.
+     */
+    private void processSuccessResponse(Tuple input, Message message) {
+        InfoMessage infoMessage = (InfoMessage) message;
+        try {
+            Values values = new Values(MAPPER.writeValueAsString(infoMessage));
+            processResponse(input, infoMessage.getDestination(), values);
+        } catch (JsonProcessingException e) {
+            throw new MessageException(message.getCorrelationId(), System.currentTimeMillis(),
+                    ErrorType.INTERNAL_ERROR, format("Unable to serialize message: %s", message),
+                    e.getMessage());
         }
     }
 
@@ -179,12 +221,12 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
     private void processErrorResponse(Tuple input, Message message) {
         ErrorMessage errorMessage = (ErrorMessage) message;
         try {
-            collector.emit(StreamType.ERROR.toString(), input, new Values(MAPPER.writeValueAsString(errorMessage)));
+            Values values = new Values(MAPPER.writeValueAsString(errorMessage));
+            processResponse(input, errorMessage.getDestination(), values);
         } catch (JsonProcessingException e) {
-            // todo: resolve catch cause
-            logger.error("JSON processing error: {}", e);
-        } finally {
-            collector.ack(input);
+            throw new MessageException(message.getCorrelationId(), System.currentTimeMillis(),
+                    ErrorType.INTERNAL_ERROR, format("Unable to serialize message: %s", message),
+                    e.getMessage());
         }
     }
 

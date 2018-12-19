@@ -46,7 +46,7 @@ class TestFlow(share.AbstractTest):
         self.feed_service(share.command(sync_request))
 
         response = self.take_kafka_response(
-            config.KAFKA_SPEAKER_FLOW_TOPIC, offset=1,
+            config.KAFKA_FLROUTER_SPEAKER_FLOW_TOPIC, offset=1,
             expect_class=message_utils.MT_COMMAND)
         self.assertEqual(
             'org.openkilda.messaging.command.flow.BatchInstallRequest',

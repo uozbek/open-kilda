@@ -30,8 +30,12 @@ public interface FlRouterTopologyConfig extends AbstractTopologyConfig {
         return getKafkaTopics().getSpeakerFlowTopic();
     }
 
-    default String getKafkaFlRouterTopic() {
-        return getKafkaTopics().getFlRouterTopic();
+    default String getKafkaFlRouterSpeakerTopic() {
+        return getKafkaTopics().getFlRouterSpeakerTopic();
+    }
+
+    default String getKafkaFlRouterSpeakerFlowTopic() {
+        return getKafkaTopics().getFlRouterSpeakerFlowTopic();
     }
 
     default String getKafkaNorthboundTopic() {
