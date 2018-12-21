@@ -49,11 +49,17 @@ public class FlRouterTopology extends AbstractTopology<FlRouterTopologyConfig> {
                 ComponentType.FLR_SPEAKER_FLOW_SPOUT_ID.toString());
         builder.setSpout(ComponentType.FLR_SPEAKER_FLOW_SPOUT_ID.toString(), kafkaSpeakerFlowSpout);
 
+        //Spout reads FLRouter speaker disco topic
+        KafkaSpout kafkaSpeakerDiscoSpout = createKafkaSpout(topologyConfig.getKafkaFlRouterSpeakerDiscoTopic(),
+                ComponentType.FLR_SPEAKER_DISCO_SPOUT_ID.toString());
+        builder.setSpout(ComponentType.FLR_SPEAKER_DISCO_SPOUT_ID.toString(), kafkaSpeakerDiscoSpout);
+
         // Floodlight Router bolt
         FlRouterBolt flRouterBolt = new FlRouterBolt();
         builder.setBolt(ComponentType.FLR_BOLT_NAME.toString(), flRouterBolt)
                 .shuffleGrouping(ComponentType.FLR_SPEAKER_SPOUT_ID.toString())
-                .shuffleGrouping(ComponentType.FLR_SPEAKER_FLOW_SPOUT_ID.toString());
+                .shuffleGrouping(ComponentType.FLR_SPEAKER_FLOW_SPOUT_ID.toString())
+                .shuffleGrouping(ComponentType.FLR_SPEAKER_DISCO_SPOUT_ID.toString());
 
         // Sends message to FL Speaker topic
         KafkaBolt speakerKafkaBolt = createKafkaBolt(topologyConfig.getKafkaSpeakerTopic());

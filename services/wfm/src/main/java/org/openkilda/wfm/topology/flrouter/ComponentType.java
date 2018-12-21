@@ -21,6 +21,8 @@ public enum ComponentType {
 
     FLR_SPEAKER_FLOW_SPOUT_ID,
 
+    FLR_SPEAKER_DISCO_SPOUT_ID,
+
     FLR_BOLT_NAME,
 
     FL_KAFKA_BOLT,

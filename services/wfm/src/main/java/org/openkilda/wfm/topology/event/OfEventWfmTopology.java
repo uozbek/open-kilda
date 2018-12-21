@@ -53,7 +53,7 @@ public class OfEventWfmTopology extends AbstractTopology<OFEventWfmTopologyConfi
     public static final String DISCO_SPOUT_ID = "disco-spout";
     private static final String DISCO_BOLT_ID = OfeLinkBolt.class.getSimpleName();
     private static final String SPEAKER_BOLT_ID = "speaker-bolt";
-    private static final String SPEAKER_DISCO_BOLT_ID = "speaker.disco-bolt";
+    private static final String FLROUTER_DISCO_BOLT_ID = "flrouter.speaker.disco-bolt";
     private static final String NETWORK_TOPOLOGY_BOLT_ID = "topology-bolt";
     private static final String REROUTE_BOLT_ID = "reroute-bolt";
 
@@ -84,7 +84,7 @@ public class OfEventWfmTopology extends AbstractTopology<OFEventWfmTopologyConfi
         //
         builder.setBolt(SPEAKER_BOLT_ID, createKafkaBolt(topologyConfig.getKafkaSpeakerTopic()),
                 topologyConfig.getParallelism()).shuffleGrouping(DISCO_BOLT_ID, OfeLinkBolt.SPEAKER_STREAM);
-        builder.setBolt(SPEAKER_DISCO_BOLT_ID, createKafkaBolt(topologyConfig.getKafkaSpeakerDiscoTopic()),
+        builder.setBolt(FLROUTER_DISCO_BOLT_ID, createKafkaBolt(topologyConfig.getKafkaFlRouterSpeakerDiscoTopic()),
                 topologyConfig.getParallelism()).shuffleGrouping(DISCO_BOLT_ID, OfeLinkBolt.SPEAKER_DISCO_STREAM);
 
         OfeLinkBolt ofeLinkBolt = new OfeLinkBolt(topologyConfig);

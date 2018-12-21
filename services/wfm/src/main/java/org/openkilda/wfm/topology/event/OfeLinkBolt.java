@@ -279,7 +279,7 @@ public class OfeLinkBolt
     private void sendDiscoveryMessage(Tuple tuple, NetworkEndpoint node, String correlationId) throws IOException {
         DiscoverIslCommandData data = new DiscoverIslCommandData(node.getDatapath(), node.getPortNumber());
         CommandMessage message = new CommandMessage(data, System.currentTimeMillis(),
-                correlationId, Destination.CONTROLLER);
+                correlationId, Destination.WFM);
         logger.debug("LINK: Send ISL discovery command: {}", message);
         collector.emit(SPEAKER_DISCO_STREAM, tuple, new Values(PAYLOAD, Utils.MAPPER.writeValueAsString(message)));
     }

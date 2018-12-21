@@ -136,6 +136,7 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         outputFieldsDeclarer.declareStream(StreamType.REQUEST_SPEAKER.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.REQUEST_SPEAKER_FLOW.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.REQUEST_SPEAKER_DISCO.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.ERROR.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.TPE_RESPONSE.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.NB_RESPONSE.toString(), AbstractTopology.fieldMessage);
@@ -157,6 +158,9 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
                     break;
                 case FLR_SPEAKER_FLOW_SPOUT_ID:
                     collector.emit(StreamType.REQUEST_SPEAKER_FLOW.toString(), input, values);
+                    break;
+                case FLR_SPEAKER_DISCO_SPOUT_ID:
+                    collector.emit(StreamType.REQUEST_SPEAKER_DISCO.toString(), input, values);
                     break;
                 default:
                     break;
@@ -185,6 +189,9 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
                     break;
                 case TOPOLOGY_ENGINE:
                     collector.emit(StreamType.TPE_RESPONSE.toString(), input, values);
+                    break;
+                case WFM:
+                    collector.emit(StreamType.WFM_RESPONSE.toString(), input, values);
                     break;
                 default:
                     break;

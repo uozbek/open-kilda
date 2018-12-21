@@ -31,6 +31,11 @@ public enum StreamType {
     REQUEST_SPEAKER_FLOW,
 
     /**
+     * Request message for FL speaker disco topic.
+     */
+    REQUEST_SPEAKER_DISCO,
+
+    /**
      * Response message.
      */
     RESPONSE,
@@ -48,5 +53,10 @@ public enum StreamType {
     /**
      * Response for Northbound.
      */
-    NB_RESPONSE;
+    NB_RESPONSE,
+
+    /**
+     * Response for Event topology.
+     */
+    WFM_RESPONSE;
 }

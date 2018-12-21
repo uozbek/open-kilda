@@ -92,6 +92,10 @@ public interface KafkaTopicsConfig {
     @Default("kilda.flrouter.speaker.flow.topic")
     String getFlRouterSpeakerFlowTopic();
 
+    @Key("flrouter.speaker.disco.topic")
+    @Default("kilda.flrouter.speaker.disco.topic")
+    String getFlRouterSpeakerDiscoTopic();
+
     /**
      * TE incoming topic name.
      *
