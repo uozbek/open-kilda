@@ -140,6 +140,7 @@ public class FlRouterBolt extends BaseStatefulBolt<KeyValueState<String, Object>
         outputFieldsDeclarer.declareStream(StreamType.ERROR.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.TPE_RESPONSE.toString(), AbstractTopology.fieldMessage);
         outputFieldsDeclarer.declareStream(StreamType.NB_RESPONSE.toString(), AbstractTopology.fieldMessage);
+        outputFieldsDeclarer.declareStream(StreamType.WFM_RESPONSE.toString(), AbstractTopology.fieldMessage);
     }
 
     /**

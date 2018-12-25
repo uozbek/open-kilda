@@ -32,6 +32,7 @@ import org.openkilda.config.KafkaTopicsConfig;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.floodlight.service.kafka.KafkaUtilityService;
+import org.openkilda.messaging.Destination;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.info.InfoData;
 import org.openkilda.messaging.info.InfoMessage;
@@ -76,6 +77,7 @@ import java.util.stream.Collectors;
 
 public class SwitchTrackingServiceTest extends EasyMockSupport {
     private static final String KAFKA_ISL_DISCOVERY_TOPIC = "kilda.topo.disco";
+    private static final String FLR_DISCOVERY_TOPIC = "kilda.flrouter.speaker.disco.topic";
     private static final DatapathId dpId = DatapathId.of(0x7fff);
 
     private final SwitchTrackingService service = new SwitchTrackingService();
@@ -102,8 +104,10 @@ public class SwitchTrackingServiceTest extends EasyMockSupport {
         KafkaTopicsConfig topics = createMock(KafkaTopicsConfig.class);
         expect(topics.getTopoDiscoTopic()).andReturn(KAFKA_ISL_DISCOVERY_TOPIC);
 
+        expect(topics.getFlRouterSpeakerDiscoTopic()).andReturn(FLR_DISCOVERY_TOPIC);
+
         KafkaUtilityService kafkaUtility = createMock(KafkaUtilityService.class);
-        expect(kafkaUtility.getTopics()).andReturn(topics);
+        expect(kafkaUtility.getTopics()).andReturn(topics).times(2);
         moduleContext.addService(KafkaUtilityService.class, kafkaUtility);
 
         replay(kafkaUtility, topics, iofSwitchService);
@@ -313,7 +317,7 @@ public class SwitchTrackingServiceTest extends EasyMockSupport {
 
         ArrayList<Message> producedMessages = new ArrayList<>();
         // setup hook for verify that we create new message for producer
-        producerService.sendMessageAndTrack(eq(KAFKA_ISL_DISCOVERY_TOPIC), anyObject(InfoMessage.class));
+        producerService.sendMessageAndTrack(eq(FLR_DISCOVERY_TOPIC), anyObject(InfoMessage.class));
         expectLastCall().andAnswer(new IAnswer<Object>() {
             @Override
             public Object answer() {
@@ -324,8 +328,8 @@ public class SwitchTrackingServiceTest extends EasyMockSupport {
             }
         }).anyTimes();
 
-        producerService.enableGuaranteedOrder(eq(KAFKA_ISL_DISCOVERY_TOPIC));
-        producerService.disableGuaranteedOrder(eq(KAFKA_ISL_DISCOVERY_TOPIC));
+        producerService.enableGuaranteedOrder(eq(FLR_DISCOVERY_TOPIC));
+        producerService.disableGuaranteedOrder(eq(FLR_DISCOVERY_TOPIC));
 
         replayAll();
 
@@ -335,22 +339,23 @@ public class SwitchTrackingServiceTest extends EasyMockSupport {
         verify(producerService);
 
         ArrayList<Message> expectedMessages = new ArrayList<>();
-        expectedMessages.add(new InfoMessage(new NetworkDumpBeginMarker(), 0, correlationId));
         expectedMessages.add(new InfoMessage(
-                new NetworkDumpSwitchData(new SwitchId(swAid.getLong())), 0, correlationId));
+                new NetworkDumpBeginMarker(), 0, correlationId, Destination.WFM));
+        expectedMessages.add(new InfoMessage(
+                new NetworkDumpSwitchData(new SwitchId(swAid.getLong())), 0, correlationId, Destination.WFM));
         expectedMessages.add(new InfoMessage(
                 new NetworkDumpPortData(new SwitchId(swAid.getLong()), 1), 0, correlationId));
         expectedMessages.add(new InfoMessage(
                 new NetworkDumpPortData(new SwitchId(swAid.getLong()), 2), 0, correlationId));
         expectedMessages.add(new InfoMessage(
-                new NetworkDumpSwitchData(new SwitchId(swBid.getLong())), 0, correlationId));
+                new NetworkDumpSwitchData(new SwitchId(swBid.getLong())), 0, correlationId, Destination.WFM));
         expectedMessages.add(new InfoMessage(
                 new NetworkDumpPortData(new SwitchId(swBid.getLong()), 3), 0, correlationId));
         expectedMessages.add(new InfoMessage(
                 new NetworkDumpPortData(new SwitchId(swBid.getLong()), 4), 0, correlationId));
         expectedMessages.add(new InfoMessage(
                 new NetworkDumpPortData(new SwitchId(swBid.getLong()), 5), 0, correlationId));
-        expectedMessages.add(new InfoMessage(new NetworkDumpEndMarker(), 0, correlationId));
+        expectedMessages.add(new InfoMessage(new NetworkDumpEndMarker(), 0, correlationId, Destination.WFM));
 
         assertEquals(expectedMessages, producedMessages);
     }

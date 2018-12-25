@@ -105,8 +105,8 @@ public class OfeLinkBolt
     private static final String STREAM_ID_CTRL = "ctrl";
     @VisibleForTesting
     static final String STATE_ID_DISCOVERY = "discovery-manager";
-    static final String SPEAKER_DISCO_STREAM = "speaker.disco";
-    static final String SPEAKER_STREAM = "speaker";
+    static final String FLR_SPEAKER_DISCO_STREAM = "flr.speaker.disco";
+    static final String FLR_SPEAKER_STREAM = "flr.speaker.stream";
     static final String NETWORK_TOPOLOGY_CHANGE_STREAM = "network-topology-change";
 
     private final String islDiscoveryTopic;
@@ -242,7 +242,7 @@ public class OfeLinkBolt
 
         try {
             String json = Utils.MAPPER.writeValueAsString(command);
-            collector.emit(SPEAKER_STREAM, tuple, new Values(PAYLOAD, json));
+            collector.emit(FLR_SPEAKER_STREAM, tuple, new Values(PAYLOAD, json));
         } catch (JsonProcessingException exception) {
             logger.error("Could not serialize network cache request", exception);
         }
@@ -281,7 +281,7 @@ public class OfeLinkBolt
         CommandMessage message = new CommandMessage(data, System.currentTimeMillis(),
                 correlationId, Destination.WFM);
         logger.debug("LINK: Send ISL discovery command: {}", message);
-        collector.emit(SPEAKER_DISCO_STREAM, tuple, new Values(PAYLOAD, Utils.MAPPER.writeValueAsString(message)));
+        collector.emit(FLR_SPEAKER_DISCO_STREAM, tuple, new Values(PAYLOAD, Utils.MAPPER.writeValueAsString(message)));
     }
 
     @Override
@@ -578,8 +578,8 @@ public class OfeLinkBolt
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         Fields fields = new Fields(FieldNameBasedTupleToKafkaMapper.BOLT_KEY,
                 FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE);
-        declarer.declareStream(SPEAKER_STREAM, fields);
-        declarer.declareStream(SPEAKER_DISCO_STREAM, fields);
+        declarer.declareStream(FLR_SPEAKER_DISCO_STREAM, fields);
+        declarer.declareStream(FLR_SPEAKER_STREAM, fields);
         declarer.declareStream(NETWORK_TOPOLOGY_CHANGE_STREAM, new Fields(PAYLOAD));
         // FIXME(dbogun): use proper tuple format
         declarer.declareStream(STREAM_ID_CTRL, AbstractTopology.fieldMessage);

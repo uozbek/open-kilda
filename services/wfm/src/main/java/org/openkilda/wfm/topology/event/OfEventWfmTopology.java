@@ -54,6 +54,7 @@ public class OfEventWfmTopology extends AbstractTopology<OFEventWfmTopologyConfi
     private static final String DISCO_BOLT_ID = OfeLinkBolt.class.getSimpleName();
     private static final String SPEAKER_BOLT_ID = "speaker-bolt";
     private static final String FLROUTER_DISCO_BOLT_ID = "flrouter.speaker.disco-bolt";
+    private static final String FLROUTER_SPEAKER_BOLT_ID = "flrouter.speaker.bolt";
     private static final String NETWORK_TOPOLOGY_BOLT_ID = "topology-bolt";
     private static final String REROUTE_BOLT_ID = "reroute-bolt";
 
@@ -82,10 +83,12 @@ public class OfEventWfmTopology extends AbstractTopology<OFEventWfmTopologyConfi
         //      just to pull out switchID.
         // (crimi) - not sure I agree here .. state can be maintained, albeit distributed.
         //
-        builder.setBolt(SPEAKER_BOLT_ID, createKafkaBolt(topologyConfig.getKafkaSpeakerTopic()),
-                topologyConfig.getParallelism()).shuffleGrouping(DISCO_BOLT_ID, OfeLinkBolt.SPEAKER_STREAM);
+
+        builder.setBolt(FLROUTER_SPEAKER_BOLT_ID, createKafkaBolt(topologyConfig.getKafkaFlRouterSpeakerTopic()),
+                topologyConfig.getParallelism()).shuffleGrouping(DISCO_BOLT_ID, OfeLinkBolt.FLR_SPEAKER_STREAM);
+
         builder.setBolt(FLROUTER_DISCO_BOLT_ID, createKafkaBolt(topologyConfig.getKafkaFlRouterSpeakerDiscoTopic()),
-                topologyConfig.getParallelism()).shuffleGrouping(DISCO_BOLT_ID, OfeLinkBolt.SPEAKER_DISCO_STREAM);
+                topologyConfig.getParallelism()).shuffleGrouping(DISCO_BOLT_ID, OfeLinkBolt.FLR_SPEAKER_DISCO_STREAM);
 
         OfeLinkBolt ofeLinkBolt = new OfeLinkBolt(topologyConfig);
         BoltDeclarer bd = builder.setBolt(DISCO_BOLT_ID, ofeLinkBolt, topologyConfig.getParallelism())
@@ -122,6 +125,7 @@ public class OfEventWfmTopology extends AbstractTopology<OFEventWfmTopologyConfi
 
     /**
      * Main function.
+     *
      * @param args args.
      */
     public static void main(String[] args) {

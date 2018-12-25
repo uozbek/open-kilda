@@ -47,6 +47,10 @@ public interface OFEventWfmTopologyConfig extends AbstractTopologyConfig {
         return getKafkaTopics().getFlRouterSpeakerDiscoTopic();
     }
 
+    default String getKafkaFlRouterSpeakerTopic() {
+        return getKafkaTopics().getFlRouterSpeakerTopic();
+    }
+
     @Key("isl.cost.when.port.down")
     int getIslCostWhenPortDown();
 

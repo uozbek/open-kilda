@@ -23,6 +23,7 @@ import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.floodlight.service.kafka.KafkaUtilityService;
 import org.openkilda.floodlight.utils.CorrelationContext;
 import org.openkilda.floodlight.utils.NewCorrelationContextRequired;
+import org.openkilda.messaging.Destination;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.info.InfoData;
 import org.openkilda.messaging.info.InfoMessage;
@@ -58,6 +59,8 @@ public class SwitchTrackingService implements IOFSwitchListener, IService {
     private ISwitchManager switchManager;
 
     private String topoDiscoTopic;
+
+    private String flRouterSpeakerDiscoTopic;
 
     /**
      * Send dump contain all connected at this moment switches.
@@ -148,30 +151,35 @@ public class SwitchTrackingService implements IOFSwitchListener, IService {
         switchManager = context.getServiceImpl(ISwitchManager.class);
 
         topoDiscoTopic = context.getServiceImpl(KafkaUtilityService.class).getTopics().getTopoDiscoTopic();
+        flRouterSpeakerDiscoTopic =
+                context.getServiceImpl(KafkaUtilityService.class).getTopics().getFlRouterSpeakerDiscoTopic();
 
         context.getServiceImpl(IOFSwitchService.class).addOFSwitchListener(this);
     }
 
     private void dumpAllSwitchesAction(String correlationId) throws SwitchOperationException {
-        producerService.enableGuaranteedOrder(topoDiscoTopic);
+        producerService.enableGuaranteedOrder(flRouterSpeakerDiscoTopic);
         try {
             producerService.sendMessageAndTrack(
-                    topoDiscoTopic,
-                    new InfoMessage(new NetworkDumpBeginMarker(), System.currentTimeMillis(), correlationId));
+                    flRouterSpeakerDiscoTopic,
+                    new InfoMessage(new NetworkDumpBeginMarker(), System.currentTimeMillis(), correlationId,
+                            Destination.WFM));
 
             for (IOFSwitch sw : switchManager.getAllSwitchMap().values()) {
                 NetworkDumpSwitchData swData = new NetworkDumpSwitchData(new SwitchId(sw.getId().getLong()));
-                producerService.sendMessageAndTrack(topoDiscoTopic,
-                                                    new InfoMessage(swData, System.currentTimeMillis(), correlationId));
+                producerService.sendMessageAndTrack(flRouterSpeakerDiscoTopic,
+                                                    new InfoMessage(swData, System.currentTimeMillis(), correlationId,
+                                                            Destination.WFM));
 
                 dumpSwitchPorts(sw.getId(), correlationId);
             }
 
             producerService.sendMessageAndTrack(
-                    topoDiscoTopic,
-                    new InfoMessage(new NetworkDumpEndMarker(), System.currentTimeMillis(), correlationId));
+                    flRouterSpeakerDiscoTopic,
+                    new InfoMessage(new NetworkDumpEndMarker(), System.currentTimeMillis(), correlationId,
+                            Destination.WFM));
         } finally {
-            producerService.disableGuaranteedOrder(topoDiscoTopic);
+            producerService.disableGuaranteedOrder(flRouterSpeakerDiscoTopic);
         }
     }
 
@@ -180,7 +188,7 @@ public class SwitchTrackingService implements IOFSwitchListener, IService {
             NetworkDumpPortData portData = new NetworkDumpPortData(new SwitchId(dpId.getLong()),
                                                                    portDesc.getPortNo().getPortNumber());
 
-            producerService.sendMessageAndTrack(topoDiscoTopic,
+            producerService.sendMessageAndTrack(flRouterSpeakerDiscoTopic,
                                                 new InfoMessage(portData, System.currentTimeMillis(), correlationId));
         }
     }

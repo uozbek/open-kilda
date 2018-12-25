@@ -29,6 +29,8 @@ public enum ComponentType {
 
     FL_FLOW_KAFKA_BOLT,
 
+    FL_DISCO_KAFKA_BOLT,
+
     NB_KAFKA_BOLT,
 
     TPE_KAFKA_BOLT;

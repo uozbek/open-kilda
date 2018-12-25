@@ -80,6 +80,11 @@ public class FlRouterTopology extends AbstractTopology<FlRouterTopologyConfig> {
         KafkaBolt tpeKafkaBolt = createKafkaBolt(topologyConfig.getKafkaTopoEngTopic());
         builder.setBolt(ComponentType.TPE_KAFKA_BOLT.toString(), tpeKafkaBolt, topologyConfig.getParallelism())
                 .shuffleGrouping(ComponentType.FLR_BOLT_NAME.toString(), StreamType.TPE_RESPONSE.toString());
+
+        // Sends responses to FL speaker disco topic
+        KafkaBolt speakerDiscoBolt = createKafkaBolt(topologyConfig.getKafkaFlRouterSpeakerDiscoTopic());
+        builder.setBolt(ComponentType.FL_DISCO_KAFKA_BOLT.toString(), speakerDiscoBolt, topologyConfig.getParallelism())
+                .shuffleGrouping(ComponentType.FLR_BOLT_NAME.toString(), StreamType.WFM_RESPONSE.toString());
         return builder.createTopology();
     }
 
