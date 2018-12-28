@@ -149,7 +149,7 @@ public class OfeLinkBolt
         watchDogInterval = discoveryConfig.getDiscoverySpeakerFailureTimeout();
         dumpRequestTimeout = discoveryConfig.getDiscoveryDumpRequestTimeout();
 
-        islDiscoveryTopic = config.getKafkaSpeakerDiscoTopic();
+        islDiscoveryTopic = config.getKafkaFlRouterSpeakerDiscoTopic();
     }
 
     @Override

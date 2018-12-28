@@ -213,7 +213,7 @@ class RecordHandler implements Runnable {
         DiscoPacketSendingConfirmation confirmation = new DiscoPacketSendingConfirmation(
                 new NetworkEndpoint(command.getSwitchId(), command.getPortNumber()));
         getKafkaProducer().sendMessageAndTrack(context.getKafkaTopoDiscoTopic(),
-                new InfoMessage(confirmation, System.currentTimeMillis(), message.getCorrelationId()));
+                new InfoMessage(confirmation, System.currentTimeMillis(), message.getCorrelationId(), Destination.WFM));
     }
 
     private void doPingRequest(CommandContext context, PingRequest request) {

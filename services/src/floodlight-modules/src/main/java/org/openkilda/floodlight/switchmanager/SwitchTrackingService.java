@@ -1,4 +1,4 @@
-/* Copyright 2017 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -189,7 +189,8 @@ public class SwitchTrackingService implements IOFSwitchListener, IService {
                                                                    portDesc.getPortNo().getPortNumber());
 
             producerService.sendMessageAndTrack(flRouterSpeakerDiscoTopic,
-                                                new InfoMessage(portData, System.currentTimeMillis(), correlationId));
+                                                new InfoMessage(portData, System.currentTimeMillis(), correlationId,
+                                                        Destination.WFM));
         }
     }
 

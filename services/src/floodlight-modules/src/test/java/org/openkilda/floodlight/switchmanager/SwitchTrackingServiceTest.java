@@ -344,17 +344,22 @@ public class SwitchTrackingServiceTest extends EasyMockSupport {
         expectedMessages.add(new InfoMessage(
                 new NetworkDumpSwitchData(new SwitchId(swAid.getLong())), 0, correlationId, Destination.WFM));
         expectedMessages.add(new InfoMessage(
-                new NetworkDumpPortData(new SwitchId(swAid.getLong()), 1), 0, correlationId));
+                new NetworkDumpPortData(new SwitchId(swAid.getLong()), 1), 0, correlationId,
+                Destination.WFM));
         expectedMessages.add(new InfoMessage(
-                new NetworkDumpPortData(new SwitchId(swAid.getLong()), 2), 0, correlationId));
+                new NetworkDumpPortData(new SwitchId(swAid.getLong()), 2), 0, correlationId,
+                Destination.WFM));
         expectedMessages.add(new InfoMessage(
                 new NetworkDumpSwitchData(new SwitchId(swBid.getLong())), 0, correlationId, Destination.WFM));
         expectedMessages.add(new InfoMessage(
-                new NetworkDumpPortData(new SwitchId(swBid.getLong()), 3), 0, correlationId));
+                new NetworkDumpPortData(new SwitchId(swBid.getLong()), 3), 0, correlationId,
+                Destination.WFM));
         expectedMessages.add(new InfoMessage(
-                new NetworkDumpPortData(new SwitchId(swBid.getLong()), 4), 0, correlationId));
+                new NetworkDumpPortData(new SwitchId(swBid.getLong()), 4), 0, correlationId,
+                Destination.WFM));
         expectedMessages.add(new InfoMessage(
-                new NetworkDumpPortData(new SwitchId(swBid.getLong()), 5), 0, correlationId));
+                new NetworkDumpPortData(new SwitchId(swBid.getLong()), 5), 0, correlationId,
+                Destination.WFM));
         expectedMessages.add(new InfoMessage(new NetworkDumpEndMarker(), 0, correlationId, Destination.WFM));
 
         assertEquals(expectedMessages, producedMessages);
