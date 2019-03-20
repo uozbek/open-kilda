@@ -19,6 +19,7 @@ import org.openkilda.testing.service.northbound.NorthboundService
 import org.openkilda.testing.service.otsdb.OtsdbQueryService
 import org.openkilda.testing.tools.IslUtils
 
+import com.deepoove.swagger.diff.SwaggerDiff
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.test.context.ContextConfiguration
@@ -71,6 +72,16 @@ class BaseSpecification extends SpringSpecification implements SetupOnce {
     @Value('${antiflap.min}')
     int antiflapMin
 
+    @Value('${northbound.endpoint}')
+    String northboundEndpoint
+
+    @Value('${northbound.username}')
+    String northboundUsername
+
+    @Value('${northbound.password}')
+    String northboundPassword
+
+
     /**
      * Use this instead of setupSpec in order to have access to Spring Context and do actions BeforeClass.
      * Can be overridden by inheritor specs.
@@ -88,6 +99,7 @@ class BaseSpecification extends SpringSpecification implements SetupOnce {
     @HealthCheck
     def "Kilda is UP and topology is clean"() {
         expect: "Kilda's health check request is successful"
+        compareSwagger()
         northbound.getHealthCheck().components["kafka"] == "operational"
 
         and: "All switches and links are active. No flows and link props are present"
@@ -121,6 +133,25 @@ class BaseSpecification extends SpringSpecification implements SetupOnce {
                 }.isEmpty()
             }.empty
         }
+    }
+
+    void compareSwagger() {
+        /** source http://deepoove.com/swagger-diff/*/
+        def address = "$northboundEndpoint/api/v1/v2/api-docs"
+
+        //new URL (address).getText()
+        new File("currentApi").withOutputStream { out ->
+            def url = new URL(address).openConnection()
+            def remoteAuth = "Basic " + "$northboundUsername:$northboundPassword".bytes.encodeBase64()
+            url.setRequestProperty("Authorization", remoteAuth)
+            out << url.inputStream
+        }
+
+        SwaggerDiff diff = SwaggerDiff.compareV2("staging_api.json", "currentApi")
+
+//        assert diff.newEndpoints.empty
+//        assert diff.missingEndpoints.empty
+        assert diff.changedEndpoints.empty
     }
 
     def requireProfiles(String[] profiles) {
