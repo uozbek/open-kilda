@@ -52,7 +52,7 @@ import org.openkilda.northbound.dto.switches.PortDto;
 import org.openkilda.northbound.dto.switches.RulesSyncResult;
 import org.openkilda.northbound.dto.switches.RulesValidationResult;
 import org.openkilda.northbound.dto.switches.SwitchDto;
-import org.openkilda.northbound.dto.switches.UnderMaintenanceDto;
+import org.openkilda.northbound.dto.switches.SyncRulesRequest;import org.openkilda.northbound.dto.switches.UnderMaintenanceDto;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
@@ -252,6 +252,13 @@ public class NorthboundServiceImpl implements NorthboundService {
     public RulesSyncResult synchronizeSwitchRules(SwitchId switchId) {
         return restTemplate.exchange("/api/v1/switches/{switch_id}/rules/synchronize", HttpMethod.GET,
                 new HttpEntity(buildHeadersWithCorrelationId()), RulesSyncResult.class, switchId).getBody();
+    }
+
+    @Override
+    public RulesSyncResult synchronizeSwitch(SwitchId switchId, SyncRulesRequest removeExcess) {
+        return restTemplate.exchange("api/v1/switches/{switch_id}/synchronize", HttpMethod.POST,
+                new HttpEntity<>(removeExcess, buildHeadersWithCorrelationId()),
+                RulesSyncResult.class, switchId).getBody();
     }
 
     @Override

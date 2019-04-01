@@ -3,6 +3,7 @@ package org.openkilda.functionaltests.spec.switches
 import static com.shazam.shazamcrest.matcher.Matchers.sameBeanAs
 import static org.junit.Assume.assumeFalse
 import static org.junit.Assume.assumeTrue
+import static org.openkilda.model.MeterId.MIN_FLOW_METER_ID
 import static org.openkilda.testing.Constants.NON_EXISTENT_SWITCH_ID
 import static org.openkilda.testing.Constants.RULES_DELETION_TIME
 import static org.openkilda.testing.Constants.RULES_INSTALLATION_TIME
@@ -12,6 +13,12 @@ import static spock.util.matcher.HamcrestSupport.expect
 import org.openkilda.functionaltests.BaseSpecification
 import org.openkilda.functionaltests.helpers.PathHelper
 import org.openkilda.functionaltests.helpers.Wrappers
+import org.openkilda.messaging.Message
+import org.openkilda.messaging.command.CommandData
+import org.openkilda.messaging.command.CommandMessage
+import org.openkilda.messaging.command.flow.InstallEgressFlow
+import org.openkilda.messaging.command.flow.InstallIngressFlow
+import org.openkilda.messaging.command.flow.InstallTransitFlow
 import org.openkilda.messaging.command.switches.DeleteRulesAction
 import org.openkilda.messaging.command.switches.InstallRulesAction
 import org.openkilda.messaging.error.MessageError
@@ -22,9 +29,17 @@ import org.openkilda.messaging.payload.flow.FlowEndpointPayload
 import org.openkilda.messaging.payload.flow.FlowPayload
 import org.openkilda.messaging.payload.flow.FlowState
 import org.openkilda.model.Cookie
+import org.openkilda.model.OutputVlanType
+import org.openkilda.model.SwitchId
 import org.openkilda.northbound.dto.flows.PingInput
+import org.openkilda.northbound.dto.switches.RulesSyncResult
 import org.openkilda.testing.model.topology.TopologyDefinition.Switch
 
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.client.HttpClientErrorException
 import spock.lang.Narrative
 import spock.lang.Shared
@@ -33,6 +48,11 @@ import spock.lang.Unroll
 @Narrative("""Verify how Kilda behaves with switch rules (either flow rules or default rules) under different 
 circumstances: e.g. persisting rules on newly connected switch, installing default rules on new switch etc.""")
 class SwitchRulesSpec extends BaseSpecification {
+    @Value("#{kafkaTopicsConfig.getSpeakerFlowTopic()}")
+    String flowTopic
+    @Autowired
+    @Qualifier("kafkaProducerProperties")
+    Properties producerProps
 
     @Shared
     Switch srcSwitch, dstSwitch
@@ -527,6 +547,91 @@ class SwitchRulesSpec extends BaseSpecification {
     }
 
     @Unroll
+    def "Synchronize switch #description installs missing rules and removes excess ones, fixes meters"() {
+        given: "Two active not neighboring switches"
+        def switches = topology.getActiveSwitches()
+        def allLinks = northbound.getAllLinks()
+        def (Switch srcSwitch, Switch dstSwitch) = [switches, switches].combinations()
+                .findAll { src, dst -> src != dst }.find { Switch src, Switch dst ->
+            allLinks.every { link -> !(link.source.switchId == src.dpId && link.destination.switchId == dst.dpId) }
+        } ?: assumeTrue("No suiting switches found", false)
+
+        and: "Create a transit-switch flow going through these switches"
+        def flow = flowHelper.randomFlow(srcSwitch, dstSwitch)
+        flow.maximumBandwidth = maximumBandwidth
+        flow.ignoreBandwidth = maximumBandwidth ? false : true
+        flowHelper.addFlow(flow)
+
+        and: "Reproduce situation when switches have missing rules by deleting flow rules from them"
+        def involvedSwitches = pathHelper.getInvolvedSwitches(flow.id)*.dpId
+        def defaultPlusFlowRulesMap = involvedSwitches.collectEntries { switchId ->
+            [switchId, northbound.getSwitchRules(switchId).flowEntries]
+        }
+
+        involvedSwitches.each { switchId ->
+            northbound.deleteSwitchRules(switchId, DeleteRulesAction.IGNORE_DEFAULTS)
+            Wrappers.wait(RULES_DELETION_TIME) {
+                assert northbound.validateSwitchRules(switchId).missingRules.size() == flowRulesCount
+            }
+        }
+
+        and: "And excess rules (ingress,egress and transit)"
+        def producer = new KafkaProducer(producerProps)
+        //pick a meter id which is not yet used on src switch
+        def excessMeterId = ((MIN_FLOW_METER_ID..100) - northbound.getAllMeters(dstSwitch.dpId)
+                                                                        .meterEntries*.meterId).first()
+        producer.send(new ProducerRecord(flowTopic, dstSwitch.dpId.toString(), buildMessage(
+                new InstallEgressFlow(UUID.randomUUID(), flow.id, 1L, dstSwitch.dpId, 1, 2, 1, 1,
+                        OutputVlanType.REPLACE)).toJson()))
+        involvedSwitches[1..-1].each { transitSw ->
+            producer.send(new ProducerRecord(flowTopic, transitSw.toString(), buildMessage(
+                    new InstallTransitFlow(UUID.randomUUID(), flow.id, 1L, transitSw, 1, 2, 1)).toJson()))
+        }
+        producer.send(new ProducerRecord(flowTopic, srcSwitch.dpId.toString(), buildMessage(
+                new InstallIngressFlow(UUID.randomUUID(), flow.id, 1L, srcSwitch.dpId, 1, 2, 1, 1,
+                        OutputVlanType.REPLACE, flow.maximumBandwidth, excessMeterId)).toJson()))
+
+        [dstSwitch.dpId, involvedSwitches[1], srcSwitch.dpId].each { sw ->
+            Wrappers.wait(RULES_INSTALLATION_TIME) {
+                assert northbound.validateSwitchRules(sw).excessRules == [1L]
+            }
+        }
+
+        when: "Synchronize rules on switches"
+        Map<SwitchId, RulesSyncResult> synchronizedRulesMap = involvedSwitches.collectEntries { switchId ->
+            [switchId, northbound.synchronizeSwitchRules(switchId)]
+        }
+
+        then: "The corresponding rules are installed on switches"
+        involvedSwitches.each { switchId ->
+            assert synchronizedRulesMap[switchId].installedRules.size() == flowRulesCount
+            assert synchronizedRulesMap[switchId].removedRules.size() == 1
+            Wrappers.wait(RULES_INSTALLATION_TIME) {
+                compareRules(northbound.getSwitchRules(switchId).flowEntries, defaultPlusFlowRulesMap[switchId])
+            }
+        }
+
+        and: "No missing or excess rules were found after rules validation"
+        involvedSwitches.each { switchId ->
+            with(northbound.validateSwitchRules(switchId)) {
+                verifyAll {
+                    properRules.size() == flowRulesCount
+                    missingRules.empty
+                    excessRules.empty
+                }
+            }
+        }
+
+        and: "Delete the flow"
+        flowHelper.deleteFlow(flow.id)
+
+        where:
+        description         | maximumBandwidth
+        "with meters"       | 1000
+        "without meters"    | 0
+    }
+
+    @Unroll
     def "Unable to #action rules on a non-existent switch"() {
         when: "Try to #action rules on a non-existent switch"
         northbound."$method"(NON_EXISTENT_SWITCH_ID)
@@ -643,5 +748,9 @@ class SwitchRulesSpec extends BaseSpecification {
 
     List<FlowEntry> getFlowRules(Switch sw) {
         northbound.getSwitchRules(sw.dpId).flowEntries.findAll { !(it.cookie in sw.defaultCookies) }.sort()
+    }
+
+    private static Message buildMessage(final CommandData data) {
+        return new CommandMessage(data, System.currentTimeMillis(), UUID.randomUUID().toString(), null);
     }
 }
