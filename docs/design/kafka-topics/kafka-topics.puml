@@ -1,0 +1,121 @@
+@startuml
+title Kilda Topics
+
+component [Floodlight] as FL
+component [FloodlightRouterTopology] as FLR
+component [Network Topology] as NT
+component [FlowTopology] as FT
+component [StatsTopology] as ST
+component [Northbound] as NB
+component [PingTopology] as PT
+component [RerouteTopology] as RerT
+component [IslStatsTopology] as IslStT
+component [PortStateTopology] as PortStT
+component [NbWorkerTopology] as NbT
+component [SwitchManagerTopology] as SwMT
+
+queue kilda.topo.disco.storm
+queue kilda.flow.storm
+queue kilda.northbound.storm
+queue kilda.stats.storm
+queue kilda.speaker.disco.storm
+queue kilda.speaker.flow.storm
+queue kilda.speaker.flow.ping.storm
+queue kilda.speaker.storm
+queue kilda.topo.reroute.storm
+queue kilda.topo.nb.storm
+queue kilda.topo.switch.manager.storm
+queue kilda.flow.status
+queue kilda.otsdb
+
+package "Floodlight Messaging" {
+    queue kilda.topo.disco_1
+    queue kilda.flow_1
+    queue kilda.stats_1
+    queue kilda.speaker.disco_1
+    queue kilda.speaker.flow_1
+    queue kilda.speaker.flow.ping_1
+    queue kilda.speaker_1
+    queue kilda.topo.nb_1
+    queue kilda.topo.switch.manager_1
+    queue kilda.northbound_1
+    queue kilda.ping_1
+    kilda.speaker.disco_1 -[hidden]down- kilda.speaker_1
+    kilda.speaker_1 -[hidden]down- kilda.speaker.flow_1
+    kilda.speaker.flow_1 -[hidden]down- kilda.speaker.flow.ping_1
+    kilda.speaker.flow.ping_1 -[hidden]down- kilda.stats_1
+    kilda.stats_1 -[hidden]down- kilda.flow_1
+    kilda.flow_1 -[hidden]down- kilda.topo.disco_1
+    kilda.topo.disco_1 -[hidden]down- kilda.northbound_1
+    kilda.northbound_1  -[hidden]down- kilda.topo.nb_1
+    kilda.topo.nb_1 -[hidden]down- kilda.topo.switch.manager_1
+    kilda.topo.switch.manager_1 -[hidden]down- kilda.ping_1
+    [FL] -r-> kilda.speaker.disco_1
+    [FL] -r-> kilda.speaker_1
+    [FL] -r-> kilda.speaker.flow_1
+    [FL] -r-> kilda.speaker.flow.ping_1
+    [FL] .r.> kilda.stats_1
+    [FL] .r.> kilda.flow_1
+    [FL] .r.> kilda.topo.disco_1
+    [FL] .r.> kilda.northbound_1
+    [FL] .r.> kilda.topo.nb_1
+    [FL] .r.> kilda.topo.switch.manager_1
+    [FL] .r.> kilda.ping_1
+}
+
+kilda.speaker.disco_1 .right.> [FLR]
+kilda.speaker_1 .left.> [FLR]
+kilda.speaker.flow_1 .left.> [FLR]
+kilda.speaker.flow.ping_1 .left.> [FLR]
+kilda.stats_1 -left-> [FLR]
+kilda.flow_1 -left-> [FLR]
+kilda.topo.disco_1 -left-> [FLR]
+kilda.northbound_1 -left-> [FLR]
+kilda.topo.nb_1 -left-> [FLR]
+kilda.topo.switch.manager_1 -left-> [FLR]
+kilda.ping_1 -left-> [FLR]
+
+
+'[FLR] -right- kilda.speaker.flow.storm
+'
+'
+'[NT] .right.> kilda.speaker.disco.storm
+'
+'[FT] .right.> kilda.speaker.flow.storm
+'[ST] -right- kilda.speaker.flow.storm
+'
+'[FT] -right- kilda.flow.storm
+'[FLR] .right.> kilda.flow.storm
+'[NB] .right.> kilda.flow.storm
+'[RerT] .right.> kilda.flow.storm
+'
+'[RerT] -right- kilda.topo.reroute.storm
+'[NT] .right.> kilda.topo.reroute.storm
+'
+'[NT] -right- kilda.topo.disco.storm
+'[IslStT] -right- kilda.topo.disco.storm
+'[PortStT] -right- kilda.topo.disco.storm
+'[NbT] .right.> kilda.topo.disco.storm
+'[FLR] .right.> kilda.topo.disco.storm
+'
+'[FLR] -right- kilda.speaker.storm
+'[PortStT] .right.> kilda.speaker.storm
+'[SwMT] .left.> kilda.speaker.storm
+'
+'[FLR] -right- kilda.speaker.flow.ping.storm
+'[PT] .right.> kilda.speaker.flow.ping.storm
+'
+'[PT] .right.> kilda.flow.status
+'
+'[PortStT] -right- kilda.stats.storm
+'[IslStT] -right- kilda.stats.storm
+'[ST] -right- kilda.stats.storm
+'
+'[NbT] -right- kilda.topo.nb.storm
+'[FLR] .right.> kilda.topo.nb.storm
+'
+'[SwMT] -right- kilda.topo.switch.manager.storm
+'[FLR] .right.> kilda.topo.switch.manager.storm
+'[FLR] -right- kilda.speaker.disco.storm
+
+@enduml
