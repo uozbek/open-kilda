@@ -52,7 +52,8 @@ import org.openkilda.northbound.dto.switches.PortDto;
 import org.openkilda.northbound.dto.switches.RulesSyncResult;
 import org.openkilda.northbound.dto.switches.RulesValidationResult;
 import org.openkilda.northbound.dto.switches.SwitchDto;
-import org.openkilda.northbound.dto.switches.SyncRulesRequest;import org.openkilda.northbound.dto.switches.UnderMaintenanceDto;
+import org.openkilda.northbound.dto.switches.SyncRulesRequest;
+import org.openkilda.northbound.dto.switches.UnderMaintenanceDto;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;

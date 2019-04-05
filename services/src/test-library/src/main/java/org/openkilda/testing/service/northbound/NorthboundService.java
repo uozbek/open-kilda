@@ -46,7 +46,8 @@ import org.openkilda.northbound.dto.switches.DeleteSwitchResult;
 import org.openkilda.northbound.dto.switches.PortDto;
 import org.openkilda.northbound.dto.switches.RulesSyncResult;
 import org.openkilda.northbound.dto.switches.RulesValidationResult;
-import org.openkilda.northbound.dto.switches.SwitchDto;import org.openkilda.northbound.dto.switches.SyncRulesRequest;
+import org.openkilda.northbound.dto.switches.SwitchDto;
+import org.openkilda.northbound.dto.switches.SyncRulesRequest;
 
 import java.util.List;
 import java.util.stream.Collectors;

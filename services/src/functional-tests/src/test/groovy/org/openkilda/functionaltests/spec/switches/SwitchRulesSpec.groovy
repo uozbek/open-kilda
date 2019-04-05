@@ -575,7 +575,7 @@ class SwitchRulesSpec extends BaseSpecification {
             }
         }
 
-        and: "And excess rules (ingress,egress and transit)"
+        and: "Add excess rules (ingress,egress and transit)"
         def producer = new KafkaProducer(producerProps)
         //pick a meter id which is not yet used on src switch
         def excessMeterId = ((MIN_FLOW_METER_ID..100) - northbound.getAllMeters(dstSwitch.dpId)
