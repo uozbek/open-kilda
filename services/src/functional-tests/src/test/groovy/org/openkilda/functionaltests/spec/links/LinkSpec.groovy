@@ -5,6 +5,7 @@ import static org.openkilda.testing.Constants.NON_EXISTENT_SWITCH_ID
 import static org.openkilda.testing.Constants.WAIT_OFFSET
 
 import org.openkilda.functionaltests.BaseSpecification
+import org.openkilda.functionaltests.extension.rerun.Rerun
 import org.openkilda.functionaltests.helpers.PathHelper
 import org.openkilda.functionaltests.helpers.Wrappers
 import org.openkilda.messaging.error.MessageError
@@ -97,6 +98,7 @@ class LinkSpec extends BaseSpecification {
         }
     }
 
+    @Rerun(times = 10)
     def "Get all flows (UP/DOWN) going through a particular link"() {
         given: "Two active not neighboring switches"
         def switches = topology.getActiveSwitches()
@@ -181,6 +183,7 @@ class LinkSpec extends BaseSpecification {
         and: "Delete all created flows and reset costs"
         [flow1, flow2, flow3, flow4].each { flowHelper.deleteFlow(it.id) }
         database.resetCosts()
+        northbound.getAllLinks().findAll { it.availableBandwidth != it.speed }.empty
     }
 
     def "ISL should immediately fail if the port went down while switch was disconnected"() {
