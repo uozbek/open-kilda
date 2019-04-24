@@ -25,6 +25,7 @@ import org.openkilda.wfm.topology.network.model.Endpoint;
 import org.openkilda.wfm.topology.network.model.LinkStatus;
 
 import lombok.extern.slf4j.Slf4j;
+import org.squirrelframework.foundation.fsm.StateMachineLogger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,6 +61,10 @@ public class NetworkBfdGlobalToggleService {
 
         BfdGlobalToggleFsm fsm = BfdGlobalToggleFsm.create(carrier, endpoint, featureTogglesRepository);
         controllerByEndpoint.put(endpoint, fsm);
+
+        // DEBUG
+        new StateMachineLogger(fsm).startLogging();
+        // DEBUG
     }
 
     /**

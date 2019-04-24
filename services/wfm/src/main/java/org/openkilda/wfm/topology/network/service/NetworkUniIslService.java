@@ -25,6 +25,7 @@ import org.openkilda.wfm.topology.network.controller.UniIslFsm.UniIslFsmState;
 import org.openkilda.wfm.topology.network.model.Endpoint;
 
 import lombok.extern.slf4j.Slf4j;
+import org.squirrelframework.foundation.fsm.StateMachineLogger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,6 +53,9 @@ public class NetworkUniIslService {
                 .history(history)
                 .build();
         controllerExecutor.fire(fsm, UniIslFsmEvent.ACTIVATE, context);
+        // DEBUG
+        new StateMachineLogger(fsm).startLogging();
+        // DEBUG
         controller.put(endpoint, fsm);
     }
 

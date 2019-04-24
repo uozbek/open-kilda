@@ -28,6 +28,7 @@ import org.openkilda.wfm.topology.network.model.IslReference;
 import org.openkilda.wfm.topology.network.model.LinkStatus;
 
 import lombok.extern.slf4j.Slf4j;
+import org.squirrelframework.foundation.fsm.StateMachineLogger;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -60,6 +61,10 @@ public class NetworkBfdPortService {
         log.info("BFD-port service receive SETUP request for {} (physical-port:{})",
                   endpoint, physicalPortNumber);
         BfdPortFsm controller = BfdPortFsm.create(persistenceManager, endpoint, physicalPortNumber);
+
+        // DEBUG
+        new StateMachineLogger(controller).startLogging();
+        // DEBUG
 
         BfdPortFsmContext context = BfdPortFsmContext.builder(carrier).build();
         controllerExecutor.fire(controller, BfdPortFsmEvent.HISTORY, context);
