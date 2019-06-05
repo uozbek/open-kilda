@@ -1,0 +1,34 @@
+@startuml
+title floodlightrouter topology structure
+
+participant Controller
+
+box "Controller IO" #LightGreen
+control "C-OUT.channel" as COUT
+control "C-IN.channel" as CIN
+end box
+
+participant "C Spout" as CSpout
+participant "C->S TopicMap" as CTopicMap
+participant "Region Mapper" as RegionMapper
+participant "S->C TopicMap" as STopicMap
+participant "S Spout" as SSpout
+
+box "Speaker IO" #LightBlue
+control "S-OUT.channel" as SOUT
+control "S-IN.channel" as SIN
+end box
+
+participant Speaker
+
+Controller --> COUT : Message
+COUT --> CSpout : Message
+CSpout --> CTopicMap : Message
+
+note right of CTopicMap: define speaker\ntopic by controller topic
+CTopicMap --> RegionMapper : Message\nS Topic
+
+note right of RegionMapper : determine target\nregion
+RegionMapper --> RegionMapper : Message\nS Topic\nregion
+
+@enduml
