@@ -24,6 +24,7 @@ import org.openkilda.wfm.topology.network.controller.bfd.BfdPortFsm;
 import org.openkilda.wfm.topology.network.controller.bfd.BfdPortFsm.BfdPortFsmContext;
 import org.openkilda.wfm.topology.network.controller.bfd.BfdPortFsm.BfdPortFsmEvent;
 import org.openkilda.wfm.topology.network.controller.bfd.BfdPortFsm.BfdPortFsmState;
+import org.openkilda.wfm.topology.network.model.PortStatusMonitor;
 import org.openkilda.wfm.topology.network.error.BfdPortControllerNotFoundException;
 import org.openkilda.wfm.topology.network.model.LinkStatus;
 
@@ -41,8 +42,8 @@ public class NetworkBfdPortService {
     private final PersistenceManager persistenceManager;
 
     private final BfdPortFsm.BfdPortFsmFactory controllerFactory;
-    private final Map<Endpoint, BfdPortFsm> controllerByPhysicalPort = new HashMap<>();
-    private final Map<Endpoint, BfdPortFsm> controllerByLogicalPort = new HashMap<>();
+    private final Map<Endpoint, BfdController> controllerByPhysicalPort = new HashMap<>();
+    private final Map<Endpoint, BfdController> controllerByLogicalPort = new HashMap<>();
     private final List<BfdPortFsm> pendingCleanup = new LinkedList<>();
     private final Map<Endpoint, IslReference> autostart = new HashMap<>();
 
@@ -255,5 +256,15 @@ public class NetworkBfdPortService {
             throw BfdPortControllerNotFoundException.ofLogical(endpoint);
         }
         return controller;
+    }
+
+    private static final class BfdController {
+        private final BfdPortFsm fsm;
+        private final PortStatusMonitor portMonitor;
+
+        public BfdController(BfdPortFsm fsm) {
+            this.fsm = fsm;
+            this.portMonitor = new PortStatusMonitor();
+        }
     }
 }

@@ -15,10 +15,13 @@
 
 package org.openkilda.wfm.topology.network.storm;
 
+import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
+
 public enum ComponentId {
     MONOTONIC_TICK("monotonic.tick"),
 
     INPUT_SPEAKER("input.speaker"),
+    INPUT_GRPC("input.grpc"),
     NETWORK_HISTORY("network-history"),
 
     WATCH_LIST("watch-list-handler"),
@@ -32,6 +35,7 @@ public enum ComponentId {
     UNI_ISL_HANDLER("uni-isl-handler"),
     ISL_HANDLER("isl-handler"),
 
+    SPEAKER_WORKER(WorkerBolt.ID + ".speaker"),
     SPEAKER_ENCODER("speaker.encoder"),
     SPEAKER_OUTPUT("speaker.output"),
 
@@ -39,7 +43,11 @@ public enum ComponentId {
     REROUTE_OUTPUT("reroute.output"),
 
     STATUS_ENCODER("status.encoder"),
-    STATUS_OUTPUT("status.output");
+    STATUS_OUTPUT("status.output"),
+
+    GRPC_WORKER(WorkerBolt.ID + ".grpc"),
+    GRPC_ENCODER("grpc.encoder"),
+    GRPC_OUTPUT("grpc.output");
 
     private final String value;
 

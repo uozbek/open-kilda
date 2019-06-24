@@ -62,6 +62,10 @@ public interface NetworkTopologyConfig extends AbstractTopologyConfig {
         return getKafkaTopics().getNetworkIslStatusTopic();
     }
 
+    default String getKafkaGrpcSpeakerTopic() {
+        return getKafkaTopics().getGrpcSpeakerTopic();
+    }
+
     @Key("bfd.port.offset")
     @Default("200")
     int getBfdPortOffset();

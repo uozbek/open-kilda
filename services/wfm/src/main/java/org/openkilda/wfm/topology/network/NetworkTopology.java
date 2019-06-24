@@ -25,11 +25,13 @@ import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.AbstractTopology;
 import org.openkilda.wfm.topology.network.model.NetworkOptions;
 import org.openkilda.wfm.topology.network.storm.ComponentId;
+import org.openkilda.wfm.topology.network.storm.bolt.GrpcEncoder;
 import org.openkilda.wfm.topology.network.storm.bolt.RerouteEncoder;
 import org.openkilda.wfm.topology.network.storm.bolt.SpeakerEncoder;
 import org.openkilda.wfm.topology.network.storm.bolt.StatusEncoder;
 import org.openkilda.wfm.topology.network.storm.bolt.bfdport.BfdPortHandler;
 import org.openkilda.wfm.topology.network.storm.bolt.decisionmaker.DecisionMakerHandler;
+import org.openkilda.wfm.topology.network.storm.bolt.grpc.GrpcWorker;
 import org.openkilda.wfm.topology.network.storm.bolt.isl.IslHandler;
 import org.openkilda.wfm.topology.network.storm.bolt.port.PortHandler;
 import org.openkilda.wfm.topology.network.storm.bolt.speaker.SpeakerRouter;
@@ -41,6 +43,7 @@ import org.openkilda.wfm.topology.network.storm.bolt.watchlist.WatchListHandler;
 import org.openkilda.wfm.topology.network.storm.spout.NetworkHistory;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
 
+import org.apache.storm.daemon.worker;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.kafka.spout.KafkaSpout;
@@ -72,6 +75,9 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
         inputSpeaker(topology, scaleFactor);
         workerSpeaker(topology, scaleFactor);
 
+        inputGrpc(topology, scaleFactor);
+        workerGrpc(topology, scaleFactor);
+
         coordinator(topology);
         networkHistory(topology);
 
@@ -90,6 +96,7 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
         outputSpeaker(topology, scaleFactor);
         outputReroute(topology, scaleFactor);
         outputStatus(topology, scaleFactor);
+        outputGrpc(topology, scaleFactor);
 
         return topology.createTopology();
     }
@@ -97,13 +104,14 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
     private void coordinator(TopologyBuilder topology) {
         topology.setSpout(CoordinatorSpout.ID, new CoordinatorSpout(), 1);
 
-        Fields keyGrouping = new Fields(MessageTranslator.KEY_FIELD);
+        Fields keyGrouping = new Fields(MessageTranslator.FIELD_ID_KEY);
         topology.setBolt(CoordinatorBolt.ID, new CoordinatorBolt(), 1)
                 .allGrouping(CoordinatorSpout.ID)
                 .fieldsGrouping(SpeakerWorker.BOLT_ID, CoordinatorBolt.INCOME_STREAM, keyGrouping);
     }
 
     private void inputSpeaker(TopologyBuilder topology, int scaleFactor) {
+        // TODO: ensure topic name
         KafkaSpout<String, Message> spout = buildKafkaSpout(
                 topologyConfig.getTopoDiscoTopic(), ComponentId.INPUT_SPEAKER.toString());
         topology.setSpout(ComponentId.INPUT_SPEAKER.toString(), spout, scaleFactor);
@@ -117,16 +125,38 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
                 .streamToHub(SpeakerWorker.STREAM_HUB_ID)
                 .defaultTimeout((int) speakerIoTimeout)
                 .build();
-        SpeakerWorker speakerWorker = new SpeakerWorker(workerConfig);
-        Fields keyGrouping = new Fields(MessageTranslator.KEY_FIELD);
-        topology.setBolt(SpeakerWorker.BOLT_ID, speakerWorker, scaleFactor)
+        SpeakerWorker worker = new SpeakerWorker(workerConfig);
+        Fields keyGrouping = new Fields(MessageTranslator.FIELD_ID_KEY);
+        topology.setBolt(SpeakerWorker.BOLT_ID, worker, scaleFactor)
                 .directGrouping(CoordinatorBolt.ID)
                 .fieldsGrouping(workerConfig.getHubComponent(), BfdPortHandler.STREAM_SPEAKER_ID, keyGrouping)
                 .fieldsGrouping(workerConfig.getWorkerSpoutComponent(), SpeakerRouter.STREAM_WORKER_ID, keyGrouping);
     }
 
+    private void inputGrpc(TopologyBuilder topology, int scaleFactor) {
+        KafkaSpout<String, Message> spout = buildKafkaSpout(
+                topologyConfig.getKafkaGrpcSpeakerTopic(), ComponentId.INPUT_GRPC.toString());
+        topology.setSpout(ComponentId.INPUT_GRPC.toString(), spout, scaleFactor);
+    }
+
+    private void workerGrpc(TopologyBuilder topology, int scaleFactor) {
+        long speakerIoTimeout = TimeUnit.SECONDS.toMillis(topologyConfig.getSpeakerIoTimeoutSeconds());
+        WorkerBolt.Config workerConfig = GrpcWorker.Config.builder()
+                .hubComponent(BfdPortHandler.BOLT_ID)
+                .workerSpoutComponent(ComponentId.INPUT_GRPC.toString())
+                .streamToHub(GrpcWorker.STREAM_HUB_ID)
+                .defaultTimeout((int) speakerIoTimeout)
+                .build();
+        GrpcWorker worker = new GrpcWorker(workerConfig);
+        Fields keyGrouping = new Fields(MessageTranslator.FIELD_ID_KEY);
+        topology.setBolt(GrpcWorker.BOLT_ID, worker, scaleFactor)
+                .directGrouping(CoordinatorBolt.ID)
+                .fieldsGrouping(workerConfig.getHubComponent(), BfdPortHandler.STREAM_GRPC_ID, keyGrouping)
+                .fieldsGrouping(workerConfig.getWorkerSpoutComponent(), keyGrouping);
+    }
+
     private void speakerRouter(TopologyBuilder topology, int scaleFactor) {
-        Fields keyGrouping = new Fields(MessageTranslator.KEY_FIELD);
+        Fields keyGrouping = new Fields(MessageTranslator.FIELD_ID_KEY);
         SpeakerRouter bolt = new SpeakerRouter();
         topology.setBolt(SpeakerRouter.BOLT_ID, bolt, scaleFactor)
                 .fieldsGrouping(ComponentId.INPUT_SPEAKER.toString(), keyGrouping);
@@ -240,6 +270,18 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
         KafkaBolt output = buildKafkaBolt(topologyConfig.getKafkaNetworkIslStatusTopic());
         topology.setBolt(ComponentId.STATUS_OUTPUT.toString(), output, scaleFactor)
                 .shuffleGrouping(StatusEncoder.BOLT_ID);
+    }
+
+    private void outputGrpc(TopologyBuilder topology, int scaleFactor) {
+        GrpcEncoder bolt = new GrpcEncoder();
+        topology.setBolt(GrpcEncoder.BOLT_ID, bolt, scaleFactor)
+            // TODO: subscribe
+            ;
+
+        // TODO: ensure topic name
+        KafkaBolt<String, Message> output = buildKafkaBolt(topologyConfig.getKafkaGrpcSpeakerTopic());
+        topology.setBolt(ComponentId.GRPC_OUTPUT.toString(), output, scaleFactor)
+                .shuffleGrouping(GrpcEncoder.BOLT_ID);
     }
 
     /**

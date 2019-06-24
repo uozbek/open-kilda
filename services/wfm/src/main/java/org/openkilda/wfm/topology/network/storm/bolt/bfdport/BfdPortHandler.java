@@ -64,6 +64,10 @@ public class BfdPortHandler extends AbstractBolt
     public static final Fields STREAM_SPEAKER_FIELDS = new Fields(FIELD_ID_COMMAND_KEY, FIELD_ID_COMMAND,
                                                                   FIELD_ID_CONTEXT);
 
+    public static final String STREAM_GRPC_ID = "grpc";
+    public static final Fields STREAM_GRPC_FIELDS = new Fields(FIELD_ID_COMMAND_KEY, FIELD_ID_COMMAND,
+                                                               FIELD_ID_CONTEXT);
+
     public static final String STREAM_UNIISL_ID = "uni-isl";
     public static final Fields STREAM_UNIISL_FIELDS = new Fields(FIELD_ID_DATAPATH, FIELD_ID_PORT_NUMBER,
                                                                  FIELD_ID_COMMAND, FIELD_ID_CONTEXT);
@@ -226,6 +230,7 @@ public class BfdPortHandler extends AbstractBolt
     @Override
     public void declareOutputFields(OutputFieldsDeclarer streamManager) {
         streamManager.declareStream(STREAM_SPEAKER_ID, STREAM_SPEAKER_FIELDS);
+        streamManager.declareStream(STREAM_GRPC_ID, STREAM_GRPC_FIELDS);
         streamManager.declareStream(STREAM_UNIISL_ID, STREAM_UNIISL_FIELDS);
     }
 

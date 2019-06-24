@@ -22,6 +22,7 @@ import org.openkilda.messaging.floodlight.response.BfdSessionResponse;
 import org.openkilda.messaging.model.NoviBfdSession;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
+import org.openkilda.wfm.topology.network.storm.ComponentId;
 import org.openkilda.wfm.topology.network.storm.bolt.SpeakerEncoder;
 import org.openkilda.wfm.topology.network.storm.bolt.bfdport.BfdPortHandler;
 import org.openkilda.wfm.topology.network.storm.bolt.bfdport.command.BfdPortCommand;
@@ -37,7 +38,7 @@ import org.apache.storm.tuple.Values;
 
 @Slf4j
 public class SpeakerWorker extends WorkerBolt {
-    public static final String BOLT_ID = WorkerBolt.ID + ".speaker";
+    public static final String BOLT_ID = ComponentId.SPEAKER_WORKER.toString();
 
     public static final String FIELD_ID_PAYLOAD = SpeakerEncoder.FIELD_ID_PAYLOAD;
     public static final String FIELD_ID_KEY = SpeakerEncoder.FIELD_ID_KEY;
@@ -97,6 +98,7 @@ public class SpeakerWorker extends WorkerBolt {
 
     // -- setup --
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer streamManager) {
         super.declareOutputFields(streamManager);  // it will define HUB stream
         streamManager.declare(STREAM_FIELDS);

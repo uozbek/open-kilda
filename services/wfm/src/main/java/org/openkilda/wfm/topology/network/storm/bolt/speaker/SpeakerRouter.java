@@ -64,7 +64,7 @@ import org.apache.storm.tuple.Values;
 public class SpeakerRouter extends AbstractBolt {
     public static final String BOLT_ID = ComponentId.SPEAKER_ROUTER.toString();
 
-    public static final String FIELD_ID_KEY = MessageTranslator.KEY_FIELD;
+    public static final String FIELD_ID_KEY = MessageTranslator.FIELD_ID_KEY;
     public static final String FIELD_ID_INPUT = MessageTranslator.FIELD_ID_PAYLOAD;
     public static final String FIELD_ID_DATAPATH = "switch";
     public static final String FIELD_ID_PORT_NUMBER = "port-number";
