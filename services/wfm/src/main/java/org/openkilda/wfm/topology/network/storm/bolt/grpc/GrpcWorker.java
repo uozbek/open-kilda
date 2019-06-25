@@ -15,12 +15,14 @@
 
 package org.openkilda.wfm.topology.network.storm.bolt.grpc;
 
+import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.network.storm.ComponentId;
 import org.openkilda.wfm.topology.network.storm.bolt.SpeakerEncoder;
 
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
 
 public class GrpcWorker extends WorkerBolt {
     public static final String BOLT_ID = ComponentId.GRPC_WORKER.toString();
@@ -34,6 +36,21 @@ public class GrpcWorker extends WorkerBolt {
 
     public GrpcWorker(Config config) {
         super(config);
+    }
+
+    @Override
+    protected void onHubRequest(Tuple input) throws Exception {
+        // TODO
+    }
+
+    @Override
+    protected void onAsyncResponse(Tuple input) throws Exception {
+        // TODO
+    }
+
+    @Override
+    public void onTimeout(String key, Tuple tuple) throws PipelineException {
+        // TODO
     }
 
     // -- setup --

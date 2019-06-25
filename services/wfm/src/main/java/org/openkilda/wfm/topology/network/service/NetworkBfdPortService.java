@@ -68,8 +68,10 @@ public class NetworkBfdPortService {
         BfdPortFsmContext context = BfdPortFsmContext.builder(carrier).build();
         controllerExecutor.fire(controller, BfdPortFsmEvent.HISTORY, context);
 
+        /*
         controllerByLogicalPort.put(controller.getLogicalEndpoint(), controller);
         controllerByPhysicalPort.put(controller.getPhysicalEndpoint(), controller);
+        */
 
         IslReference autostartData = autostart.remove(controller.getPhysicalEndpoint());
         if (autostartData != null) {
@@ -86,6 +88,7 @@ public class NetworkBfdPortService {
     public Endpoint remove(Endpoint logicalEndpoint) {
         log.info("BFD-port service receive REMOVE request for {} (logical)", logicalEndpoint);
 
+        /*
         BfdPortFsm controller = controllerByLogicalPort.remove(logicalEndpoint);
         if (controller == null) {
             throw BfdPortControllerNotFoundException.ofLogical(logicalEndpoint);
@@ -95,6 +98,8 @@ public class NetworkBfdPortService {
         remove(controller);
 
         return controller.getPhysicalEndpoint();
+        */
+        return null;
     }
 
     private void remove(BfdPortFsm controller) {
@@ -219,7 +224,10 @@ public class NetworkBfdPortService {
     }
 
     private void handleSpeakerResponse(Endpoint logicalEndpoint, BfdPortFsmContext context) {
+        /*
         BfdPortFsm controller = controllerByLogicalPort.get(logicalEndpoint);
+        */
+        BfdPortFsm controller = null;
         if (controller != null) {
             controllerExecutor.fire(controller, BfdPortFsmEvent.SPEAKER_RESPONSE, context);
         }
@@ -243,7 +251,10 @@ public class NetworkBfdPortService {
 
     // -- private --
     private BfdPortFsm lookupControllerByPhysicalEndpoint(Endpoint endpoint) {
+        /*
         BfdPortFsm controller = controllerByPhysicalPort.get(endpoint);
+        */
+        BfdPortFsm controller = null;
         if (controller == null) {
             throw BfdPortControllerNotFoundException.ofPhysical(endpoint);
         }
@@ -251,7 +262,10 @@ public class NetworkBfdPortService {
     }
 
     private BfdPortFsm lookupControllerByLogicalEndpoint(Endpoint endpoint) {
+        /*
         BfdPortFsm controller = controllerByLogicalPort.get(endpoint);
+        */
+        BfdPortFsm controller = null;
         if (controller == null) {
             throw BfdPortControllerNotFoundException.ofLogical(endpoint);
         }
