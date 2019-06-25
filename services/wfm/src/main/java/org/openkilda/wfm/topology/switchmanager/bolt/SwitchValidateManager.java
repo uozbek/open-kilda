@@ -29,8 +29,6 @@ import org.openkilda.messaging.info.rule.BatchInstallResponse;
 import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.error.PipelineException;
-import org.openkilda.wfm.share.hubandspoke.CoordinatorBolt;
-import org.openkilda.wfm.share.hubandspoke.CoordinatorBolt.CoordinatorCommand;
 import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
 import org.openkilda.wfm.topology.switchmanager.SwitchManagerCarrier;
@@ -148,10 +146,6 @@ public class SwitchValidateManager extends HubBolt implements SwitchManagerCarri
     public void endProcessing(String key) {
         cancelCallback(key);
         removeKeyFromRouterBolt(key);
-    }
-
-    private void cancelCallback(String key) {
-        getOutput().emit(CoordinatorBolt.INCOME_STREAM, new Values(key, CoordinatorCommand.CANCEL_CALLBACK, 0, null));
     }
 
     private void removeKeyFromRouterBolt(String key) {
