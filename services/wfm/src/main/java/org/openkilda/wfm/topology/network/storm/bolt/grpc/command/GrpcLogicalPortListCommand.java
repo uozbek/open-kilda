@@ -13,8 +13,18 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.network.storm;
+package org.openkilda.wfm.topology.network.storm.bolt.grpc.command;
 
-public interface ICommand<H> {
-    void apply(H handler) throws Exception;
+import org.openkilda.model.SwitchId;
+import org.openkilda.wfm.topology.network.storm.bolt.grpc.GrpcWorker;
+
+public class GrpcLogicalPortListCommand extends GrpcWorkerCommand {
+    public GrpcLogicalPortListCommand(String key, SwitchId switchId) {
+        super(key, switchId);
+    }
+
+    @Override
+    public void apply(GrpcWorker handler) throws Exception {
+        handler.processLogicalPortList(getSwitchId());
+    }
 }

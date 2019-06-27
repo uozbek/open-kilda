@@ -28,11 +28,11 @@ public class SpeakerBfdSessionRemoveCommand extends SpeakerWorkerCommand {
 
     @Override
     public void apply(SpeakerWorker handler) {
-        handler.processBfdRemoveRequest(getKey(), bfdSession);
+        handler.processBfdSessionRemoveRequest(getKey(), bfdSession);
     }
 
     @Override
     public void timeout(SpeakerWorker handler) {
-        handler.timeoutBfdRequest(getKey(), bfdSession);
+        handler.timeoutBfdSessionRequest(getKey(), bfdSession);
     }
 }

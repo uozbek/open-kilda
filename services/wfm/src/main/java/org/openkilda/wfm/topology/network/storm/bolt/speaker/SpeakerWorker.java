@@ -77,12 +77,12 @@ public class SpeakerWorker extends WorkerBolt {
 
     // -- commands processing --
 
-    public void processBfdSetupRequest(String key, NoviBfdSession bfdSession) {
+    public void processBfdSessionSetupRequest(String key, NoviBfdSession bfdSession) {
         SetupBfdSession payload = new SetupBfdSession(bfdSession);
         emitSpeakerRequest(key, payload);
     }
 
-    public void processBfdRemoveRequest(String key, NoviBfdSession bfdSession) {
+    public void processBfdSessionRemoveRequest(String key, NoviBfdSession bfdSession) {
         RemoveBfdSession payload = new RemoveBfdSession(bfdSession);
         emitSpeakerRequest(key, payload);
     }
@@ -92,7 +92,7 @@ public class SpeakerWorker extends WorkerBolt {
                 key, new BfdPortSpeakerBfdSessionResponseCommand(key, response)));
     }
 
-    public void timeoutBfdRequest(String key, NoviBfdSession bfdSession) {
+    public void timeoutBfdSessionRequest(String key, NoviBfdSession bfdSession) {
         emitResponseToHub(getCurrentTuple(), makeHubTuple(key, new BfdPortSpeakerTimeoutCommand(key, bfdSession)));
     }
 

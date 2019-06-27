@@ -147,7 +147,7 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
                 .streamToHub(GrpcWorker.STREAM_HUB_ID)
                 .defaultTimeout((int) speakerIoTimeout)
                 .build();
-        GrpcWorker worker = new GrpcWorker(workerConfig);
+        GrpcWorker worker = new GrpcWorker(workerConfig, persistenceManager);
         Fields keyGrouping = new Fields(MessageTranslator.FIELD_ID_KEY);
         topology.setBolt(GrpcWorker.BOLT_ID, worker, scaleFactor)
                 .directGrouping(CoordinatorBolt.ID)

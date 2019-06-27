@@ -13,8 +13,23 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.network.storm;
+package org.openkilda.wfm.topology.network.storm.bolt.grpc.command;
 
-public interface ICommand<H> {
-    void apply(H handler) throws Exception;
+import org.openkilda.model.SwitchId;
+import org.openkilda.wfm.topology.network.storm.ICommand;
+import org.openkilda.wfm.topology.network.storm.bolt.grpc.GrpcWorker;
+
+import lombok.Getter;
+
+@Getter
+public abstract class GrpcWorkerCommand implements ICommand<GrpcWorker> {
+    private final String key;
+    private final SwitchId switchId;
+
+    public GrpcWorkerCommand(String key, SwitchId switchId) {
+        this.key = key;
+        this.switchId = switchId;
+    }
+
+    public abstract void error(GrpcWorker carrier, Exception error);
 }
