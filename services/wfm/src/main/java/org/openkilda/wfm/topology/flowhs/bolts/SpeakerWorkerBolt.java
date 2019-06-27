@@ -16,8 +16,8 @@
 package org.openkilda.wfm.topology.flowhs.bolts;
 
 import static org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream.SPEAKER_WORKER_REQUEST_SENDER;
+import static org.openkilda.wfm.topology.utils.KafkaRecordTranslator.FIELD_ID_KEY;
 import static org.openkilda.wfm.topology.utils.KafkaRecordTranslator.FIELD_ID_PAYLOAD;
-import static org.openkilda.wfm.topology.utils.MessageTranslator.KEY_FIELD;
 
 import org.openkilda.floodlight.flow.request.FlowRequest;
 import org.openkilda.floodlight.flow.response.FlowResponse;
@@ -36,8 +36,6 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarri
     public static final String ID = "speaker.worker.bolt";
     private transient SpeakerWorkerService service;
 
-    private Tuple currentTuple;
-
     public SpeakerWorkerBolt(Config config) {
         super(config);
     }
@@ -49,29 +47,23 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarri
 
     @Override
     protected void onHubRequest(Tuple input) throws PipelineException {
-        this.currentTuple = input;
-
-        String key = input.getStringByField(KEY_FIELD);
+        String key = pullKey();
         FlowRequest command = (FlowRequest) input.getValueByField(FIELD_ID_PAYLOAD);
 
         service.sendCommand(key, command);
     }
 
     @Override
-    protected void onAsyncResponse(Tuple input) throws PipelineException {
-        this.currentTuple = input;
-
-        String key = input.getStringByField(KEY_FIELD);
-        FlowResponse message = (FlowResponse) input.getValueByField(FIELD_ID_PAYLOAD);
+    protected void onAsyncResponse(Tuple request, Tuple response) throws PipelineException {
+        String key = request.getStringByField(FIELD_ID_KEY);
+        FlowResponse message = (FlowResponse) request.getValueByField(FIELD_ID_PAYLOAD);
 
         service.handleResponse(key, message);
     }
 
     @Override
-    public void onTimeout(String key, Tuple tuple) throws PipelineException {
-        this.currentTuple = tuple;
-
-        service.handleTimeout(key);
+    protected void onRequestTimeout(Tuple tuple) throws PipelineException {
+        service.handleTimeout(pullKey(tuple));
     }
 
     @Override
@@ -83,12 +75,12 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarri
 
     @Override
     public void sendCommand(String key, FlowRequest command) {
-        emitWithContext(SPEAKER_WORKER_REQUEST_SENDER.name(), currentTuple, new Values(key, command));
+        emitWithContext(SPEAKER_WORKER_REQUEST_SENDER.name(), getCurrentTuple(), new Values(key, command));
     }
 
     @Override
     public void sendResponse(String key, FlowResponse response) {
         Values values = new Values(key, response, getCommandContext());
-        emitResponseToHub(currentTuple, values);
+        emitResponseToHub(getCurrentTuple(), values);
     }
 }
