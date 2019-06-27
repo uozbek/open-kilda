@@ -73,18 +73,23 @@ public class GrpcWorker extends WorkerBolt {
 
     @Override
     protected void onHubRequest(Tuple input) throws Exception {
-        handleCommand(input, BfdPortHandler.FIELD_ID_COMMAND);
+        GrpcWorkerCommand command = pullValue(input, BfdPortHandler.FIELD_ID_COMMAND, GrpcWorkerCommand.class);
+        try {
+            command.apply(this);
+        } catch (SwitchNotFoundException e) {
+            command.error(this, e);  // FIXME
+        }
     }
 
     @Override
-    protected void onAsyncResponse(Tuple input) throws Exception {
-        Message message = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, Message.class);
+    protected void onAsyncResponse(Tuple request, Tuple response) throws Exception {
+        Message message = pullValue(response, MessageTranslator.FIELD_ID_PAYLOAD, Message.class);
         if (message instanceof InfoMessage) {
             dispatchInfoMessage(((InfoMessage) message).getData());
         } else if (message instanceof ErrorMessage) {
             dispatchErrorMessage(((ErrorMessage) message).getData());
         } else {
-            unhandledInput(input);
+            unhandledInput(response);
         }
     }
 
@@ -121,8 +126,9 @@ public class GrpcWorker extends WorkerBolt {
     }
 
     @Override
-    public void onTimeout(String key, Tuple tuple) throws PipelineException {
-        // TODO
+    protected void onRequestTimeout(Tuple request) throws PipelineException {
+        GrpcWorkerCommand command = pullValue(request, BfdPortHandler.FIELD_ID_COMMAND, GrpcWorkerCommand.class);
+        command.timeout(this);
     }
 
     // -- commands processing --
@@ -165,15 +171,6 @@ public class GrpcWorker extends WorkerBolt {
 
     // -- private/service methods --
 
-    private void handleCommand(Tuple input, String field) throws Exception {
-        GrpcWorkerCommand command = pullValue(input, field, GrpcWorkerCommand.class);
-        try {
-            command.apply(this);
-        } catch (SwitchNotFoundException e) {
-            command.error(this, e);
-        }
-    }
-
     private String lookupSwitchAddress(SwitchId switchId) throws SwitchNotFoundException {
         Switch sw = switchRepository.findById(switchId)
                 .orElseThrow(() -> new SwitchNotFoundException(switchId));
@@ -184,7 +181,7 @@ public class GrpcWorker extends WorkerBolt {
         return new Values(key, payload, getCommandContext());
     }
 
-    private Values makeHubTuple(BfdPortCommand command) {
-        return new Values(pullKey())
+    private Values makeHubTuple(BfdPortCommand command) throws PipelineException {
+        return new Values(pullKey(), command, getCommandContext());
     }
 }

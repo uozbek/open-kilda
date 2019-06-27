@@ -31,5 +31,5 @@ public abstract class GrpcWorkerCommand implements ICommand<GrpcWorker> {
         this.switchId = switchId;
     }
 
-    public abstract void error(GrpcWorker carrier, Exception error);
+    public abstract void timeout(GrpcWorker carrier);
 }
