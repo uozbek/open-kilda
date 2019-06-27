@@ -275,8 +275,7 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
     private void outputGrpc(TopologyBuilder topology, int scaleFactor) {
         GrpcEncoder bolt = new GrpcEncoder();
         topology.setBolt(GrpcEncoder.BOLT_ID, bolt, scaleFactor)
-            // TODO: subscribe
-            ;
+                .shuffleGrouping(GrpcWorker.BOLT_ID);
 
         // TODO: ensure topic name
         KafkaBolt<String, Message> output = buildKafkaBolt(topologyConfig.getKafkaGrpcSpeakerTopic());

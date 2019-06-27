@@ -15,8 +15,17 @@
 
 package org.openkilda.wfm.topology.network.storm.bolt.grpc;
 
+import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
+import org.openkilda.messaging.command.grpc.CreateLogicalPortRequest;
 import org.openkilda.messaging.command.grpc.DumpLogicalPortsRequest;
+import org.openkilda.messaging.error.ErrorData;
+import org.openkilda.messaging.error.ErrorMessage;
+import org.openkilda.messaging.info.InfoData;
+import org.openkilda.messaging.info.InfoMessage;
+import org.openkilda.messaging.info.grpc.CreateLogicalPortResponse;
+import org.openkilda.messaging.info.grpc.DumpLogicalPortsResponse;
+import org.openkilda.messaging.model.grpc.LogicalPortType;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
 import org.openkilda.persistence.PersistenceManager;
@@ -24,15 +33,23 @@ import org.openkilda.persistence.repositories.SwitchRepository;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.error.SwitchNotFoundException;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
+import org.openkilda.wfm.topology.network.model.LogicalPortDescriptor;
 import org.openkilda.wfm.topology.network.storm.ComponentId;
 import org.openkilda.wfm.topology.network.storm.bolt.GrpcEncoder;
 import org.openkilda.wfm.topology.network.storm.bolt.bfdport.BfdPortHandler;
+import org.openkilda.wfm.topology.network.storm.bolt.bfdport.command.BfdPortCommand;
 import org.openkilda.wfm.topology.network.storm.bolt.grpc.command.GrpcWorkerCommand;
+import org.openkilda.wfm.topology.utils.MessageTranslator;
 
+import javassist.tools.Dump;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import scala.annotation.meta.field;
+
+import java.util.Collections;
+import java.util.List;
 
 public class GrpcWorker extends WorkerBolt {
     public static final String BOLT_ID = ComponentId.GRPC_WORKER.toString();
@@ -61,6 +78,45 @@ public class GrpcWorker extends WorkerBolt {
 
     @Override
     protected void onAsyncResponse(Tuple input) throws Exception {
+        Message message = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, Message.class);
+        if (message instanceof InfoMessage) {
+            dispatchInfoMessage(((InfoMessage) message).getData());
+        } else if (message instanceof ErrorMessage) {
+            dispatchErrorMessage(((ErrorMessage) message).getData());
+        } else {
+            unhandledInput(input);
+        }
+    }
+
+    private void dispatchInfoMessage(InfoData payload) {
+        if (payload instanceof DumpLogicalPortsResponse) {
+            handleResponse((DumpLogicalPortsResponse) payload);
+        } else if (payload instanceof CreateLogicalPortResponse) {
+            handleResponse((CreateLogicalPortResponse) payload);
+        } else if (payload instanceof RemoveLogicalPortResponse) {
+            handleResponse((RemoveLogicalPortResponse) payload);
+        } else {
+            unhandledInput(getCurrentTuple());
+        }
+    }
+
+    private void dispatchErrorMessage(ErrorData payload) {
+        handleResponse(payload);
+    }
+
+    private void handleResponse(DumpLogicalPortsResponse response) {
+        // TODO
+    }
+
+    private void handleResponse(CreateLogicalPortResponse response) {
+        // TODO
+    }
+
+    private void handleResponse(RemoveLogicalPortResponse response) {
+        // TODO
+    }
+
+    private void handleResponse(ErrorData response) {
         // TODO
     }
 
@@ -71,9 +127,21 @@ public class GrpcWorker extends WorkerBolt {
 
     // -- commands processing --
 
-    public void processBfdPortCreate() {}
+    public void processBfdPortCreate(String key, SwitchId switchId,
+                                     LogicalPortDescriptor portDescriptor) throws SwitchNotFoundException {
+        List<Integer> physicalPort = Collections.singletonList(portDescriptor.getPhysicalPortNumber());
+        CreateLogicalPortRequest request = new CreateLogicalPortRequest(
+                lookupSwitchAddress(switchId), physicalPort, portDescriptor.getLogicalPortNumber(),
+                LogicalPortType.BFD);
+        getOutput().emit(getCurrentTuple(), makeGrpcTuple(key, request));
+    }
 
-    public void processBfdPortRemove() {}
+    public void processBfdPortRemove(String key, SwitchId switchId,
+                                     LogicalPortDescriptor portDescriptor) throws SwitchNotFoundException {
+        RemoveLogicalPortRequest request = new RemoveLogicalPortRequest(
+                lookupSwitchAddress(switchId), portDescriptor.getLogicalPortNumber());
+        getOutput().emit(getCurrentTuple(), makeGrpcTuple(key, request));
+    }
 
     public void processLogicalPortList(String key, SwitchId switchId) throws SwitchNotFoundException {
         DumpLogicalPortsRequest request = new DumpLogicalPortsRequest(lookupSwitchAddress(switchId));
@@ -114,5 +182,9 @@ public class GrpcWorker extends WorkerBolt {
 
     private Values makeGrpcTuple(String key, CommandData payload) {
         return new Values(key, payload, getCommandContext());
+    }
+
+    private Values makeHubTuple(BfdPortCommand command) {
+        return new Values(pullKey())
     }
 }
