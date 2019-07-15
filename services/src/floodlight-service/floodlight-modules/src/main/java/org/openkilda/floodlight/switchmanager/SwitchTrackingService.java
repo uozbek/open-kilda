@@ -27,6 +27,7 @@ import org.openkilda.floodlight.service.kafka.KafkaUtilityService;
 import org.openkilda.floodlight.utils.CorrelationContext;
 import org.openkilda.floodlight.utils.FloodlightDashboardLogger;
 import org.openkilda.floodlight.utils.NewCorrelationContextRequired;
+import org.openkilda.floodlight.utils.SwitchPipelineAdapter;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.info.ChunkedInfoMessage;
 import org.openkilda.messaging.info.InfoData;
@@ -94,6 +95,14 @@ public class SwitchTrackingService implements IOFSwitchListener, IService {
             switchDiscoveryAction(dpId, SwitchChangeType.ACTIVATED);
         } finally {
             discoveryLock.readLock().unlock();
+        }
+
+        try {
+            IOFSwitch sw = switchManager.lookupSwitch(dpId);
+
+            new SwitchPipelineAdapter(sw).dumpPipeline();
+        } catch (SwitchNotFoundException e) {
+            logger.error("Lost connection with {} during activation phase", dpId);
         }
     }
 

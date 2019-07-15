@@ -59,5 +59,4 @@ public abstract class SpeakerFlowRequest extends AbstractMessage {
         this.flowId = flowId;
         this.switchId = switchId;
     }
-
 }
