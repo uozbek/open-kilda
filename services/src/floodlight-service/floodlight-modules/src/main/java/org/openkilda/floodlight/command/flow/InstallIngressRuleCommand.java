@@ -20,7 +20,7 @@ import static org.projectfloodlight.openflow.protocol.OFVersion.OF_15;
 
 import org.openkilda.floodlight.command.MessageWriter;
 import org.openkilda.floodlight.command.SessionProxy;
-import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.command.SpeakerCommandV1;
 import org.openkilda.floodlight.command.meter.InstallMeterCommand;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
@@ -177,15 +177,15 @@ public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
     private Optional<SessionProxy> getMeterCommand(IOFSwitch sw, FloodlightModuleContext moduleContext)
             throws SwitchOperationException {
         if (meterId == null) {
-            getLogger().debug("Skip meter installation. No meter required for flow {}", flowId);
+            log.debug("Skip meter installation. No meter required for flow {}", flowId);
             return Optional.empty();
         }
 
         try {
-            SpeakerCommand meterCommand = new InstallMeterCommand(messageContext, switchId, meterId, bandwidth);
+            SpeakerCommandV1 meterCommand = new InstallMeterCommand(messageContext, switchId, meterId, bandwidth);
             return meterCommand.getCommands(sw, moduleContext).stream().findFirst();
         } catch (UnsupportedSwitchOperationException e) {
-            getLogger().info("Skip meter {} installation for flow {} on switch {}: {}",
+            log.info("Skip meter {} installation for flow {} on switch {}: {}",
                     meterId, flowId, switchId.toString(), e.getMessage());
             return Optional.empty();
         }

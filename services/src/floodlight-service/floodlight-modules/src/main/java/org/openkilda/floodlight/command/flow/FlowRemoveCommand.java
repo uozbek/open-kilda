@@ -18,7 +18,7 @@ package org.openkilda.floodlight.command.flow;
 import org.openkilda.floodlight.FloodlightResponse;
 import org.openkilda.floodlight.command.MessageWriter;
 import org.openkilda.floodlight.command.SessionProxy;
-import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.command.SpeakerCommandV1;
 import org.openkilda.floodlight.command.meter.RemoveMeterCommand;
 import org.openkilda.floodlight.error.OfDeleteException;
 import org.openkilda.floodlight.error.SwitchOperationException;
@@ -112,7 +112,7 @@ public class FlowRemoveCommand extends FlowCommand {
 
     List<OFFlowDelete> getDeleteCommands(IOFSwitch sw, DeleteRulesCriteria... criterias) {
         return Stream.of(criterias)
-                .peek(criteria -> getLogger().info("Rules by criteria {} are to be removed from switch {}.",
+                .peek(criteria -> log.info("Rules by criteria {} are to be removed from switch {}.",
                         criteria, sw.getId()))
                 .map(criteria -> buildFlowDeleteByCriteria(sw.getOFFactory(), criteria))
                 .collect(Collectors.toList());
@@ -163,11 +163,10 @@ public class FlowRemoveCommand extends FlowCommand {
         }
 
         try {
-            SpeakerCommand meterCommand = new RemoveMeterCommand(messageContext, switchId, meterId);
+            SpeakerCommandV1 meterCommand = new RemoveMeterCommand(messageContext, switchId, meterId);
             return meterCommand.getCommands(sw, moduleContext).stream().findFirst();
         } catch (UnsupportedSwitchOperationException e) {
-            getLogger().debug("Skip meter {} deletion for flow {} on switch {}: {}",
-                    meterId, flowId, switchId.toString(), e.getMessage());
+            log.debug("Skip meter {} deletion for flow {} on switch {}: {}", meterId, flowId, switchId, e.getMessage());
             return Optional.empty();
         }
     }
@@ -187,7 +186,7 @@ public class FlowRemoveCommand extends FlowCommand {
                 .map(entry -> entry.getCookie().getValue())
                 .filter(cookieBefore -> entriesAfter.stream()
                         .noneMatch(after -> after.getCookie().getValue() == cookieBefore))
-                .forEach(deleted -> getLogger().info("Rule with cookie {} has been removed from switch {}.",
+                .forEach(deleted -> log.info("Rule with cookie {} has been removed from switch {}.",
                         deleted, switchId));
 
         return Optional.empty();

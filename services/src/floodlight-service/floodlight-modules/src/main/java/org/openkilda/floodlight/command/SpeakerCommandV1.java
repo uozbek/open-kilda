@@ -16,8 +16,10 @@
 package org.openkilda.floodlight.command;
 
 import org.openkilda.floodlight.FloodlightResponse;
+import org.openkilda.floodlight.KafkaChannel;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.SwitchWriteException;
+import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.floodlight.service.session.SessionService;
 import org.openkilda.floodlight.switchmanager.ISwitchManager;
 import org.openkilda.messaging.MessageContext;
@@ -33,8 +35,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-public abstract class SpeakerV1Command extends SpeakerCommand {
-    public SpeakerV1Command(SwitchId switchId, MessageContext messageContext) {
+public abstract class SpeakerCommandV1 extends SpeakerCommand {
+    public SpeakerCommandV1(SwitchId switchId, MessageContext messageContext) {
         super(switchId, messageContext);
     }
 
@@ -43,14 +45,18 @@ public abstract class SpeakerV1Command extends SpeakerCommand {
      * @param moduleContext floodlight context.
      * @return response wrapped into completable future.
      */
-    public CompletableFuture<FloodlightResponse> execute(FloodlightModuleContext moduleContext) {
+    @Override
+    public CompletableFuture<SpeakerCommandReport> execute(FloodlightModuleContext moduleContext,
+                                                           SpeakerCommandReport report) {
         ISwitchManager switchManager = moduleContext.getServiceImpl(ISwitchManager.class);
         IOFSwitch sw;
+
+        CompletableFuture<SpeakerCommandReport> future = new CompletableFuture<>();
         try {
             DatapathId dpid = DatapathId.of(switchId.toLong());
             sw = switchManager.lookupSwitch(dpid);
 
-            return writeCommands(sw, moduleContext)
+            CompletableFuture<FloodlightResponse> execStream = writeCommands(sw, moduleContext)
                     .handle((result, error) -> {
                         if (error != null) {
                             log.error("Error occurred while processing OF command", error);
@@ -59,11 +65,30 @@ public abstract class SpeakerV1Command extends SpeakerCommand {
                             return result.isPresent() ? buildResponse(result.get()) : buildResponse();
                         }
                     });
+            execStream.whenComplete((result, error) -> {
+                if (error == null) {
+                    future.complete(report);
+                } else {
+                    future.completeExceptionally(error);
+                }
+            });
         } catch (Exception e) {
-            log.error("Failed to execute OF command", e);
-            return CompletableFuture.completedFuture(buildError(e));
+            future.completeExceptionally(e);
+        }
+
+        return future;
+    }
+
+    @Override
+    public void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService,
+                                          String requestKey, SpeakerCommandReport report, Throwable error) {
+        if (error != null) {
+            log.error("Error occurred while trying to execute OF command", unwrapError(error));
+        } else {
+            kafkaProducerService.sendMessageAndTrack(getResponseTopic(kafkaChannel), requestKey, buildResponse());
         }
     }
+
 
     /**
      * Writes command to a switch.
@@ -82,6 +107,11 @@ public abstract class SpeakerV1Command extends SpeakerCommand {
             });
         }
         return chain;
+    }
+
+    protected String getResponseTopic(KafkaChannel kafkaChannel) {
+        throw new IllegalStateException(String.format(
+                "Class %s must override method `.getResponseTopic(...)`", getClass().getName()));
     }
 
     protected abstract FloodlightResponse buildError(Throwable error);

@@ -45,6 +45,7 @@ import org.openkilda.floodlight.kafka.dispatcher.SetupBfdSessionDispatcher;
 import org.openkilda.floodlight.kafka.dispatcher.StatsRequestDispatcher;
 import org.openkilda.floodlight.service.CommandProcessorService;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
+import org.openkilda.floodlight.service.kafka.KafkaUtilityService;
 import org.openkilda.floodlight.switchmanager.ISwitchManager;
 import org.openkilda.floodlight.switchmanager.SwitchTrackingService;
 import org.openkilda.floodlight.utils.CorrelationContext;
@@ -1182,17 +1183,10 @@ class RecordHandler implements Runnable {
 
             try (CorrelationContextClosable closable =
                          CorrelationContext.create(speakerCommand.getMessageContext().getCorrelationId())) {
-                KafkaTopicFactory kafkaTopicFactory = new KafkaTopicFactory(context);
-
+                KafkaUtilityService kafkaUtil = context.getModuleContext().getServiceImpl(KafkaUtilityService.class);
                 speakerCommand.execute(context.getModuleContext())
-                        .whenComplete((response, error) -> {
-                            if (error != null) {
-                                logger.error("Error occurred while trying to execute OF command", error.getCause());
-                            } else {
-                                getKafkaProducer().sendMessageAndTrack(kafkaTopicFactory.getTopic(response),
-                                        record.key(), response);
-                            }
-                        });
+                        .whenComplete((response, error) -> speakerCommand.handleResult(
+                                kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key(), response, error));
             }
         } catch (JsonMappingException e) {
             logger.trace("Received deprecated command message");

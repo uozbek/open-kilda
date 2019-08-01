@@ -15,9 +15,12 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.floodlight.command.SpeakerV1Command;
+import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.command.SpeakerCommandReport;
+import org.openkilda.floodlight.command.SpeakerCommandV1;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
+import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.MeterId;
@@ -35,13 +38,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-abstract class MeterCommand extends SpeakerV1Command {
+abstract class MeterCommand extends SpeakerCommandV1 {
 
     MeterId meterId;
 
     MeterCommand(SwitchId switchId, MessageContext messageContext, MeterId meterId) {
         super(switchId, messageContext);
         this.meterId = meterId;
+    }
+
+    public void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService,
+                             String requestKey, SpeakerCommandReport report, Throwable error) {
+        log.debug("Complete command {} for meter {} (do not produce response)", getClass().getCanonicalName(), meterId);
     }
 
     void checkSwitchSupportCommand(IOFSwitch sw, FeatureDetectorService featureDetectorService)

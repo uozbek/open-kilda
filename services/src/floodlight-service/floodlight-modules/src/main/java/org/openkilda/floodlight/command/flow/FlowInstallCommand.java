@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.FloodlightResponse;
+import org.openkilda.floodlight.KafkaChannel;
 import org.openkilda.floodlight.flow.response.FlowResponse;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -39,6 +40,10 @@ public abstract class FlowInstallCommand extends FlowCommand {
         super(commandId, flowId, messageContext, cookie, switchId);
         this.inputPort = inputPort;
         this.outputPort = outputPort;
+    }
+
+    protected String getResponseTopic(KafkaChannel kafkaChannel) {
+        return kafkaChannel.getSpeakerFlowHsTopic();
     }
 
     @Override
