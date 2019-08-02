@@ -16,8 +16,8 @@
 package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.KafkaChannel;
-import org.openkilda.floodlight.command.SpeakerCommandReport;
-import org.openkilda.floodlight.command.SpeakerCommandV1;
+import org.openkilda.floodlight.command.SpeakerCommandV2;
+import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
@@ -27,7 +27,7 @@ import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import lombok.AllArgsConstructor;
-import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsReply;
 import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.OFVersion;
@@ -38,7 +38,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-abstract class MeterCommand extends SpeakerCommandV1 {
+abstract class MeterCommand extends SpeakerCommandV2 {
+    private FeatureDetectorService featureDetectorService;
 
     MeterId meterId;
 
@@ -47,16 +48,21 @@ abstract class MeterCommand extends SpeakerCommandV1 {
         this.meterId = meterId;
     }
 
-    public void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService,
-                             String requestKey, SpeakerCommandReport report, Throwable error) {
+    @Override
+    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
+        super.setup(moduleContext);
+        featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
+    }
+
+    public void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService, String requestKey,
+                             Throwable error) {
         log.debug("Complete command {} for meter {} (do not produce response)", getClass().getCanonicalName(), meterId);
     }
 
-    void checkSwitchSupportCommand(IOFSwitch sw, FeatureDetectorService featureDetectorService)
-            throws UnsupportedSwitchOperationException {
-        Set<Feature> supportedFeatures = featureDetectorService.detectSwitch(sw);
+    void checkSwitchSupportCommand() throws UnsupportedSwitchOperationException {
+        Set<Feature> supportedFeatures = featureDetectorService.detectSwitch(getSw());
         if (!supportedFeatures.contains(Feature.METERS)) {
-            throw new UnsupportedSwitchOperationException(sw.getId(), "Switch doesn't support meters");
+            throw new UnsupportedSwitchOperationException(getSw().getId(), "Switch doesn't support meters");
         }
     }
 

@@ -15,5 +15,12 @@
 
 package org.openkilda.floodlight.command;
 
-public class SpeakerCommandReport {
+import org.projectfloodlight.openflow.protocol.OFErrorMsg;
+import org.projectfloodlight.openflow.protocol.OFMessage;
+
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
+public interface IOfErrorResponseHandler {
+    CompletableFuture<Optional<OFMessage>> handleOfError(OFErrorMsg response);
 }

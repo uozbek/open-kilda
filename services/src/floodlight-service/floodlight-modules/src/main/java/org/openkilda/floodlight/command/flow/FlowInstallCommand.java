@@ -42,6 +42,7 @@ public abstract class FlowInstallCommand extends FlowCommand {
         this.outputPort = outputPort;
     }
 
+    @Override
     protected String getResponseTopic(KafkaChannel kafkaChannel) {
         return kafkaChannel.getSpeakerFlowHsTopic();
     }

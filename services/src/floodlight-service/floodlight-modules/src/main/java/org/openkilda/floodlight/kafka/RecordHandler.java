@@ -1186,7 +1186,7 @@ class RecordHandler implements Runnable {
                 KafkaUtilityService kafkaUtil = context.getModuleContext().getServiceImpl(KafkaUtilityService.class);
                 speakerCommand.execute(context.getModuleContext())
                         .whenComplete((response, error) -> speakerCommand.handleResult(
-                                kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key(), response, error));
+                                kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key(), error));
             }
         } catch (JsonMappingException e) {
             logger.trace("Received deprecated command message");

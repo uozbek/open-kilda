@@ -65,15 +65,10 @@ public abstract class SpeakerCommand {
         this.messageContext = messageContext;
     }
 
-    public CompletableFuture<SpeakerCommandReport> execute(FloodlightModuleContext moduleContext) {
-        return execute(moduleContext, new SpeakerCommandReport());
-    }
-
-    public abstract CompletableFuture<SpeakerCommandReport> execute(
-            FloodlightModuleContext moduleContext, SpeakerCommandReport report);
+    public abstract CompletableFuture<Void> execute(FloodlightModuleContext moduleContext);
 
     public abstract void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService,
-                                      String requestKey, SpeakerCommandReport report, Throwable error);
+                                      String requestKey, Throwable error);
 
     protected Throwable unwrapError(Throwable error) {
         if (error == null) {

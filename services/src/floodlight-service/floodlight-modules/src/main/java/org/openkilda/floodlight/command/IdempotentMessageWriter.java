@@ -52,9 +52,9 @@ public class IdempotentMessageWriter<T extends OFStatsReply> extends MessageWrit
     public IdempotentMessageWriter(
             @NonNull MessageContext context,
             @NonNull OFMessage message,
-                                   @NonNull OFRequest<T> readRequest,
-                                   @NonNull Function<T, Boolean> ofEntryChecker,
-                                   @NonNull ErrorTypeHelper errorTypeHelper) {
+            @NonNull OFRequest<T> readRequest,
+            @NonNull Function<T, Boolean> ofEntryChecker,
+            @NonNull ErrorTypeHelper errorTypeHelper) {
         super(message);
         this.context = context;
         this.readRequest = readRequest;

@@ -46,12 +46,11 @@ public abstract class SpeakerCommandV1 extends SpeakerCommand {
      * @return response wrapped into completable future.
      */
     @Override
-    public CompletableFuture<SpeakerCommandReport> execute(FloodlightModuleContext moduleContext,
-                                                           SpeakerCommandReport report) {
+    public CompletableFuture<Void> execute(FloodlightModuleContext moduleContext) {
         ISwitchManager switchManager = moduleContext.getServiceImpl(ISwitchManager.class);
         IOFSwitch sw;
 
-        CompletableFuture<SpeakerCommandReport> future = new CompletableFuture<>();
+        CompletableFuture<Void> future = new CompletableFuture<>();
         try {
             DatapathId dpid = DatapathId.of(switchId.toLong());
             sw = switchManager.lookupSwitch(dpid);
@@ -67,7 +66,7 @@ public abstract class SpeakerCommandV1 extends SpeakerCommand {
                     });
             execStream.whenComplete((result, error) -> {
                 if (error == null) {
-                    future.complete(report);
+                    future.complete(null);
                 } else {
                     future.completeExceptionally(error);
                 }
@@ -81,7 +80,7 @@ public abstract class SpeakerCommandV1 extends SpeakerCommand {
 
     @Override
     public void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService,
-                                          String requestKey, SpeakerCommandReport report, Throwable error) {
+                             String requestKey, Throwable error) {
         if (error != null) {
             log.error("Error occurred while trying to execute OF command", unwrapError(error));
         } else {
