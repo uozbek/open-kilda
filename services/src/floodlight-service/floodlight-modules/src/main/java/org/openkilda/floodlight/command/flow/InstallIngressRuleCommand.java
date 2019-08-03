@@ -182,8 +182,12 @@ public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
         }
 
         try {
+            // FIXME
+            throw new UnsupportedSwitchOperationException(sw.getId(), "dummy");
+/*
             SpeakerCommandV1 meterCommand = new InstallMeterCommand(messageContext, switchId, meterId, bandwidth);
             return meterCommand.getCommands(sw, moduleContext).stream().findFirst();
+*/
         } catch (UnsupportedSwitchOperationException e) {
             log.info("Skip meter {} installation for flow {} on switch {}: {}",
                     meterId, flowId, switchId.toString(), e.getMessage());

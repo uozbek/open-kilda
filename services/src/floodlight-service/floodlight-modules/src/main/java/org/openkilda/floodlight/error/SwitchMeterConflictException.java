@@ -15,14 +15,23 @@
 
 package org.openkilda.floodlight.error;
 
-import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.openkilda.model.MeterId;
+
 import org.projectfloodlight.openflow.types.DatapathId;
 
-// Must be removed together with {@link org.openkilda.floodlight.command.IdempotentMessageWriter}
-@Deprecated
-public class OfConflictException extends OfInstallException {
+public class SwitchMeterConflictException extends SwitchOperationException {
+    private final MeterId meterId;
 
-    public OfConflictException(DatapathId dpId, OFMessage ofMessage) {
-        super(dpId, ofMessage);
+    public SwitchMeterConflictException(DatapathId dpId, MeterId meterId) {
+        this(dpId, meterId, "meter with same id already exists");
+    }
+
+    public SwitchMeterConflictException(DatapathId dpId, MeterId meterId, String details) {
+        super(dpId, String.format("Unable to install meter %s on switch %s - %s", meterId, dpId, details));
+        this.meterId = meterId;
+    }
+
+    public MeterId getMeterId() {
+        return meterId;
     }
 }

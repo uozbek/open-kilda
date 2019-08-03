@@ -30,6 +30,9 @@ import org.projectfloodlight.openflow.types.DatapathId;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 public abstract class SpeakerCommandV2 extends SpeakerCommand {
     private SessionService sessionService;
@@ -103,12 +106,12 @@ public abstract class SpeakerCommandV2 extends SpeakerCommand {
         });
     }
 
-    private <T> void propagateFutureResponse(CompletableFuture<T> branch, CompletableFuture<T> future) {
-        future.whenComplete((result, error) -> {
+    protected <T> void propagateFutureResponse(CompletableFuture<T> outerStream, CompletableFuture<T> nested) {
+        nested.whenComplete((result, error) -> {
             if (error == null) {
-                branch.complete(result);
+                outerStream.complete(result);
             } else {
-                branch.completeExceptionally(error);
+                outerStream.completeExceptionally(error);
             }
         });
     }

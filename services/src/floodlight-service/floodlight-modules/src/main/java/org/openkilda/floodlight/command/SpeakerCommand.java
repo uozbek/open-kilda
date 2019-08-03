@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 @JsonTypeInfo(use = Id.NAME, property = "clazz")
@@ -75,9 +76,13 @@ public abstract class SpeakerCommand {
             return null;
         }
 
-        if (error instanceof ExecutionException) {
+        if (error instanceof CompletionException) {
             return error.getCause();
         }
         return error;
+    }
+
+    protected RuntimeException maskCallbackException(Exception e) {
+        return new CompletionException(e);
     }
 }
