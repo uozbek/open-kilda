@@ -53,7 +53,9 @@ import org.projectfloodlight.openflow.types.U64;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class SessionServiceTest extends EasyMockSupport {
     private final SessionService subject = new SessionService();
@@ -183,26 +185,24 @@ public class SessionServiceTest extends EasyMockSupport {
     }
 
     @Test
-    public void switchWriteError() throws Exception {
+    public void switchWriteError() throws Throwable {
         IOFSwitch sw = createMock(IOFSwitch.class);
         setupSwitchMock(sw, dpId);
         swWriteSecondFail(sw);
         doneWithSetUp(sw);
 
         OFFactory ofFactory = sw.getOFFactory();
-        CompletableFuture<Optional<OFMessage>> futureAlpha = null;
-        CompletableFuture<Optional<OFMessage>> futureBeta = null;
-        try {
-            try (Session session = subject.open(sw, context)) {
-                futureAlpha = session.write(makePacketOut(ofFactory, 1));
-                futureBeta = session.write(makePacketOut(ofFactory, 2));
-            }
+        CompletableFuture<Optional<OFMessage>> future = null;
+        try (Session session = subject.open(sw, context)) {
+            session.write(makePacketOut(ofFactory, 1));
+            future = session.write(makePacketOut(ofFactory, 2));
+        }
 
-            throw new AssertionError("Expect exception to be thrown");
-        } catch (SwitchWriteException e) {
-            Assert.assertNotNull(futureAlpha);
-            expectExceptionResponse(futureAlpha, SessionRevertException.class);
-            Assert.assertNull(futureBeta);
+        try {
+            future.get(4, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            Assert.assertNotNull(e.getCause());
+            Assert.assertTrue(e.getCause() instanceof SwitchWriteException);
         }
     }
 
@@ -214,14 +214,15 @@ public class SessionServiceTest extends EasyMockSupport {
         doneWithSetUp(sw);
 
         CompletableFuture<Optional<OFMessage>> future = null;
+        try (Session session = subject.open(sw, context)) {
+            future = session.write(makePacketOut(sw.getOFFactory(), 1));
+        }
+
         try {
-            try (Session session = subject.open(sw, context)) {
-                future = session.write(makePacketOut(sw.getOFFactory(), 1));
-            }
-            throw new AssertionError("Expect exception to be thrown");
-        } catch (SwitchWriteException e) {
-            Assert.assertNotNull(future);
-            expectExceptionResponse(future, SessionCloseException.class);
+            future.get(4, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            Assert.assertNotNull(e.getCause());
+            Assert.assertTrue(e.getCause() instanceof SessionCloseException);
         }
     }
 

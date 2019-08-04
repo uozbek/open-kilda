@@ -163,8 +163,12 @@ public class FlowRemoveCommand extends FlowCommand {
         }
 
         try {
+            // FIXME
+            throw new UnsupportedSwitchOperationException(sw.getId(), "dummy");
+/*
             SpeakerCommandV1 meterCommand = new RemoveMeterCommand(messageContext, switchId, meterId);
             return meterCommand.getCommands(sw, moduleContext).stream().findFirst();
+*/
         } catch (UnsupportedSwitchOperationException e) {
             log.debug("Skip meter {} deletion for flow {} on switch {}: {}", meterId, flowId, switchId, e.getMessage());
             return Optional.empty();

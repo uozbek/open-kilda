@@ -15,23 +15,13 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.floodlight.FloodlightResponse;
-import org.openkilda.floodlight.command.MessageWriter;
-import org.openkilda.floodlight.command.SessionProxy;
-import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
-import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.module.FloodlightModuleContext;
-import org.projectfloodlight.openflow.protocol.OFMeterMod;
-import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class RemoveMeterCommand extends MeterCommand {
 
@@ -41,6 +31,11 @@ public class RemoveMeterCommand extends MeterCommand {
         super(switchId, messageContext, meterId);
     }
 
+    @Override
+    protected void makeExecutePlan(CompletableFuture<Void> resultAdapter) throws Exception {
+        // FIXME
+    }
+/*
     @Override
     protected FloodlightResponse buildError(Throwable error) {
         throw new UnsupportedOperationException("Meter's deletion is not supported");
@@ -55,7 +50,7 @@ public class RemoveMeterCommand extends MeterCommand {
     public List<SessionProxy> getCommands(IOFSwitch sw, FloodlightModuleContext moduleContext)
             throws UnsupportedSwitchOperationException {
         FeatureDetectorService featureDetector = moduleContext.getServiceImpl(FeatureDetectorService.class);
-        checkSwitchSupportCommand(sw, featureDetector);
+        ensureSwitchSupportMeters(sw, featureDetector);
 
         OFMeterMod meterDelete = sw.getOFFactory().buildMeterMod()
                 .setMeterId(meterId.getValue())
@@ -64,4 +59,5 @@ public class RemoveMeterCommand extends MeterCommand {
 
         return Collections.singletonList(new MessageWriter(meterDelete));
     }
+*/
 }

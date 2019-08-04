@@ -59,47 +59,10 @@ abstract class MeterCommand extends SpeakerCommandV2 {
         log.debug("Complete command {} for meter {} (do not produce response)", getClass().getCanonicalName(), meterId);
     }
 
-    void checkSwitchSupportCommand() throws UnsupportedSwitchOperationException {
+    void ensureSwitchSupportMeters() throws UnsupportedSwitchOperationException {
         Set<Feature> supportedFeatures = featureDetectorService.detectSwitch(getSw());
         if (!supportedFeatures.contains(Feature.METERS)) {
             throw new UnsupportedSwitchOperationException(getSw().getId(), "Switch doesn't support meters");
-        }
-    }
-
-    @AllArgsConstructor
-    final class MeterChecker implements Function<OFMeterConfigStatsReply, Boolean> {
-        private final OFMeterMod expectedMeterConfig;
-
-        @Override
-        public Boolean apply(OFMeterConfigStatsReply meterConfig) {
-            return meterConfig.getEntries()
-                    .stream()
-                    .filter(entry -> entry.getMeterId() == meterId.getValue())
-                    .allMatch(entry -> entry.getFlags().containsAll(expectedMeterConfig.getFlags())
-                            && meterBandsEqual(entry.getEntries()));
-        }
-
-        private boolean meterBandsEqual(List<OFMeterBand> actual) {
-            OFMeterBandDrop expectedDrop = getMeterBands()
-                    .stream()
-                    .filter(OFMeterBandDrop.class::isInstance)
-                    .map(OFMeterBandDrop.class::cast)
-                    .findFirst()
-                    .orElse(null);
-
-            OFMeterBandDrop actualDrop = actual
-                    .stream()
-                    .filter(OFMeterBandDrop.class::isInstance)
-                    .map(OFMeterBandDrop.class::cast)
-                    .findFirst()
-                    .orElse(null);
-
-            return expectedDrop != null && actualDrop != null && expectedDrop.getRate() == actualDrop.getRate();
-        }
-
-        private List<OFMeterBand> getMeterBands() {
-            return expectedMeterConfig.getVersion() == OFVersion.OF_13
-                    ? expectedMeterConfig.getMeters() : expectedMeterConfig.getBands();
         }
     }
 }

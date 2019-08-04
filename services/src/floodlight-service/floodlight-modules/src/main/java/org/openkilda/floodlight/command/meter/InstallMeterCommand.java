@@ -34,6 +34,7 @@ import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
@@ -108,7 +109,7 @@ public class InstallMeterCommand extends MeterCommand implements IOfErrorRespons
     }
 
     private OFMeterMod makeMeterCreateCommand() throws UnsupportedSwitchOperationException, InvalidMeterIdException {
-        checkSwitchSupportCommand();
+        ensureSwitchSupportMeters();
         ensureMeterIdIsValid();
 
         final OFFactory ofFactory = getSw().getOFFactory();
@@ -206,7 +207,7 @@ public class InstallMeterCommand extends MeterCommand implements IOfErrorRespons
                         .build();
             }
 
-            mismatch = expect.equals(actual);
+            mismatch = !expect.equals(actual);
             if (mismatch) {
                 break;
             }
