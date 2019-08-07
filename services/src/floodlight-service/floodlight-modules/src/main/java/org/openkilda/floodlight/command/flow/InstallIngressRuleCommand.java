@@ -20,8 +20,6 @@ import static org.projectfloodlight.openflow.protocol.OFVersion.OF_15;
 
 import org.openkilda.floodlight.command.MessageWriter;
 import org.openkilda.floodlight.command.SessionProxy;
-import org.openkilda.floodlight.command.SpeakerCommandV1;
-import org.openkilda.floodlight.command.meter.InstallMeterCommand;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
@@ -58,6 +56,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Getter
 public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
@@ -88,6 +87,11 @@ public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
         this.inputVlanId = inputVlanId;
         this.outputVlanType = outputVlanType;
         this.meterId = meterId;
+    }
+
+    @Override
+    protected void makeExecutePlan(CompletableFuture<Void> resultAdapter) throws Exception {
+
     }
 
     @Override

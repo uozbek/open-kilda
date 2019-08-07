@@ -26,17 +26,9 @@ import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
-import lombok.AllArgsConstructor;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
-import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsReply;
-import org.projectfloodlight.openflow.protocol.OFMeterMod;
-import org.projectfloodlight.openflow.protocol.OFVersion;
-import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
-import org.projectfloodlight.openflow.protocol.meterband.OFMeterBandDrop;
 
-import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 abstract class MeterCommand extends SpeakerCommandV2 {
     private FeatureDetectorService featureDetectorService;

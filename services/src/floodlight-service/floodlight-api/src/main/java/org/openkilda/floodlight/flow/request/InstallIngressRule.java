@@ -31,7 +31,7 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class InstallIngressRule extends InstallMeteredRule {
+public class InstallIngressRule extends InstallFlowRule {
 
     /**
      * Input vlan id value.
@@ -45,10 +45,11 @@ public class InstallIngressRule extends InstallMeteredRule {
     @JsonProperty("output_vlan_type")
     private final OutputVlanType outputVlanType;
 
+    // FIXME
     public InstallIngressRule(MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
                               SwitchId switchId, Integer inputPort, Integer outputPort, MeterId meterId, Long bandwidth,
                               OutputVlanType outputVlanType, Integer inputVlanId) {
-        super(messageContext, commandId, flowId, cookie, switchId, inputPort, outputPort, meterId, bandwidth);
+        super(messageContext, commandId, flowId, cookie, switchId, inputPort, outputPort);
 
         this.inputVlanId = inputVlanId;
         this.outputVlanType = outputVlanType;

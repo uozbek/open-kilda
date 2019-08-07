@@ -15,11 +15,12 @@
 
 package org.openkilda.floodlight.flow.request;
 
+import org.openkilda.floodlight.flow.MeterConfig;
+import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -30,25 +31,31 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-class InstallMeteredRule extends InstallFlowRule {
+class InstallMeteredRule extends AbstractMessage {
+    /**
+     * Unique identifier for the command.
+     */
+    @JsonProperty("command_id")
+    private final UUID commandId;
 
     /**
-     * Allocated meter id.
+     * The switch id to manage flow on. It is a mandatory parameter.
      */
-    @JsonProperty("meter_id")
-    private final MeterId meterId;
+    @JsonProperty("switch_id")
+    final SwitchId switchId;
 
-    /**
-     * Flow bandwidth value.
-     */
-    @JsonProperty("bandwidth")
-    private final Long bandwidth;
+    @JsonProperty("config")
+    private final MeterConfig config;
 
-    public InstallMeteredRule(MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
-                              SwitchId switchId, Integer inputPort, Integer outputPort, MeterId meterId,
-                              Long bandwidth) {
-        super(messageContext, commandId, flowId, cookie, switchId, inputPort, outputPort);
-        this.meterId = meterId;
-        this.bandwidth = bandwidth;
+    @JsonCreator
+    public InstallMeteredRule(
+            @JsonProperty("message_context") MessageContext messageContext,
+            @JsonProperty("command_id") UUID commandId,
+            @JsonProperty("switch_id") SwitchId switchId,
+            @JsonProperty("config") MeterConfig config) {
+        super(messageContext);
+        this.commandId = commandId;
+        this.switchId = switchId;
+        this.config = config;
     }
 }

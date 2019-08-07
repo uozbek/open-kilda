@@ -18,18 +18,21 @@ package org.openkilda.floodlight.command.flow;
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
 
 import org.openkilda.floodlight.FloodlightResponse;
-import org.openkilda.floodlight.command.SpeakerCommandV1;
+import org.openkilda.floodlight.command.SpeakerCommandV2;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
+import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import lombok.Getter;
 import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFErrorMsg;
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -45,17 +48,20 @@ import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.U64;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Getter
-public abstract class FlowCommand extends SpeakerCommandV1 {
+public abstract class FlowCommand extends SpeakerCommandV2 {
     // This is invalid VID mask - it cut of highest bit that indicate presence of VLAN tag on package. But valid mask
     // 0x1FFF lead to rule reject during install attempt on accton based switches.
     private static short OF10_VLAN_MASK = 0x0FFF;
     protected static final long FLOW_COOKIE_MASK = 0x7FFFFFFFFFFFFFFFL;
     protected static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
+
+    private Set<SpeakerSwitchView.Feature> switchFeatures;
 
     final UUID commandId;
     final String flowId;
@@ -69,6 +75,14 @@ public abstract class FlowCommand extends SpeakerCommandV1 {
     }
 
     @Override
+    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
+        super.setup(moduleContext);
+
+        FeatureDetectorService featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
+        switchFeatures = featureDetectorService.detectSwitch(getSw());
+    }
+
+    // FIXME
     protected FloodlightResponse buildError(Throwable error) {
         ErrorCode code;
         if (error instanceof SwitchNotFoundException) {
@@ -139,5 +153,9 @@ public abstract class FlowCommand extends SpeakerCommandV1 {
             default:
                 return ErrorCode.UNKNOWN;
         }
+    }
+
+    protected Set<SpeakerSwitchView.Feature> getSwitchFeatures() {
+        return switchFeatures;
     }
 }
