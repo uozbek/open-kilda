@@ -24,9 +24,11 @@ import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchMeterConflictException;
+import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.messaging.info.meter.SwitchMeterUnsupported;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
@@ -110,11 +112,11 @@ public class InstallMeterCommandTest extends AbstractSpeakerCommandTest {
     }
 
     @Test
-    public void happyPath() throws Exception {
+    public void happyPath() throws Throwable {
         switchFeaturesSetup(true);
         replayAll();
 
-        CompletableFuture<Void> result = command.execute(moduleContext);
+        CompletableFuture<MeterReport> result = command.execute(moduleContext);
 
         SessionWriteRecord write0 = getWriteRecord(0);
         Assert.assertTrue(write0.getRequest() instanceof OFMeterMod);
@@ -123,15 +125,24 @@ public class InstallMeterCommandTest extends AbstractSpeakerCommandTest {
 
         write0.getFuture().complete(Optional.empty());
 
-        result.get(4, TimeUnit.SECONDS);
+        result.get(4, TimeUnit.SECONDS).raiseError();
     }
 
     @Test
-    public void notConflictError() throws Exception {
+    public void switchDoNotSupportMeters() throws Throwable {
+        switchFeaturesSetup(false);
+        replayAll();
+
+        CompletableFuture<MeterReport> result = command.execute(moduleContext);
+        verifyErrorCompletion(result, UnsupportedSwitchOperationException.class);
+    }
+
+    @Test
+    public void notConflictError() throws Throwable {
         switchFeaturesSetup(true);
         replayAll();
 
-        CompletableFuture<Void> result = command.execute(moduleContext);
+        CompletableFuture<MeterReport> result = command.execute(moduleContext);
 
         SessionWriteRecord write0 = getWriteRecord(0);
         OFErrorMsg error = sw.getOFFactory().errorMsgs().buildBadRequestErrorMsg()
@@ -142,12 +153,12 @@ public class InstallMeterCommandTest extends AbstractSpeakerCommandTest {
     }
 
     @Test
-    public void conflictError() throws Exception {
+    public void conflictError() throws Throwable {
         switchFeaturesSetup(true);
         SettableFuture<List<OFMeterConfigStatsReply>> metersConfigReplyFuture = setupMeterConfigStatsReply();
         replayAll();
 
-        CompletableFuture<Void> result = processConflictError();
+        CompletableFuture<MeterReport> result = processConflictError();
 
         SessionWriteRecord write0 = getWriteRecord(0);
         OFMeterMod requestRaw = (OFMeterMod) write0.getRequest();
@@ -162,37 +173,37 @@ public class InstallMeterCommandTest extends AbstractSpeakerCommandTest {
 
         metersConfigReplyFuture.set(ImmutableList.of(statsReplyEntry));
 
-        result.get(4, TimeUnit.SECONDS);
+        result.get(4, TimeUnit.SECONDS).raiseError();
     }
 
     @Test
-    public void missingConflictError() throws Exception {
+    public void missingConflictError() throws Throwable {
         switchFeaturesSetup(true);
         SettableFuture<List<OFMeterConfigStatsReply>> metersConfigReplyFuture = setupMeterConfigStatsReply();
         replayAll();
 
-        CompletableFuture<Void> result = processConflictError();
+        CompletableFuture<MeterReport> result = processConflictError();
 
         metersConfigReplyFuture.set(Collections.emptyList());
         verifyErrorCompletion(result, SwitchMeterConflictException.class);
     }
 
     @Test
-    public void conflictAndDisconnectError() throws Exception {
+    public void conflictAndDisconnectError() throws Throwable {
         switchFeaturesSetup(true);
         SettableFuture<List<OFMeterConfigStatsReply>> metersConfigReplyFuture = setupMeterConfigStatsReply();
         replayAll();
 
-        CompletableFuture<Void> result = processConflictError();
+        CompletableFuture<MeterReport> result = processConflictError();
 
         metersConfigReplyFuture.setException(new SwitchDisconnectedException(dpId));
         verifyErrorCompletion(result, SwitchDisconnectedException.class);
     }
 
-    private void verifyErrorCompletion(CompletableFuture<Void> result, Class<? extends Throwable> errorType)
-            throws Exception {
+    private void verifyErrorCompletion(CompletableFuture<MeterReport> result, Class<? extends Throwable> errorType)
+            throws Throwable {
         try {
-            result.get();
+            result.get().raiseError();
             Assert.fail("must never reach this line");
         } catch (ExecutionException e) {
             Assert.assertNotNull(e.getCause());
@@ -200,8 +211,8 @@ public class InstallMeterCommandTest extends AbstractSpeakerCommandTest {
         }
     }
 
-    private CompletableFuture<Void> processConflictError() throws Exception {
-        CompletableFuture<Void> result = command.execute(moduleContext);
+    private CompletableFuture<MeterReport> processConflictError() throws Exception {
+        CompletableFuture<MeterReport> result = command.execute(moduleContext);
 
         SessionWriteRecord write0 = getWriteRecord(0);
         OFErrorMsg error = sw.getOFFactory().errorMsgs().buildMeterModFailedErrorMsg()

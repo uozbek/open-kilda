@@ -55,7 +55,7 @@ import java.util.concurrent.ExecutionException;
                 name = "org.openkilda.floodlight.flow.request.GetInstalledRule")
 })
 @Getter
-public abstract class SpeakerCommand {
+public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
     protected final SwitchId switchId;
     protected final MessageContext messageContext;
 
@@ -66,10 +66,7 @@ public abstract class SpeakerCommand {
         this.messageContext = messageContext;
     }
 
-    public abstract CompletableFuture<Void> execute(FloodlightModuleContext moduleContext);
-
-    public abstract void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService,
-                                      String requestKey, Throwable error);
+    public abstract CompletableFuture<T> execute(FloodlightModuleContext moduleContext);
 
     protected Throwable unwrapError(Throwable error) {
         if (error == null) {

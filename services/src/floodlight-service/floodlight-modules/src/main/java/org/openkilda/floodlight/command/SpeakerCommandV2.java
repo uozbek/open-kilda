@@ -34,7 +34,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
-public abstract class SpeakerCommandV2 extends SpeakerCommand {
+public abstract class SpeakerCommandV2<T extends SpeakerCommandReport> extends SpeakerCommand<T> {
     private SessionService sessionService;
     private IOFSwitch sw;
 
@@ -43,18 +43,27 @@ public abstract class SpeakerCommandV2 extends SpeakerCommand {
     }
 
     @Override
-    public CompletableFuture<Void> execute(FloodlightModuleContext moduleContext) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+    public CompletableFuture<T> execute(FloodlightModuleContext moduleContext) {
+        CompletableFuture<T> future = new CompletableFuture<>();
         try {
             setup(moduleContext);
-            makeExecutePlan(future);
+            makeExecutePlan()
+                    .whenComplete((result, error) -> {
+                        if (error == null) {
+                            future.complete(result);
+                        } else {
+                            future.complete(makeReport(error));
+                        }
+                    });
         } catch (Exception e) {
-            future.completeExceptionally(e);
+            future.complete(makeReport(e));
         }
         return future;
     }
 
-    protected abstract void makeExecutePlan(CompletableFuture<Void> resultAdapter) throws Exception;
+    protected abstract CompletableFuture<T> makeExecutePlan() throws Exception;
+
+    protected abstract T makeReport(Throwable error);
 
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         OFSwitchManager ofSwitchManager = moduleContext.getServiceImpl(OFSwitchManager.class);
@@ -95,18 +104,7 @@ public abstract class SpeakerCommandV2 extends SpeakerCommand {
         return sessionService;
     }
 
-    protected void setupExecPlanResultExtractor(CompletableFuture<Void> branch,
-                                                CompletableFuture<Optional<OFMessage>> future) {
-        future.whenComplete((result, error) -> {
-            if (error == null) {
-                branch.complete(null);
-            } else {
-                branch.completeExceptionally(error);
-            }
-        });
-    }
-
-    protected <T> void propagateFutureResponse(CompletableFuture<T> outerStream, CompletableFuture<T> nested) {
+    protected <K> void propagateFutureResponse(CompletableFuture<K> outerStream, CompletableFuture<K> nested) {
         nested.whenComplete((result, error) -> {
             if (error == null) {
                 outerStream.complete(result);

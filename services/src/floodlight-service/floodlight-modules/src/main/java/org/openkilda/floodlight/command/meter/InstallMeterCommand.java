@@ -70,14 +70,18 @@ public class InstallMeterCommand extends MeterCommand implements IOfErrorRespons
     }
 
     @Override
-    protected void makeExecutePlan(CompletableFuture<Void> resultAdapter)
+    protected CompletableFuture<MeterReport> makeExecutePlan()
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         final OFMeterMod meterAddCommand = makeMeterCreateCommand();
         try (Session session = getSessionService().open(getSw(), getMessageContext())) {
-            CompletableFuture<Optional<OFMessage>> future = session.write(meterAddCommand);
-            future = setupErrorHandler(future, this);
-            setupExecPlanResultExtractor(resultAdapter, future);
+            return setupErrorHandler(session.write(meterAddCommand), this)
+                    .thenApply(result -> new MeterReport(meterId));
         }
+    }
+
+    @Override
+    protected MeterReport makeReport(Throwable error) {
+        return new MeterReport(error);
     }
 
     @Override

@@ -30,6 +30,7 @@ import static org.openkilda.model.Cookie.VERIFICATION_UNICAST_VXLAN_RULE_COOKIE;
 import org.openkilda.floodlight.command.Command;
 import org.openkilda.floodlight.command.CommandContext;
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.converter.OfFlowStatsMapper;
 import org.openkilda.floodlight.converter.OfMeterConverter;
 import org.openkilda.floodlight.converter.OfPortDescConverter;
@@ -113,6 +114,7 @@ import org.openkilda.model.OutputVlanType;
 import org.openkilda.model.PortStatus;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.ImmutableList;
 import net.floodlightcontroller.core.IOFSwitch;
@@ -1178,15 +1180,16 @@ class RecordHandler implements Runnable {
 
     private boolean handleSpeakerCommand() {
         try {
-            logger.info("command: {}", record.value());
-            SpeakerCommand speakerCommand = MAPPER.readValue(record.value(), SpeakerCommand.class);
+            TypeReference<SpeakerCommandReport> commandType = new TypeReference<SpeakerCommandReport>() {};
+            SpeakerCommand<SpeakerCommandReport> speakerCommand = MAPPER.readValue(
+                    record.value(), commandType);
 
             try (CorrelationContextClosable closable =
                          CorrelationContext.create(speakerCommand.getMessageContext().getCorrelationId())) {
                 KafkaUtilityService kafkaUtil = context.getModuleContext().getServiceImpl(KafkaUtilityService.class);
                 speakerCommand.execute(context.getModuleContext())
-                        .whenComplete((response, error) -> speakerCommand.handleResult(
-                                kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key(), error));
+                        .whenComplete((response, error) -> response.reply(
+                                kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key()));
             }
         } catch (JsonMappingException e) {
             logger.trace("Received deprecated command message");
