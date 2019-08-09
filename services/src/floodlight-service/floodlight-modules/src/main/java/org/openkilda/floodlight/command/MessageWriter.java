@@ -46,7 +46,7 @@ public class MessageWriter implements SessionProxy {
     public CompletableFuture<Optional<OFMessage>> writeTo(
             IOFSwitch sw, SessionService sessionService, MessageContext context)
             throws SwitchWriteException {
-        try (Session session = sessionService.open(sw, context)) {
+        try (Session session = sessionService.open(context, sw)) {
             return session.write(ofMessage)
                     .whenComplete((result, error) -> {
                         if (error == null) {

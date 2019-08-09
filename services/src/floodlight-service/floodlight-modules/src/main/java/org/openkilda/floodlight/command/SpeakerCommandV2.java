@@ -30,9 +30,6 @@ import org.projectfloodlight.openflow.types.DatapathId;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 
 public abstract class SpeakerCommandV2<T extends SpeakerCommandReport> extends SpeakerCommand<T> {
     private SessionService sessionService;
@@ -52,7 +49,7 @@ public abstract class SpeakerCommandV2<T extends SpeakerCommandReport> extends S
                         if (error == null) {
                             future.complete(result);
                         } else {
-                            future.complete(makeReport(error));
+                            handleError(future, error);
                         }
                     });
         } catch (Exception e) {
@@ -63,7 +60,7 @@ public abstract class SpeakerCommandV2<T extends SpeakerCommandReport> extends S
 
     protected abstract CompletableFuture<T> makeExecutePlan() throws Exception;
 
-    protected abstract T makeReport(Throwable error);
+    protected abstract T makeReport(Exception error);
 
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         OFSwitchManager ofSwitchManager = moduleContext.getServiceImpl(OFSwitchManager.class);
@@ -112,5 +109,13 @@ public abstract class SpeakerCommandV2<T extends SpeakerCommandReport> extends S
                 outerStream.completeExceptionally(error);
             }
         });
+    }
+
+    private void handleError(CompletableFuture<T> future, Throwable error) {
+        if (error instanceof Exception) {
+            future.complete(makeReport((Exception) error));
+        } else {
+            future.completeExceptionally(error);
+        }
     }
 }

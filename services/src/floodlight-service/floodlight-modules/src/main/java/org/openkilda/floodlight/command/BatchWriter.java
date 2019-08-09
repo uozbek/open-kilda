@@ -46,7 +46,7 @@ public class BatchWriter implements SessionProxy {
             IOFSwitch sw, SessionService sessionService, MessageContext context)
             throws SwitchWriteException {
         List<CompletableFuture<Optional<OFMessage>>> requests = new ArrayList<>(batch.size());
-        try (Session session = sessionService.open(sw, context)) {
+        try (Session session = sessionService.open(context, sw)) {
             for (OFMessage payload : batch) {
                 requests.add(session.write(payload));
             }

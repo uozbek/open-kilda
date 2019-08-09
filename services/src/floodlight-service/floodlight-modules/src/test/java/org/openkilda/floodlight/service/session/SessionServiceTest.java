@@ -21,7 +21,6 @@ import static org.easymock.EasyMock.expect;
 
 import org.openkilda.floodlight.error.SessionCloseException;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
-import org.openkilda.floodlight.error.SessionRevertException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.SwitchWriteException;
 import org.openkilda.floodlight.service.of.InputService;
@@ -53,7 +52,6 @@ import org.projectfloodlight.openflow.types.U64;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -102,7 +100,7 @@ public class SessionServiceTest extends EasyMockSupport {
         CompletableFuture<Optional<OFMessage>> future;
         OFPacketOut pktOut = makePacketOut(sw.getOFFactory(), 1);
 
-        try (Session session = subject.open(sw, context)) {
+        try (Session session = subject.open(context, sw)) {
             future = session.write(pktOut);
         }
         Assert.assertFalse(future.isDone());
@@ -132,7 +130,7 @@ public class SessionServiceTest extends EasyMockSupport {
 
         CompletableFuture<Optional<OFMessage>> pktOutFuture;
         CompletableFuture<Optional<OFMessage>> barrierFuture;
-        try (Session session = subject.open(sw, context)) {
+        try (Session session = subject.open(context, sw)) {
             pktOutFuture = session.write(pktOut);
             barrierFuture = session.write(barrier);
         }
@@ -166,7 +164,7 @@ public class SessionServiceTest extends EasyMockSupport {
         OFFactory ofFactory = sw.getOFFactory();
         OFPacketOut pktOut = makePacketOut(ofFactory, 1);
         CompletableFuture<Optional<OFMessage>> future;
-        try (Session session = subject.open(sw, context)) {
+        try (Session session = subject.open(context, sw)) {
             future = session.write(pktOut);
         }
 
@@ -193,7 +191,7 @@ public class SessionServiceTest extends EasyMockSupport {
 
         OFFactory ofFactory = sw.getOFFactory();
         CompletableFuture<Optional<OFMessage>> future = null;
-        try (Session session = subject.open(sw, context)) {
+        try (Session session = subject.open(context, sw)) {
             session.write(makePacketOut(ofFactory, 1));
             future = session.write(makePacketOut(ofFactory, 2));
         }
@@ -214,7 +212,7 @@ public class SessionServiceTest extends EasyMockSupport {
         doneWithSetUp(sw);
 
         CompletableFuture<Optional<OFMessage>> future = null;
-        try (Session session = subject.open(sw, context)) {
+        try (Session session = subject.open(context, sw)) {
             future = session.write(makePacketOut(sw.getOFFactory(), 1));
         }
 

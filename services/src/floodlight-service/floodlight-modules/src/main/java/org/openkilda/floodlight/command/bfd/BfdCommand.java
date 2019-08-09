@@ -70,7 +70,7 @@ abstract class BfdCommand extends Command {
             IOFSwitch sw = switchManager.lookupSwitch(target);
 
             validate(sw);
-            try (Session session = sessionService.open(sw, new MessageContext(getContext().getCorrelationId()))) {
+            try (Session session = sessionService.open(new MessageContext(getContext().getCorrelationId()), sw)) {
                 handle(session);
             }
         } catch (SwitchOperationException e) {

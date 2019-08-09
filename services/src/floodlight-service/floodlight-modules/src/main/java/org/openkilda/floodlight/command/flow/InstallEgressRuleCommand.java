@@ -75,7 +75,7 @@ public class InstallEgressRuleCommand extends InstallTransitRuleCommand {
         OFInstructionApplyActions actions = applyActions(ofFactory, actionList);
 
         // build FLOW_MOD command, no meter
-        OFFlowMod flowMod = prepareFlowModBuilder(ofFactory)
+        OFFlowMod flowMod = makeFlowAddMessageBuilder(ofFactory)
                 .setMatch(matchFlow(inputPort, transitEncapsulationId, ofFactory))
                 .setInstructions(ImmutableList.of(actions))
                 .build();
@@ -89,7 +89,7 @@ public class InstallEgressRuleCommand extends InstallTransitRuleCommand {
         switch (outputVlanType) {
             case PUSH:
             case REPLACE:
-                action = actionReplaceVlan(ofFactory, outputVlanId);
+                action = makeSetVlanIdAction(ofFactory, outputVlanId);
                 break;
             case POP:
             case NONE:

@@ -62,7 +62,7 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
     }
 
     @Override
-    List<OFAction> getOutputAction(OFFactory ofFactory) {
+    List<OFAction> makePacketTransformActions(OFFactory ofFactory) {
         return pushSchemeOutputVlanTypeToOfActionList(ofFactory);
     }
 
@@ -72,10 +72,10 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
         switch (getOutputVlanType()) {
             case PUSH:      // No VLAN on packet so push a new one
                 actionList.add(actionPushVlan(ofFactory, ETH_TYPE));
-                actionList.add(actionReplaceVlan(ofFactory, outputVlanId));
+                actionList.add(makeSetVlanIdAction(ofFactory, outputVlanId));
                 break;
             case REPLACE:   // VLAN on packet but needs to be replaced
-                actionList.add(actionReplaceVlan(ofFactory, outputVlanId));
+                actionList.add(makeSetVlanIdAction(ofFactory, outputVlanId));
                 break;
             case POP:       // VLAN on packet, so remove it
                 actionList.add(ofFactory.actions().popVlan());

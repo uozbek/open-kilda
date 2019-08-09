@@ -15,22 +15,17 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.floodlight.FloodlightResponse;
-import org.openkilda.floodlight.KafkaChannel;
-import org.openkilda.floodlight.flow.response.FlowResponse;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
-import org.projectfloodlight.openflow.types.OFBufferId;
 import org.projectfloodlight.openflow.types.U64;
 
 import java.util.UUID;
 
-public abstract class FlowInstallCommand extends FlowCommand {
+public abstract class FlowInstallCommand extends FlowCommand<FlowInstallReport> {
 
     final Integer inputPort;
     final Integer outputPort;
@@ -42,27 +37,16 @@ public abstract class FlowInstallCommand extends FlowCommand {
         this.outputPort = outputPort;
     }
 
-    @Override
-    protected String getResponseTopic(KafkaChannel kafkaChannel) {
-        return kafkaChannel.getSpeakerFlowHsTopic();
+    protected FlowInstallReport makeReport(Exception error) {
+        return new FlowInstallReport(this, error);
     }
 
-    @Override
-    protected FloodlightResponse buildResponse() {
-        return FlowResponse.builder()
-                .commandId(commandId)
-                .flowId(flowId)
-                .messageContext(messageContext)
-                .success(true)
-                .switchId(switchId)
-                .build();
+    protected FlowInstallReport makeSuccessReport() {
+        return new FlowInstallReport(this);
     }
 
-    final OFFlowAdd.Builder prepareFlowModBuilder(OFFactory ofFactory) {
+    final OFFlowAdd.Builder makeFlowAddMessageBuilder(OFFactory ofFactory) {
         return ofFactory.buildFlowAdd()
-                .setIdleTimeout(FlowModUtils.INFINITE_TIMEOUT)
-                .setHardTimeout(FlowModUtils.INFINITE_TIMEOUT)
-                .setBufferId(OFBufferId.NO_BUFFER)
                 .setCookie(U64.of(cookie.getValue()))
                 .setPriority(FLOW_PRIORITY);
     }

@@ -71,7 +71,7 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
         expect(sw.getOFFactory()).andReturn(of).anyTimes();
 
         expect(ofSwitchManager.getActiveSwitch(dpId)).andReturn(sw).anyTimes();
-        expect(sessionService.open(anyObject(IOFSwitch.class), anyObject(MessageContext.class)))
+        expect(sessionService.open(anyObject(MessageContext.class), anyObject(IOFSwitch.class)))
                 .andAnswer(new IAnswer<Session>() {
                     @Override
                     public Session answer() throws Throwable {

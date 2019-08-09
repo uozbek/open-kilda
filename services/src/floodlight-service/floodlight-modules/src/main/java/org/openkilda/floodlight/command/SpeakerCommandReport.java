@@ -19,17 +19,17 @@ import org.openkilda.floodlight.KafkaChannel;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 
 public abstract class SpeakerCommandReport {
-    private final Throwable error;
+    private final Exception error;
 
     public SpeakerCommandReport() {
         this(null);
     }
 
-    public SpeakerCommandReport(Throwable error) {
+    public SpeakerCommandReport(Exception error) {
         this.error = error;
     }
 
-    public void raiseError() throws Throwable {
+    public void raiseError() throws Exception {
         if (error != null) {
             throw error;
         }

@@ -18,6 +18,7 @@ package org.openkilda.floodlight.command.flow;
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
 
 import org.openkilda.floodlight.FloodlightResponse;
+import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.command.SpeakerCommandV2;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
@@ -54,7 +55,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Getter
-public abstract class FlowCommand extends SpeakerCommandV2 {
+public abstract class FlowCommand<T extends SpeakerCommandReport> extends SpeakerCommandV2<T> {
     // This is invalid VID mask - it cut of highest bit that indicate presence of VLAN tag on package. But valid mask
     // 0x1FFF lead to rule reject during install attempt on accton based switches.
     private static short OF10_VLAN_MASK = 0x0FFF;

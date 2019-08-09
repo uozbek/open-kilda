@@ -74,7 +74,7 @@ public class InstallTransitRuleCommand extends FlowInstallCommand {
         Match match = matchFlow(inputPort, transitEncapsulationId, factory);
         actionList.add(setOutputPort(factory, OFPort.of(outputPort)));
 
-        OFFlowMod flowMod = prepareFlowModBuilder(factory)
+        OFFlowMod flowMod = makeFlowAddMessageBuilder(factory)
                 .setInstructions(ImmutableList.of(applyActions(factory, actionList)))
                 .setMatch(match)
                 .build();
@@ -93,11 +93,7 @@ public class InstallTransitRuleCommand extends FlowInstallCommand {
                 .build();
     }
 
-    final OFInstructionApplyActions applyActions(OFFactory ofFactory, List<OFAction> actionList) {
-        return ofFactory.instructions().applyActions(actionList).createBuilder().build();
-    }
-
-    final OFAction actionReplaceVlan(final OFFactory factory, final int newVlan) {
+    final OFAction makeSetVlanIdAction(final OFFactory factory, final int newVlan) {
         OFOxms oxms = factory.oxms();
         OFActions actions = factory.actions();
         OFVlanVidMatch vlanMatch = factory.getVersion() == OF_12
@@ -107,5 +103,4 @@ public class InstallTransitRuleCommand extends FlowInstallCommand {
                 .setValue(vlanMatch)
                 .build()).build();
     }
-
 }

@@ -41,10 +41,14 @@ public class SessionService implements IService, IInputTranslator {
 
     private final Map<DatapathId, SwitchSessions> sessionsByDatapath = new ConcurrentHashMap<>();
 
+    public Session open(IOFSwitch sw) {
+        return open(new MessageContext(), sw);
+    }
+
     /**
      * Create new OF communication session and register it in service.
      */
-    public Session open(IOFSwitch sw, MessageContext context) {
+    public Session open(MessageContext context, IOFSwitch sw) {
         SwitchSessions group = sessionsByDatapath.get(sw.getId());
         if (group == null) {
             throw new IllegalStateException(String.format(

@@ -15,14 +15,13 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import static org.openkilda.messaging.Utils.ETH_TYPE;
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_15;
 
-import org.openkilda.floodlight.command.MessageWriter;
-import org.openkilda.floodlight.command.SessionProxy;
-import org.openkilda.floodlight.error.SwitchOperationException;
+import org.openkilda.floodlight.command.meter.InstallMeterCommand;
+import org.openkilda.floodlight.command.meter.MeterReport;
+import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
-import org.openkilda.floodlight.service.FeatureDetectorService;
+import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.switchmanager.SwitchManager;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
@@ -34,32 +33,26 @@ import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import lombok.Getter;
-import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.OFFlowModFlags;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
-import org.projectfloodlight.openflow.protocol.action.OFActions;
-import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyActions;
-import org.projectfloodlight.openflow.protocol.instruction.OFInstructionMeter;
-import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
 public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
+    private FloodlightModuleContext moduleContext;
 
     private final Long bandwidth;
     private final Integer inputVlanId;
@@ -90,112 +83,99 @@ public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
     }
 
     @Override
-    protected void makeExecutePlan(CompletableFuture<Void> resultAdapter) throws Exception {
+    protected CompletableFuture<FlowInstallReport> makeExecutePlan() {
+        CompletableFuture<FlowInstallReport> future;
+        if (meterId != null) {
+            future = planMeterInstall()
+                .thenCompose(this::planToUseMeter);
+        } else {
+            future = planForwardRuleInstall(null);
+        }
+        return future;
+    }
 
+    private CompletableFuture<MeterReport> planMeterInstall() {
+        InstallMeterCommand meterCommand = new InstallMeterCommand(messageContext, switchId, meterId, bandwidth);
+        return meterCommand.execute(moduleContext);
+    }
+
+    private CompletableFuture<FlowInstallReport> planToUseMeter(MeterReport report) {
+        MeterId effectiveMeterId;
+        try {
+            report.raiseError();
+            effectiveMeterId = report.getMeterId();
+        } catch (UnsupportedSwitchOperationException e) {
+            // switch do not support meters, setup rules without meter
+            effectiveMeterId = null;
+        } catch (Exception e) {
+            throw maskCallbackException(e);
+        }
+
+        return planForwardRuleInstall(effectiveMeterId);
+    }
+
+    private CompletableFuture<FlowInstallReport> planForwardRuleInstall(MeterId effectiveMeterId) {
+        try (Session session = getSessionService().open(messageContext, getSw())) {
+            return session.write(makeForwardRuleAddMessage(effectiveMeterId))
+                    .thenApply(response -> makeSuccessReport());
+        }
     }
 
     @Override
-    public List<SessionProxy> getCommands(IOFSwitch sw, FloodlightModuleContext moduleContext)
-            throws SwitchOperationException {
-        List<SessionProxy> commands = new ArrayList<>(2);
-        FeatureDetectorService featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
-
-        getMeterCommand(sw, moduleContext)
-                .ifPresent(commands::add);
-        OFFlowMod ruleCommand = getInstallRuleCommand(sw, featureDetectorService);
-        commands.add(new MessageWriter(ruleCommand));
-        return commands;
+    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
+        super.setup(moduleContext);
+        this.moduleContext = moduleContext;
     }
 
-    List<OFAction> getOutputAction(OFFactory ofFactory) {
-        return inputVlanTypeToOfActionList(ofFactory);
-    }
+    private OFFlowMod makeForwardRuleAddMessage(MeterId effectiveMeterId) {
+        final OFFactory of = getSw().getOFFactory();
 
-    OFPort getOutputPort() {
-        return OFPort.of(outputPort);
-    }
+        List<OFAction> applyActions = new ArrayList<>();
+        List<OFInstruction> instructions = new ArrayList<>();
 
-    final OFFlowMod getInstallRuleCommand(IOFSwitch sw, FeatureDetectorService featureDetectorService) {
-        List<OFAction> actionList = new ArrayList<>();
-        OFFactory ofFactory = sw.getOFFactory();
-        Set<Feature> supportedFeatures = featureDetectorService.detectSwitch(sw);
+        if (effectiveMeterId != null) {
+            makeMeterApplyCall(of, effectiveMeterId, applyActions, instructions);
+        }
+        applyActions.addAll(makePacketTransformActions(of));
+        applyActions.add(of.actions().buildOutput()
+                        .setPort(OFPort.of(outputPort))
+                        .build());
 
-        // build meter instruction
-        OFInstructionMeter meter = getMeterInstructions(supportedFeatures, ofFactory, actionList);
-
-        // output action based on encap scheme
-        actionList.addAll(getOutputAction(ofFactory));
-
-        // transmit packet from outgoing port
-        actionList.add(setOutputPort(ofFactory));
-
-        // build instruction with action list
-        OFInstructionApplyActions actions = applyActions(ofFactory, actionList);
-
-        // build match by input port and input vlan id
-        Match match = matchFlow(inputPort, inputVlanId, ofFactory);
+        instructions.add(of.instructions().applyActions(applyActions));
 
         // build FLOW_MOD command with meter
-        OFFlowAdd.Builder builder = prepareFlowModBuilder(ofFactory)
-                .setInstructions(meter != null ? ImmutableList.of(meter, actions) : ImmutableList.of(actions))
-                .setMatch(match)
+        OFFlowAdd.Builder builder = makeFlowAddMessageBuilder(of)
+                .setMatch(matchFlow(inputPort, inputVlanId, of))
+                .setInstructions(instructions)
                 .setPriority(inputVlanId == 0 ? SwitchManager.DEFAULT_FLOW_PRIORITY : FLOW_PRIORITY);
-
-        if (supportedFeatures.contains(Feature.RESET_COUNTS_FLAG)) {
+        if (getSwitchFeatures().contains(Feature.RESET_COUNTS_FLAG)) {
             builder.setFlags(ImmutableSet.of(OFFlowModFlags.RESET_COUNTS));
         }
 
         return builder.build();
     }
 
-    private List<OFAction> inputVlanTypeToOfActionList(OFFactory ofFactory) {
+    List<OFAction> makePacketTransformActions(OFFactory ofFactory) {
+        return inputVlanTypeToOfActionList(ofFactory);
+    }
+
+    private List<OFAction> inputVlanTypeToOfActionList(OFFactory of) {
         List<OFAction> actionList = new ArrayList<>(3);
         if (outputVlanType == OutputVlanType.PUSH || outputVlanType == OutputVlanType.NONE) {
-            actionList.add(actionPushVlan(ofFactory, ETH_TYPE));
+            of.actions().pushVlan(EthType.VLAN_FRAME);
         }
-        actionList.add(actionReplaceVlan(ofFactory, transitEncapsulationId));
+        actionList.add(makeSetVlanIdAction(of, transitEncapsulationId));
         return actionList;
     }
 
-    final OFAction actionPushVlan(OFFactory ofFactory, int etherType) {
-        OFActions actions = ofFactory.actions();
-        return actions.buildPushVlan().setEthertype(EthType.of(etherType)).build();
-    }
-
-    OFInstructionMeter getMeterInstructions(Set<Feature> supportedFeatures, OFFactory ofFactory,
-                                            List<OFAction> actionList) {
-        OFInstructionMeter meterInstruction = null;
-        if (meterId != null && supportedFeatures.contains(Feature.METERS)) {
-            if (ofFactory.getVersion().compareTo(OF_15) == 0) {
-                actionList.add(ofFactory.actions().buildMeter().setMeterId(meterId.getValue()).build());
-            } else /* OF_13, OF_14 */ {
-                meterInstruction = ofFactory.instructions().buildMeter()
-                        .setMeterId(meterId.getValue())
-                        .build();
-            }
-        }
-
-        return meterInstruction;
-    }
-
-    private Optional<SessionProxy> getMeterCommand(IOFSwitch sw, FloodlightModuleContext moduleContext)
-            throws SwitchOperationException {
-        if (meterId == null) {
-            log.debug("Skip meter installation. No meter required for flow {}", flowId);
-            return Optional.empty();
-        }
-
-        try {
-            // FIXME
-            throw new UnsupportedSwitchOperationException(sw.getId(), "dummy");
-/*
-            SpeakerCommandV1 meterCommand = new InstallMeterCommand(messageContext, switchId, meterId, bandwidth);
-            return meterCommand.getCommands(sw, moduleContext).stream().findFirst();
-*/
-        } catch (UnsupportedSwitchOperationException e) {
-            log.info("Skip meter {} installation for flow {} on switch {}: {}",
-                    meterId, flowId, switchId.toString(), e.getMessage());
-            return Optional.empty();
+    private static void makeMeterApplyCall(OFFactory of, MeterId effectiveMeterId,
+                                           List<OFAction> actionList, List<OFInstruction> instructions) {
+        if (of.getVersion().compareTo(OF_15) == 0) {
+            actionList.add(of.actions().buildMeter().setMeterId(effectiveMeterId.getValue()).build());
+        } else /* OF_13, OF_14 */ {
+            instructions.add(of.instructions().buildMeter()
+                    .setMeterId(effectiveMeterId.getValue())
+                    .build());
         }
     }
 }

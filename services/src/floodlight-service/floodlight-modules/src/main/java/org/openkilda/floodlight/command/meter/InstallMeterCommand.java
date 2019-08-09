@@ -72,15 +72,15 @@ public class InstallMeterCommand extends MeterCommand implements IOfErrorRespons
     @Override
     protected CompletableFuture<MeterReport> makeExecutePlan()
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
-        final OFMeterMod meterAddCommand = makeMeterCreateCommand();
-        try (Session session = getSessionService().open(getSw(), getMessageContext())) {
-            return setupErrorHandler(session.write(meterAddCommand), this)
+        final OFMeterMod meterAddMessage = makeMeterAddMessage();
+        try (Session session = getSessionService().open(getMessageContext(), getSw())) {
+            return setupErrorHandler(session.write(meterAddMessage), this)
                     .thenApply(result -> new MeterReport(meterId));
         }
     }
 
     @Override
-    protected MeterReport makeReport(Throwable error) {
+    protected MeterReport makeReport(Exception error) {
         return new MeterReport(error);
     }
 
@@ -111,7 +111,7 @@ public class InstallMeterCommand extends MeterCommand implements IOfErrorRespons
         switchManagerConfig = provider.getConfiguration(SwitchManagerConfig.class);
     }
 
-    private OFMeterMod makeMeterCreateCommand() throws UnsupportedSwitchOperationException, InvalidMeterIdException {
+    private OFMeterMod makeMeterAddMessage() throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         ensureSwitchSupportMeters();
         ensureMeterIdIsValid();
 

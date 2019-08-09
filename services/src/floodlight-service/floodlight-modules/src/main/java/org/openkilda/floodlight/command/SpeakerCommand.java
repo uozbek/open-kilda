@@ -79,7 +79,10 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
         return error;
     }
 
-    protected RuntimeException maskCallbackException(Exception e) {
+    protected RuntimeException maskCallbackException(Throwable e) {
+        if (e instanceof CompletionException) {
+            return (CompletionException) e;
+        }
         return new CompletionException(e);
     }
 }
