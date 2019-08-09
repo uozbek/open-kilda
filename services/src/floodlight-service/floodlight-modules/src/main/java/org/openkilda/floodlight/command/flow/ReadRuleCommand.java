@@ -74,7 +74,7 @@ public class ReadRuleCommand extends FlowCommand<ReadRuleReport> {
 
     @Override
     protected ReadRuleReport makeReport(Exception error) {
-        return new ReadRuleReport(error);
+        return new ReadRuleReport(this, error);
     }
 
     private ReadRuleReport handleStatsResponse(List<OFFlowStatsReply> statsReplies) {
@@ -114,72 +114,5 @@ public class ReadRuleCommand extends FlowCommand<ReadRuleReport> {
                 .setCookieMask(U64.NO_MASK)
                 .setOutGroup(OFGroup.ANY)
                 .build();
-    }
-
-    private FloodlightResponse toFlowRuleResponse(OFMessage message) {
-        Map<OFInstructionType, OFInstruction> instructionMap = entry.getInstructions()
-                .stream()
-                .collect(Collectors.toMap(OFInstruction::getType, instruction -> instruction));
-        OFInstructionApplyActions applyActions =
-                (OFInstructionApplyActions) instructionMap.get(OFInstructionType.APPLY_ACTIONS);
-
-        return FlowRuleResponse.flowRuleResponseBuilder()
-                .commandId(commandId)
-                .messageContext(messageContext)
-                .switchId(switchId)
-                .cookie(new Cookie(entry.getCookie().getValue()))
-                .meterId(getMeter(instructionMap))
-                .inPort(getInputPort(entry.getMatch()))
-                .outPort(getOutputPort(applyActions))
-                .inVlan(getInVlan(entry.getMatch()))
-                .outVlan(getOutVlan(applyActions))
-                .ofVersion(message.getVersion().toString())
-                .flowId(flowId)
-                .build();
-    }
-
-    private Integer getInputPort(Match match) {
-        return Optional.ofNullable(match.get(MatchField.IN_PORT))
-                .map(OFPort::getPortNumber)
-                .orElse(null);
-    }
-
-    private int getInVlan(Match match) {
-        return Optional.ofNullable(match.get(MatchField.VLAN_VID))
-                .map(OFVlanVidMatch::getVlan)
-                .map(Integer::valueOf)
-                .orElse(0);
-    }
-
-    private MeterId getMeter(Map<OFInstructionType, OFInstruction> instructionMap) {
-        return Optional.ofNullable(instructionMap.get(OFInstructionType.METER))
-                .map(OFInstructionMeter.class::cast)
-                .map(OFInstructionMeter::getMeterId)
-                .map(MeterId::new)
-                .orElse(null);
-    }
-
-    private Integer getOutputPort(OFInstructionApplyActions applyActions) {
-        return applyActions.getActions().stream()
-                .filter(OFActionOutput.class::isInstance)
-                .map(OFActionOutput.class::cast)
-                .map(OFActionOutput::getPort)
-                .map(OFPort::getPortNumber)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private int getOutVlan(OFInstructionApplyActions applyActions) {
-        return applyActions.getActions().stream()
-                .filter(OFActionSetField.class::isInstance)
-                .map(OFActionSetField.class::cast)
-                .map(OFActionSetField::getField)
-                .filter(OFOxmVlanVid.class::isInstance)
-                .map(OFOxmVlanVid.class::cast)
-                .map(OFOxmVlanVid::getValue)
-                .map(OFVlanVidMatch::getVlan)
-                .map(Integer::valueOf)
-                .findAny()
-                .orElse(0);
     }
 }

@@ -15,7 +15,123 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.floodlight.command.SpeakerCommandReport;
+import org.openkilda.floodlight.flow.response.FlowRuleResponse;
+import org.openkilda.messaging.AbstractMessage;
+import org.openkilda.model.Cookie;
+import org.openkilda.model.MeterId;
 
-public class ReadRuleReport extends SpeakerCommandReport {
+import lombok.Value;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
+import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.action.OFActionMeter;
+import org.projectfloodlight.openflow.protocol.action.OFActionOutput;
+import org.projectfloodlight.openflow.protocol.action.OFActionSetField;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyActions;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstructionMeter;
+import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.protocol.oxm.OFOxm;
+import org.projectfloodlight.openflow.protocol.oxm.OFOxmVlanVid;
+import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.OFVlanVidMatch;
+
+import java.util.List;
+
+@Value
+public class ReadRuleReport extends FlowReport {
+    private final OFFlowStatsEntry rule;
+
+    public ReadRuleReport(ReadRuleCommand command, Exception error) {
+        this(command, null, error);
+    }
+
+    public ReadRuleReport(ReadRuleCommand command, OFFlowStatsEntry rule) {
+        this(command, rule, null);
+    }
+
+    private ReadRuleReport(ReadRuleCommand command, OFFlowStatsEntry rule, Exception error) {
+        super(command, error);
+        this.rule = rule;
+    }
+
+    @Override
+    protected AbstractMessage assembleSuccessResponse() {
+        FlowCommand<?> command = getCommand();
+        FlowRuleResponse.FlowRuleResponseBuilder builder = FlowRuleResponse.flowRuleResponseBuilder()
+                .commandId(command.getCommandId())
+                .messageContext(command.getMessageContext())
+                .switchId(command.getSwitchId())
+                .flowId(command.getFlowId())
+                .cookie(new Cookie(rule.getCookie().getValue()))
+                .ofVersion(rule.getVersion().toString());
+
+        decodeMatch(builder, rule.getMatch());
+        decodeInstructions(builder, rule.getInstructions());
+
+        return builder.build();
+    }
+
+    private void decodeMatch(FlowRuleResponse.FlowRuleResponseBuilder builder, Match match) {
+        // in port
+        OFPort inPort = match.get(MatchField.IN_PORT);
+        if (inPort != null) {
+            builder.inPort(inPort.getPortNumber());
+        }
+
+        // vlan id
+        OFVlanVidMatch vlanId = match.get(MatchField.VLAN_VID);
+        if (vlanId != null) {
+            builder.inVlan((int) vlanId.getVlan());
+        }
+    }
+
+    private void decodeInstructions(FlowRuleResponse.FlowRuleResponseBuilder builder,
+                                    List<OFInstruction> instructions) {
+        for (OFInstruction entry : instructions) {
+            if (entry instanceof OFInstructionApplyActions) {
+                decodeInstructions(builder, (OFInstructionApplyActions) entry);
+            } else if (entry instanceof OFInstructionMeter) {
+                decodeInstructions(builder, (OFInstructionMeter) entry);
+            }
+        }
+    }
+
+    private void decodeInstructions(FlowRuleResponse.FlowRuleResponseBuilder builder,
+                                    OFInstructionApplyActions applyActions) {
+        decodeApplyActions(builder, applyActions.getActions());
+    }
+
+    private void decodeInstructions(FlowRuleResponse.FlowRuleResponseBuilder builder,
+                                    OFInstructionMeter applyMeter) {
+        builder.meterId(new MeterId(applyMeter.getMeterId()));
+    }
+
+    private void decodeApplyActions(FlowRuleResponse.FlowRuleResponseBuilder builder, List<OFAction> actions) {
+        for (OFAction entry : actions) {
+            if (entry instanceof OFActionSetField) {
+                decodeApplyActions(builder, (OFActionSetField) entry);
+            } else if (entry instanceof OFActionOutput) {
+                decodeApplyActions(builder, (OFActionOutput) entry);
+            } else if (entry instanceof OFActionMeter) {
+                decodeApplyActions(builder, (OFActionMeter) entry);
+            }
+        }
+    }
+
+    private void decodeApplyActions(FlowRuleResponse.FlowRuleResponseBuilder builder, OFActionSetField setField) {
+        OFOxm<?> field = setField.getField();
+        if (field instanceof OFOxmVlanVid) {
+            OFOxmVlanVid setVlanId = (OFOxmVlanVid) field;
+            builder.outVlan((int) setVlanId.getValue().getVlan());
+        }
+    }
+
+    private void decodeApplyActions(FlowRuleResponse.FlowRuleResponseBuilder builder, OFActionOutput output) {
+        builder.outPort(output.getPort().getPortNumber());
+    }
+
+    private void decodeApplyActions(FlowRuleResponse.FlowRuleResponseBuilder builder, OFActionMeter meter) {
+        builder.meterId(new MeterId(meter.getMeterId()));
+    }
 }

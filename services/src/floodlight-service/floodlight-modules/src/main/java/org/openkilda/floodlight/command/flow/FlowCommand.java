@@ -83,30 +83,6 @@ public abstract class FlowCommand<T extends SpeakerCommandReport> extends Speake
         switchFeatures = featureDetectorService.detectSwitch(getSw());
     }
 
-    // FIXME
-    protected FloodlightResponse buildError(Throwable error) {
-        ErrorCode code;
-        if (error instanceof SwitchNotFoundException) {
-            code = ErrorCode.SWITCH_UNAVAILABLE;
-        } else if (error instanceof SessionErrorResponseException) {
-            SessionErrorResponseException sessionException = (SessionErrorResponseException) error;
-            OFErrorMsg errorMsg = sessionException.getErrorResponse();
-            OFFlowModFailedErrorMsg modFailedError = (OFFlowModFailedErrorMsg) errorMsg;
-            code = getCode(modFailedError);
-        } else {
-            code = ErrorCode.UNKNOWN;
-        }
-
-        return FlowErrorResponse.errorBuilder()
-                .errorCode(code)
-                .description(error.getMessage())
-                .messageContext(messageContext)
-                .switchId(switchId)
-                .commandId(commandId)
-                .flowId(flowId)
-                .build();
-    }
-
     final Match matchFlow(Integer inputPort, Integer inputVlan, OFFactory ofFactory) {
         Match.Builder mb = ofFactory.buildMatch();
         mb.setExact(MatchField.IN_PORT, OFPort.of(inputPort));
@@ -141,19 +117,6 @@ public abstract class FlowCommand<T extends SpeakerCommandReport> extends Speake
                         .flatMap(List::stream)
                         .collect(Collectors.toList())
         );
-    }
-
-    private ErrorCode getCode(OFFlowModFailedErrorMsg error) {
-        switch (error.getCode()) {
-            case UNSUPPORTED:
-                return ErrorCode.UNSUPPORTED;
-            case BAD_COMMAND:
-                return ErrorCode.BAD_COMMAND;
-            case BAD_FLAGS:
-                return ErrorCode.BAD_FLAGS;
-            default:
-                return ErrorCode.UNKNOWN;
-        }
     }
 
     protected Set<SpeakerSwitchView.Feature> getSwitchFeatures() {

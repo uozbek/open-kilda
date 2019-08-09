@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.Flow;
 import org.openkilda.model.SwitchId;
 
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -25,7 +26,7 @@ import org.projectfloodlight.openflow.types.U64;
 
 import java.util.UUID;
 
-public abstract class FlowInstallCommand extends FlowCommand<FlowInstallReport> {
+public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
 
     final Integer inputPort;
     final Integer outputPort;
@@ -37,12 +38,12 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowInstallReport> 
         this.outputPort = outputPort;
     }
 
-    protected FlowInstallReport makeReport(Exception error) {
-        return new FlowInstallReport(this, error);
+    protected FlowReport makeReport(Exception error) {
+        return new FlowReport(this, error);
     }
 
-    protected FlowInstallReport makeSuccessReport() {
-        return new FlowInstallReport(this);
+    protected FlowReport makeSuccessReport() {
+        return new FlowReport(this);
     }
 
     final OFFlowAdd.Builder makeFlowAddMessageBuilder(OFFactory ofFactory) {

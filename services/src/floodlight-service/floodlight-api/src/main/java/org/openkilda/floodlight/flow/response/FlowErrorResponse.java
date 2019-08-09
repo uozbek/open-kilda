@@ -62,5 +62,4 @@ public class FlowErrorResponse extends FlowResponse {
         OPERATION_TIMED_OUT,
         UNKNOWN
     }
-
 }
