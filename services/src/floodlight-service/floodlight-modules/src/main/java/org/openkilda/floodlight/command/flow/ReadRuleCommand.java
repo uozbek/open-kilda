@@ -18,8 +18,6 @@ package org.openkilda.floodlight.command.flow;
 import static java.lang.String.format;
 
 import org.openkilda.floodlight.FloodlightResponse;
-import org.openkilda.floodlight.command.MessageWriter;
-import org.openkilda.floodlight.command.SessionProxy;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
@@ -30,11 +28,13 @@ import org.openkilda.model.SwitchId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
+import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsRequest;
 import org.projectfloodlight.openflow.protocol.OFInstructionType;
 import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.projectfloodlight.openflow.protocol.OFStatsReply;
 import org.projectfloodlight.openflow.protocol.action.OFActionOutput;
 import org.projectfloodlight.openflow.protocol.action.OFActionSetField;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
@@ -48,7 +48,6 @@ import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.U64;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,55 +55,68 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class GetRuleCommand extends FlowCommand {
+public class ReadRuleCommand extends FlowCommand<ReadRuleReport> {
 
-    public GetRuleCommand(@JsonProperty("command_id") UUID commandId,
-                          @JsonProperty("flowid") String flowId,
-                          @JsonProperty("message_context") MessageContext messageContext,
-                          @JsonProperty("cookie") Cookie cookie,
-                          @JsonProperty("switch_id") SwitchId switchId) {
+    public ReadRuleCommand(@JsonProperty("command_id") UUID commandId,
+                           @JsonProperty("flowid") String flowId,
+                           @JsonProperty("message_context") MessageContext messageContext,
+                           @JsonProperty("cookie") Cookie cookie,
+                           @JsonProperty("switch_id") SwitchId switchId) {
         super(commandId, flowId, messageContext, cookie, switchId);
     }
 
     @Override
-    protected CompletableFuture<Optional<OFMessage>> writeCommands(IOFSwitch sw,
-                                                                   FloodlightModuleContext moduleContext) {
+    protected CompletableFuture<ReadRuleReport> makeExecutePlan() {
         log.debug("Getting rule with cookie {} from the switch {}", cookie, switchId);
-        return new CompletableFutureAdapter<>(messageContext, sw.writeRequest(buildCommand(sw)))
-                .thenApply(Optional::of);
+        return new CompletableFutureAdapter<>(messageContext, getSw().writeStatsRequest(makeDumpRulesMessage()))
+                .thenApply(this::handleStatsResponse);
     }
 
     @Override
-    protected FloodlightResponse buildResponse(OFMessage response) {
-        return toFlowRuleResponse(response);
+    protected ReadRuleReport makeReport(Exception error) {
+        return new ReadRuleReport(error);
     }
 
-    @Override
-    public List<SessionProxy> getCommands(IOFSwitch sw, FloodlightModuleContext moduleContext) {
-        return Collections.singletonList(new MessageWriter(buildCommand(sw)));
+    private ReadRuleReport handleStatsResponse(List<OFFlowStatsReply> statsReplies) {
+        OFFlowStatsEntry entry = extractFirstReply(statsReplies);
+        return new ReadRuleReport(this, entry);
     }
 
-    private OFFlowStatsRequest buildCommand(IOFSwitch sw) {
-        return sw.getOFFactory().buildFlowStatsRequest()
+    private OFFlowStatsEntry extractFirstReply(List<OFFlowStatsReply> statsReplies) {
+        OFFlowStatsEntry result = null;
+        int count = 0;
+        for (OFFlowStatsReply reply : statsReplies) {
+            for (OFFlowStatsEntry entry : reply.getEntries()) {
+                count++;
+                if (result == null) {
+                    result = entry;
+                }
+            }
+        }
+
+        if (1 < count) {
+            throw new IllegalStateException(
+                    format("Found more than one rule with cookie %s on the switch %s. Total rules %s",
+                           cookie, switchId, count));
+        }
+        if (result == null) {
+            throw new IllegalStateException(format("Failed to find rule with cookie %s on the switch %s",
+                                                   cookie, switchId));
+        }
+
+        return result;
+    }
+
+    private OFFlowStatsRequest makeDumpRulesMessage() {
+        OFFactory of = getSw().getOFFactory();
+        return of.buildFlowStatsRequest()
                 .setCookie(U64.of(cookie.getValue()))
                 .setCookieMask(U64.NO_MASK)
                 .setOutGroup(OFGroup.ANY)
-                .setMatch(sw.getOFFactory().buildMatch().build())
                 .build();
     }
 
     private FloodlightResponse toFlowRuleResponse(OFMessage message) {
-        OFFlowStatsReply statsReply = (OFFlowStatsReply) message;
-        if (statsReply.getEntries().isEmpty()) {
-            return buildError(new IllegalStateException(format("Failed to find rule with cookie %s on the switch %s",
-                    cookie, switchId)));
-        } else if (statsReply.getEntries().size() > 1) {
-            return buildError(new IllegalStateException(
-                    format("Found more than one rule with cookie %s on the switch %s. Total rules %s",
-                    cookie, switchId, statsReply.getEntries().size())));
-        }
-
-        OFFlowStatsEntry entry = statsReply.getEntries().get(0);
         Map<OFInstructionType, OFInstruction> instructionMap = entry.getInstructions()
                 .stream()
                 .collect(Collectors.toMap(OFInstruction::getType, instruction -> instruction));
@@ -170,5 +182,4 @@ public class GetRuleCommand extends FlowCommand {
                 .findAny()
                 .orElse(0);
     }
-
 }

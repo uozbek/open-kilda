@@ -15,14 +15,12 @@
 
 package org.openkilda.floodlight.command;
 
-import org.openkilda.floodlight.KafkaChannel;
 import org.openkilda.floodlight.command.flow.FlowRemoveCommand;
-import org.openkilda.floodlight.command.flow.GetRuleCommand;
+import org.openkilda.floodlight.command.flow.ReadRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallEgressRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallIngressRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallOneSwitchRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallTransitRuleCommand;
-import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
@@ -37,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 
 @JsonTypeInfo(use = Id.NAME, property = "clazz")
 @JsonSubTypes({
@@ -51,7 +48,7 @@ import java.util.concurrent.ExecutionException;
                 name = "org.openkilda.floodlight.flow.request.InstallEgressRule"),
         @Type(value = FlowRemoveCommand.class,
                 name = "org.openkilda.floodlight.flow.request.RemoveRule"),
-        @Type(value = GetRuleCommand.class,
+        @Type(value = ReadRuleCommand.class,
                 name = "org.openkilda.floodlight.flow.request.GetInstalledRule")
 })
 @Getter
