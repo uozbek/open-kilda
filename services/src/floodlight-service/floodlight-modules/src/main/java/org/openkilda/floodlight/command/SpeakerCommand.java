@@ -21,6 +21,9 @@ import org.openkilda.floodlight.command.flow.InstallEgressRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallIngressRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallOneSwitchRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallTransitRuleCommand;
+import org.openkilda.floodlight.error.SessionErrorResponseException;
+import org.openkilda.floodlight.error.SwitchNotFoundException;
+import org.openkilda.floodlight.service.session.SessionService;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
@@ -28,11 +31,18 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import lombok.AccessLevel;
 import lombok.Getter;
+import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.internal.OFSwitchManager;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
+import org.projectfloodlight.openflow.protocol.OFErrorMsg;
+import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.projectfloodlight.openflow.types.DatapathId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -58,12 +68,94 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
+    @Getter(AccessLevel.PROTECTED)
+    private SessionService sessionService;
+
+    @Getter(AccessLevel.PROTECTED)
+    private IOFSwitch sw;
+
     public SpeakerCommand(SwitchId switchId, MessageContext messageContext) {
         this.switchId = switchId;
         this.messageContext = messageContext;
     }
 
-    public abstract CompletableFuture<T> execute(FloodlightModuleContext moduleContext);
+    public CompletableFuture<T> execute(FloodlightModuleContext moduleContext) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        try {
+            setup(moduleContext);
+            makeExecutePlan()
+                    .whenComplete((result, error) -> {
+                        if (error == null) {
+                            future.complete(result);
+                        } else {
+                            handleError(future, error);
+                        }
+                    });
+        } catch (Exception e) {
+            future.complete(makeReport(e));
+        }
+        return future;
+    }
+
+    protected abstract CompletableFuture<T> makeExecutePlan() throws Exception;
+
+    protected abstract T makeReport(Exception error);
+
+    private void handleError(CompletableFuture<T> future, Throwable error) {
+        if (error instanceof Exception) {
+            future.complete(makeReport((Exception) error));
+        } else {
+            future.completeExceptionally(error);
+        }
+    }
+
+    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
+        OFSwitchManager ofSwitchManager = moduleContext.getServiceImpl(OFSwitchManager.class);
+        sessionService = moduleContext.getServiceImpl(SessionService.class);
+
+        DatapathId dpId = DatapathId.of(switchId.toLong());
+        sw = ofSwitchManager.getActiveSwitch(dpId);
+        if (sw == null) {
+            throw new SwitchNotFoundException(dpId);
+        }
+    }
+
+    protected CompletableFuture<Optional<OFMessage>> setupErrorHandler(
+            CompletableFuture<Optional<OFMessage>> future, IOfErrorResponseHandler handler) {
+        CompletableFuture<Optional<OFMessage>> branch = new CompletableFuture<>();
+
+        future.whenComplete((response, error) -> {
+            if (error == null) {
+                branch.complete(response);
+            } else {
+                Throwable actualError = unwrapError(error);
+                if (actualError instanceof SessionErrorResponseException) {
+                    OFErrorMsg errorResponse = ((SessionErrorResponseException) error).getErrorResponse();
+                    propagateFutureResponse(branch, handler.handleOfError(errorResponse));
+                } else {
+                    branch.completeExceptionally(actualError);
+                }
+            }
+        });
+        return branch;
+    }
+
+    protected <K> void propagateFutureResponse(CompletableFuture<K> outerStream, CompletableFuture<K> nested) {
+        nested.whenComplete((result, error) -> {
+            if (error == null) {
+                outerStream.complete(result);
+            } else {
+                outerStream.completeExceptionally(error);
+            }
+        });
+    }
+
+    protected RuntimeException maskCallbackException(Throwable e) {
+        if (e instanceof CompletionException) {
+            return (CompletionException) e;
+        }
+        return new CompletionException(e);
+    }
 
     protected Throwable unwrapError(Throwable error) {
         if (error == null) {
@@ -74,12 +166,5 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
             return error.getCause();
         }
         return error;
-    }
-
-    protected RuntimeException maskCallbackException(Throwable e) {
-        if (e instanceof CompletionException) {
-            return (CompletionException) e;
-        }
-        return new CompletionException(e);
     }
 }

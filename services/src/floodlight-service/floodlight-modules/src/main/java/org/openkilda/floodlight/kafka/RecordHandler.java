@@ -1188,8 +1188,13 @@ class RecordHandler implements Runnable {
                          CorrelationContext.create(speakerCommand.getMessageContext().getCorrelationId())) {
                 KafkaUtilityService kafkaUtil = context.getModuleContext().getServiceImpl(KafkaUtilityService.class);
                 speakerCommand.execute(context.getModuleContext())
-                        .whenComplete((response, error) -> response.reply(
-                                kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key()));
+                        .whenComplete((response, error) -> {
+                            if (error != null) {
+                                logger.error("Error occurred while processing speaker command", error);
+                            }
+                            response.reply(
+                                    kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key());
+                        });
             }
         } catch (JsonMappingException e) {
             logger.trace("Received deprecated command message");

@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.floodlight.command.SpeakerCommandV2;
+import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
@@ -28,7 +28,7 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 
 import java.util.Set;
 
-abstract class MeterCommand extends SpeakerCommandV2<MeterReport> {
+abstract class MeterCommand extends SpeakerCommand<MeterReport> {
     private FeatureDetectorService featureDetectorService;
 
     MeterId meterId;
