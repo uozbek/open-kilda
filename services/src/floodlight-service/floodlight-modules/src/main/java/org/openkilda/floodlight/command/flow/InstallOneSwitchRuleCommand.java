@@ -15,8 +15,6 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import static org.openkilda.messaging.Utils.ETH_TYPE;
-
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
@@ -27,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.ArrayList;
@@ -57,11 +56,6 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
     }
 
     @Override
-    OFPort getOutputPort() {
-        return outputPort.equals(inputPort) ? OFPort.IN_PORT : OFPort.of(outputPort);
-    }
-
-    @Override
     List<OFAction> makePacketTransformActions(OFFactory ofFactory) {
         return pushSchemeOutputVlanTypeToOfActionList(ofFactory);
     }
@@ -71,7 +65,7 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
 
         switch (getOutputVlanType()) {
             case PUSH:      // No VLAN on packet so push a new one
-                actionList.add(actionPushVlan(ofFactory, ETH_TYPE));
+                actionList.add(ofFactory.actions().pushVlan(EthType.VLAN_FRAME));
                 actionList.add(makeSetVlanIdAction(ofFactory, outputVlanId));
                 break;
             case REPLACE:   // VLAN on packet but needs to be replaced
@@ -90,4 +84,11 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
         return actionList;
     }
 
+    @Override
+    protected OFAction makeOutputAction(OFPort port) {
+        if (inputPort.equals(port.getPortNumber())) {
+            return super.makeOutputAction(OFPort.IN_PORT);
+        }
+        return super.makeOutputAction(port);
+    }
 }

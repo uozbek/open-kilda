@@ -112,7 +112,7 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
         return planForwardRuleInstall(effectiveMeterId);
     }
 
-    private CompletableFuture<FlowReport> planForwardRuleInstall(MeterId effectiveMeterId) {
+    protected CompletableFuture<FlowReport> planForwardRuleInstall(MeterId effectiveMeterId) {
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return session.write(makeForwardRuleAddMessage(effectiveMeterId))
                     .thenApply(response -> makeSuccessReport());
@@ -129,9 +129,7 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
             makeMeterApplyCall(of, effectiveMeterId, applyActions, instructions);
         }
         applyActions.addAll(makePacketTransformActions(of));
-        applyActions.add(of.actions().buildOutput()
-                        .setPort(OFPort.of(outputPort))
-                        .build());
+        applyActions.add(makeOutputAction(OFPort.of(outputPort)));
 
         instructions.add(of.instructions().applyActions(applyActions));
 
@@ -149,6 +147,12 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
 
     List<OFAction> makePacketTransformActions(OFFactory ofFactory) {
         return inputVlanTypeToOfActionList(ofFactory);
+    }
+
+    protected OFAction makeOutputAction(OFPort port) {
+        return getSw().getOFFactory().actions().buildOutput()
+                .setPort(port)
+                .build();
     }
 
     private List<OFAction> inputVlanTypeToOfActionList(OFFactory of) {
