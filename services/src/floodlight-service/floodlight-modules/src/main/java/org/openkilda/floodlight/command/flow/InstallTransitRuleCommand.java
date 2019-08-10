@@ -34,9 +34,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class InstallTransitRuleCommand extends FlowInstallCommand {
-    final Integer transitEncapsulationId;
-    final FlowEncapsulationType transitEncapsulationType;
-
     @JsonCreator
     public InstallTransitRuleCommand(@JsonProperty("command_id") UUID commandId,
                                      @JsonProperty("flowid") String flowId,
@@ -48,20 +45,19 @@ public class InstallTransitRuleCommand extends FlowInstallCommand {
                                      @JsonProperty("transit_encapsulation_id") Integer transitEncapsulationId,
                                      @JsonProperty("transit_encapsulation_type")
                                              FlowEncapsulationType transitEncapsulationType) {
-        super(commandId, flowId, messageContext, cookie, switchId, inputPort, outputPort);
-        this.transitEncapsulationId = transitEncapsulationId;
-        this.transitEncapsulationType = transitEncapsulationType;
+        super(commandId, flowId, messageContext, cookie, switchId, inputPort, outputPort, transitEncapsulationId,
+              transitEncapsulationType);
     }
 
     @Override
     protected CompletableFuture<FlowReport> makeExecutePlan() {
         try (Session session = getSessionService().open(messageContext, getSw())) {
-            return session.write(makeOfFlowAddMessage())
+            return session.write(makeTransitRuleAddMessage())
                     .thenApply(ignore -> new FlowReport(this));
         }
     }
 
-    private OFFlowMod makeOfFlowAddMessage() {
+    private OFFlowMod makeTransitRuleAddMessage() {
         OFFactory of = getSw().getOFFactory();
         List<OFAction> applyActions = ImmutableList.of(
                 of.actions().buildOutput()

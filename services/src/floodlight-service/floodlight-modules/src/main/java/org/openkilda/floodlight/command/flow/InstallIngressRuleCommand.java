@@ -51,7 +51,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
+public class InstallIngressRuleCommand extends FlowInstallCommand {
     private final Long bandwidth;
     private final Integer inputVlanId;
     private final OutputVlanType outputVlanType;

@@ -18,6 +18,7 @@ package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.SwitchId;
 
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -35,12 +36,17 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
 
     final Integer inputPort;
     final Integer outputPort;
+    final Integer transitEncapsulationId;
+    final FlowEncapsulationType transitEncapsulationType;
 
     FlowInstallCommand(UUID commandId, String flowId, MessageContext messageContext, Cookie cookie, SwitchId switchId,
-                       Integer inputPort, Integer outputPort) {
+                       Integer inputPort, Integer outputPort,
+                       Integer transitEncapsulationId, FlowEncapsulationType transitEncapsulationType) {
         super(commandId, flowId, messageContext, cookie, switchId);
         this.inputPort = inputPort;
         this.outputPort = outputPort;
+        this.transitEncapsulationId = transitEncapsulationId;
+        this.transitEncapsulationType = transitEncapsulationType;
     }
 
     protected FlowReport makeReport(Exception error) {
