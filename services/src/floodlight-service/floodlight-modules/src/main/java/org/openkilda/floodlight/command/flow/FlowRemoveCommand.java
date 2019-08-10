@@ -15,16 +15,11 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.floodlight.FloodlightResponse;
-import org.openkilda.floodlight.command.MessageWriter;
-import org.openkilda.floodlight.command.SessionProxy;
-import org.openkilda.floodlight.command.SpeakerCommandV1;
+import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.command.meter.RemoveMeterCommand;
 import org.openkilda.floodlight.error.OfDeleteException;
-import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
-import org.openkilda.floodlight.flow.response.FlowResponse;
-import org.openkilda.floodlight.service.session.SessionService;
+import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
 import org.openkilda.model.Cookie;
@@ -33,26 +28,19 @@ import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowDelete;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
-import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.match.Match;
-import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.U64;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class FlowRemoveCommand extends FlowCommand {
+public class FlowRemoveCommand extends FlowCommand<FlowReport> {
 
     private final MeterId meterId;
     private final DeleteRulesCriteria criteria;
@@ -70,64 +58,59 @@ public class FlowRemoveCommand extends FlowCommand {
     }
 
     @Override
-    protected FloodlightResponse buildResponse() {
-        return FlowResponse.builder()
-                .commandId(commandId)
-                .flowId(flowId)
-                .messageContext(messageContext)
-                .success(true)
-                .switchId(switchId)
-                .build();
+    protected CompletableFuture<FlowReport> makeExecutePlan() throws Exception {
+        CompletableFuture<List<OFFlowStatsEntry>> ofFlowBefore = planOfFlowTableDump();
+        CompletableFuture<List<OFFlowStatsEntry>> ofFlowAfter = ofFlowBefore
+                .thenCompose(ignored -> planDelete())
+                .thenCompose(ignored -> planOfFlowTableDump());
+
+        return ofFlowAfter
+                .thenAcceptBoth(ofFlowBefore, (after, before) -> ensureRulesDeleted(before, after))
+                .thenApply(ignore -> new FlowReport(this));
     }
 
     @Override
-    protected CompletableFuture<Optional<OFMessage>> writeCommands(IOFSwitch sw,
-                                                                   FloodlightModuleContext moduleContext) {
-        SessionService sessionService = moduleContext.getServiceImpl(SessionService.class);
-
-        CompletableFuture<List<OFFlowStatsEntry>> entriesBeforeDeletion = dumpFlowTable(sw);
-        CompletableFuture<List<OFFlowStatsEntry>> entriesAfterDeletion = entriesBeforeDeletion
-                .thenCompose(ignored -> removeRules(sw, sessionService, moduleContext))
-                .thenCompose(ignored -> dumpFlowTable(sw));
-
-        return entriesAfterDeletion
-                .thenCombine(entriesBeforeDeletion, (after, before) -> verifyRulesDeleted(sw.getId(), before, after));
+    protected FlowReport makeReport(Exception error) {
+        return new FlowReport(this, error);
     }
 
-    @Override
-    public List<SessionProxy> getCommands(IOFSwitch sw, FloodlightModuleContext moduleContext)
-            throws SwitchOperationException {
-        List<SessionProxy> commands = new ArrayList<>();
-
-        getDeleteMeterCommand(sw, moduleContext)
-                .ifPresent(commands::add);
-
-        getDeleteCommands(sw, criteria)
-                .stream()
-                .map(MessageWriter::new)
-                .forEach(commands::add);
-
-        return commands;
+    private CompletableFuture<Void> planDelete() {
+        CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
+        if (meterId != null) {
+            future = future.thenCompose(ignore -> planMeterDelete());
+        }
+        return future.thenCompose(ignore -> planOfFlowDelete());
     }
 
-    List<OFFlowDelete> getDeleteCommands(IOFSwitch sw, DeleteRulesCriteria... criterias) {
-        return Stream.of(criterias)
-                .peek(criteria -> log.info("Rules by criteria {} are to be removed from switch {}.",
-                        criteria, sw.getId()))
-                .map(criteria -> buildFlowDeleteByCriteria(sw.getOFFactory(), criteria))
-                .collect(Collectors.toList());
+    private CompletableFuture<Void> planMeterDelete() {
+        RemoveMeterCommand meterRemoveCommand = new RemoveMeterCommand(messageContext, switchId, meterId);
+        return meterRemoveCommand.execute(getModuleContext())
+                .thenAccept(this::handleMeterDelete);
     }
 
-    private CompletableFuture<Optional<OFMessage>> removeRules(IOFSwitch sw, SessionService sessionService,
-                                                               FloodlightModuleContext moduleContext) {
-        try {
-            return super.writeCommands(sw, moduleContext);
-        } catch (SwitchOperationException e) {
-            throw new CompletionException(e);
+    private CompletableFuture<Void> planOfFlowDelete() {
+        IOFSwitch sw = getSw();
+
+        OFFlowDelete deleteMessage = makeOfFlowDeleteMessage();
+        try (Session session = getSessionService().open(messageContext, sw)) {
+            return session.write(deleteMessage)
+                    .thenAccept(ignore -> log.info(
+                            "Delete OF flow by criteria {} from switch {}.", criteria, sw.getId()));
         }
     }
 
-    private OFFlowDelete buildFlowDeleteByCriteria(OFFactory ofFactory, DeleteRulesCriteria criteria) {
+    private void handleMeterDelete(MeterReport report) {
+        try {
+            report.raiseError();
+        } catch (UnsupportedSwitchOperationException e) {
+            log.debug("Skip meter {} deletion for flow {} on switch {}: {}", meterId, flowId, switchId, e.getMessage());
+        } catch (Exception e) {
+            throw maskCallbackException(e);
+        }
+    }
+
+    private OFFlowDelete makeOfFlowDeleteMessage() {
+        OFFactory ofFactory = getSw().getOFFactory();
         OFFlowDelete.Builder builder = ofFactory.buildFlowDelete();
         Optional.ofNullable(criteria.getCookie())
                 .ifPresent(flowCookie -> {
@@ -156,32 +139,12 @@ public class FlowRemoveCommand extends FlowCommand {
         return builder.build();
     }
 
-    private Optional<SessionProxy> getDeleteMeterCommand(IOFSwitch sw, FloodlightModuleContext moduleContext)
-            throws SwitchOperationException {
-        if (meterId == null) {
-            return Optional.empty();
-        }
-
-        try {
-            // FIXME
-            throw new UnsupportedSwitchOperationException(sw.getId(), "dummy");
-/*
-            SpeakerCommandV1 meterCommand = new RemoveMeterCommand(messageContext, switchId, meterId);
-            return meterCommand.getCommands(sw, moduleContext).stream().findFirst();
-*/
-        } catch (UnsupportedSwitchOperationException e) {
-            log.debug("Skip meter {} deletion for flow {} on switch {}: {}", meterId, flowId, switchId, e.getMessage());
-            return Optional.empty();
-        }
-    }
-
-    private Optional<OFMessage> verifyRulesDeleted(DatapathId dpid, List<OFFlowStatsEntry> entriesBefore,
-                                                   List<OFFlowStatsEntry> entriesAfter) {
+    private void ensureRulesDeleted(List<OFFlowStatsEntry> entriesBefore, List<OFFlowStatsEntry> entriesAfter) {
         entriesAfter.stream()
                 .filter(entry -> entry.getCookie().equals(U64.of(cookie.getValue())))
                 .findAny()
                 .ifPresent(nonDeleted -> {
-                    throw new CompletionException(new OfDeleteException(dpid, cookie.getValue()));
+                    throw maskCallbackException(new OfDeleteException(getSw().getId(), cookie.getValue()));
                 });
 
         // we might accidentally delete rules belong to another flows. In order to be able to track it we write all
@@ -192,7 +155,5 @@ public class FlowRemoveCommand extends FlowCommand {
                         .noneMatch(after -> after.getCookie().getValue() == cookieBefore))
                 .forEach(deleted -> log.info("Rule with cookie {} has been removed from switch {}.",
                         deleted, switchId));
-
-        return Optional.empty();
     }
 }

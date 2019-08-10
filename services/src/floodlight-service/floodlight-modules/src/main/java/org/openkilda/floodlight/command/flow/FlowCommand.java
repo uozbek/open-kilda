@@ -31,6 +31,7 @@ import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
@@ -62,6 +63,9 @@ public abstract class FlowCommand<T extends SpeakerCommandReport> extends Speake
     protected static final long FLOW_COOKIE_MASK = 0x7FFFFFFFFFFFFFFFL;
     protected static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
 
+    @Getter(AccessLevel.PROTECTED)
+    private FloodlightModuleContext moduleContext;
+    @Getter(AccessLevel.PROTECTED)
     private Set<SpeakerSwitchView.Feature> switchFeatures;
 
     final UUID commandId;
@@ -102,24 +106,30 @@ public abstract class FlowCommand<T extends SpeakerCommandReport> extends Speake
         }
     }
 
-    final CompletableFuture<List<OFFlowStatsEntry>> dumpFlowTable(IOFSwitch sw) {
-        OFFactory ofFactory = sw.getOFFactory();
-        OFFlowStatsRequest flowRequest = ofFactory.buildFlowStatsRequest()
-                .setOutGroup(OFGroup.ANY)
-                .setCookieMask(U64.ZERO)
-                .build();
-
-        CompletableFuture<List<OFFlowStatsReply>> dumpFlowStatsStage =
-                new CompletableFutureAdapter<>(messageContext, sw.writeStatsRequest(flowRequest));
-        return dumpFlowStatsStage.thenApply(values ->
-                values.stream()
-                        .map(OFFlowStatsReply::getEntries)
-                        .flatMap(List::stream)
-                        .collect(Collectors.toList())
-        );
+    protected final CompletableFuture<List<OFFlowStatsEntry>> planOfFlowTableDump() {
+        return planOfFlowTableDump(makeOfFlowTableDumpBuilder().build());
     }
 
-    protected Set<SpeakerSwitchView.Feature> getSwitchFeatures() {
-        return switchFeatures;
+    protected final CompletableFuture<List<OFFlowStatsEntry>> planOfFlowTableDump(Cookie matchCookie) {
+        OFFlowStatsRequest dumpMessage = makeOfFlowTableDumpBuilder()
+                .setCookie(U64.of(matchCookie.getValue()))
+                .setCookieMask(U64.NO_MASK)
+                .build();
+        return planOfFlowTableDump(dumpMessage);
+    }
+
+    private CompletableFuture<List<OFFlowStatsEntry>> planOfFlowTableDump(OFFlowStatsRequest dumpMessage) {
+        CompletableFuture<List<OFFlowStatsReply>> future =
+                new CompletableFutureAdapter<>(messageContext, getSw().writeStatsRequest(dumpMessage));
+        return future.thenApply(values -> values.stream()
+                .map(OFFlowStatsReply::getEntries)
+                .flatMap(List::stream)
+                .collect(Collectors.toList()));
+    }
+
+    private OFFlowStatsRequest.Builder makeOfFlowTableDumpBuilder() {
+        return getSw().getOFFactory().buildFlowStatsRequest()
+                .setOutGroup(OFGroup.ANY)
+                .setCookieMask(U64.ZERO);
     }
 }

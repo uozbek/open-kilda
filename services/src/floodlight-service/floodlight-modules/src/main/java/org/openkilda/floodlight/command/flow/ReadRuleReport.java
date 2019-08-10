@@ -66,6 +66,7 @@ public class ReadRuleReport extends FlowReport {
                 .cookie(new Cookie(rule.getCookie().getValue()))
                 .ofVersion(rule.getVersion().toString());
 
+        // TODO(surabujin): move into separate OF decode tool
         decodeMatch(builder, rule.getMatch());
         decodeInstructions(builder, rule.getInstructions());
 

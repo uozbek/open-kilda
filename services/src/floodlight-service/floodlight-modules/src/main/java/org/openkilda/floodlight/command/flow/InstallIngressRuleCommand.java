@@ -52,8 +52,6 @@ import java.util.concurrent.CompletableFuture;
 
 @Getter
 public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
-    private FloodlightModuleContext moduleContext;
-
     private final Long bandwidth;
     private final Integer inputVlanId;
     private final OutputVlanType outputVlanType;
@@ -83,8 +81,8 @@ public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
     }
 
     @Override
-    protected CompletableFuture<FlowInstallReport> makeExecutePlan() {
-        CompletableFuture<FlowInstallReport> future;
+    protected CompletableFuture<FlowReport> makeExecutePlan() {
+        CompletableFuture<FlowReport> future;
         if (meterId != null) {
             future = planMeterInstall()
                 .thenCompose(this::planToUseMeter);
@@ -96,10 +94,10 @@ public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
 
     private CompletableFuture<MeterReport> planMeterInstall() {
         InstallMeterCommand meterCommand = new InstallMeterCommand(messageContext, switchId, meterId, bandwidth);
-        return meterCommand.execute(moduleContext);
+        return meterCommand.execute(getModuleContext());
     }
 
-    private CompletableFuture<FlowInstallReport> planToUseMeter(MeterReport report) {
+    private CompletableFuture<FlowReport> planToUseMeter(MeterReport report) {
         MeterId effectiveMeterId;
         try {
             report.raiseError();
@@ -114,17 +112,11 @@ public class InstallIngressRuleCommand extends InstallTransitRuleCommand {
         return planForwardRuleInstall(effectiveMeterId);
     }
 
-    private CompletableFuture<FlowInstallReport> planForwardRuleInstall(MeterId effectiveMeterId) {
+    private CompletableFuture<FlowReport> planForwardRuleInstall(MeterId effectiveMeterId) {
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return session.write(makeForwardRuleAddMessage(effectiveMeterId))
                     .thenApply(response -> makeSuccessReport());
         }
-    }
-
-    @Override
-    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
-        super.setup(moduleContext);
-        this.moduleContext = moduleContext;
     }
 
     private OFFlowMod makeForwardRuleAddMessage(MeterId effectiveMeterId) {

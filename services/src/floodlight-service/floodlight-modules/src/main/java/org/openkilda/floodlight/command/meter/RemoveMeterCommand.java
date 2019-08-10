@@ -15,11 +15,15 @@
 
 package org.openkilda.floodlight.command.meter;
 
+import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.floodlightcontroller.core.IOFSwitch;
+import org.projectfloodlight.openflow.protocol.OFMeterMod;
+import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -32,32 +36,17 @@ public class RemoveMeterCommand extends MeterCommand {
     }
 
     @Override
-    protected void makeExecutePlan(CompletableFuture<Void> resultAdapter) throws Exception {
-        // FIXME
-    }
-/*
-    @Override
-    protected FloodlightResponse buildError(Throwable error) {
-        throw new UnsupportedOperationException("Meter's deletion is not supported");
-    }
+    protected CompletableFuture<MeterReport> makeExecutePlan() throws Exception {
+        ensureSwitchSupportMeters();
 
-    @Override
-    protected FloodlightResponse buildResponse() {
-        throw new UnsupportedOperationException("Meter's deletion is not supported");
-    }
-
-    @Override
-    public List<SessionProxy> getCommands(IOFSwitch sw, FloodlightModuleContext moduleContext)
-            throws UnsupportedSwitchOperationException {
-        FeatureDetectorService featureDetector = moduleContext.getServiceImpl(FeatureDetectorService.class);
-        ensureSwitchSupportMeters(sw, featureDetector);
-
-        OFMeterMod meterDelete = sw.getOFFactory().buildMeterMod()
+        IOFSwitch sw = getSw();
+        OFMeterMod meterDeleteMessage = sw.getOFFactory().buildMeterMod()
                 .setMeterId(meterId.getValue())
                 .setCommand(OFMeterModCommand.DELETE)
                 .build();
-
-        return Collections.singletonList(new MessageWriter(meterDelete));
+        try (Session session = getSessionService().open(messageContext, sw)) {
+            return session.write(meterDeleteMessage)
+                    .thenApply(ignore -> new MeterReport(meterId));
+        }
     }
-*/
 }

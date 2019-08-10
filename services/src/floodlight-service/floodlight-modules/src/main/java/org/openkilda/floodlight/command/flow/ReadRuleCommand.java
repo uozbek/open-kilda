@@ -68,7 +68,7 @@ public class ReadRuleCommand extends FlowCommand<ReadRuleReport> {
     @Override
     protected CompletableFuture<ReadRuleReport> makeExecutePlan() {
         log.debug("Getting rule with cookie {} from the switch {}", cookie, switchId);
-        return new CompletableFutureAdapter<>(messageContext, getSw().writeStatsRequest(makeDumpRulesMessage()))
+        return planOfFlowTableDump(cookie)
                 .thenApply(this::handleStatsResponse);
     }
 
@@ -77,20 +77,18 @@ public class ReadRuleCommand extends FlowCommand<ReadRuleReport> {
         return new ReadRuleReport(this, error);
     }
 
-    private ReadRuleReport handleStatsResponse(List<OFFlowStatsReply> statsReplies) {
+    private ReadRuleReport handleStatsResponse(List<OFFlowStatsEntry> statsReplies) {
         OFFlowStatsEntry entry = extractFirstReply(statsReplies);
         return new ReadRuleReport(this, entry);
     }
 
-    private OFFlowStatsEntry extractFirstReply(List<OFFlowStatsReply> statsReplies) {
+    private OFFlowStatsEntry extractFirstReply(List<OFFlowStatsEntry> statsReplies) {
         OFFlowStatsEntry result = null;
         int count = 0;
-        for (OFFlowStatsReply reply : statsReplies) {
-            for (OFFlowStatsEntry entry : reply.getEntries()) {
-                count++;
-                if (result == null) {
-                    result = entry;
-                }
+        for (OFFlowStatsEntry entry : statsReplies) {
+            count++;
+            if (result == null) {
+                result = entry;
             }
         }
 
@@ -105,14 +103,5 @@ public class ReadRuleCommand extends FlowCommand<ReadRuleReport> {
         }
 
         return result;
-    }
-
-    private OFFlowStatsRequest makeDumpRulesMessage() {
-        OFFactory of = getSw().getOFFactory();
-        return of.buildFlowStatsRequest()
-                .setCookie(U64.of(cookie.getValue()))
-                .setCookieMask(U64.NO_MASK)
-                .setOutGroup(OFGroup.ANY)
-                .build();
     }
 }

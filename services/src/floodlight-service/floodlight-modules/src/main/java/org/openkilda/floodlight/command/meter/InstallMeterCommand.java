@@ -80,11 +80,6 @@ public class InstallMeterCommand extends MeterCommand implements IOfErrorRespons
     }
 
     @Override
-    protected MeterReport makeReport(Exception error) {
-        return new MeterReport(error);
-    }
-
-    @Override
     public CompletableFuture<Optional<OFMessage>> handleOfError(OFErrorMsg response) {
         CompletableFuture<Optional<OFMessage>> future = new CompletableFuture<>();
         if (!isAddConflict(response)) {

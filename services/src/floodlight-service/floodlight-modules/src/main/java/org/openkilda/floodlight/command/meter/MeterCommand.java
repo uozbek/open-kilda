@@ -39,18 +39,15 @@ abstract class MeterCommand extends SpeakerCommandV2<MeterReport> {
     }
 
     @Override
+    protected MeterReport makeReport(Exception error) {
+        return new MeterReport(error);
+    }
+
+    @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         super.setup(moduleContext);
         featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
     }
-
-    // FIXME
-/*
-    public void handleResult(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService, String requestKey,
-                             Throwable error) {
-        log.debug("Complete command {} for meter {} (do not produce response)", getClass().getCanonicalName(), meterId);
-    }
-*/
 
     void ensureSwitchSupportMeters() throws UnsupportedSwitchOperationException {
         Set<Feature> supportedFeatures = featureDetectorService.detectSwitch(getSw());
