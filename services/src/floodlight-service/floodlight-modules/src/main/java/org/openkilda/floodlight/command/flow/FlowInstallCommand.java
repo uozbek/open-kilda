@@ -15,13 +15,18 @@
 
 package org.openkilda.floodlight.command.flow;
 
+
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.Flow;
 import org.openkilda.model.SwitchId;
 
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
+import org.projectfloodlight.openflow.protocol.OFVersion;
+import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.action.OFActions;
+import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
+import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.U64;
 
 import java.util.UUID;
@@ -50,5 +55,16 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
         return ofFactory.buildFlowAdd()
                 .setCookie(U64.of(cookie.getValue()))
                 .setPriority(FLOW_PRIORITY);
+    }
+
+    protected final OFAction makeSetVlanIdAction(final OFFactory factory, final int newVlan) {
+        OFOxms oxms = factory.oxms();
+        OFActions actions = factory.actions();
+        OFVlanVidMatch vlanMatch = factory.getVersion() == OFVersion.OF_12
+                ? OFVlanVidMatch.ofRawVid((short) newVlan) : OFVlanVidMatch.ofVlan(newVlan);
+
+        return actions.buildSetField().setField(oxms.buildVlanVid()
+                                                        .setValue(vlanMatch)
+                                                        .build()).build();
     }
 }

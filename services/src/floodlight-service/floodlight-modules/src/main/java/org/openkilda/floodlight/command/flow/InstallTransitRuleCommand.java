@@ -15,11 +15,7 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
-
-import org.openkilda.floodlight.command.MessageWriter;
-import org.openkilda.floodlight.command.SessionProxy;
-import org.openkilda.floodlight.error.SwitchOperationException;
+import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
@@ -28,22 +24,14 @@ import org.openkilda.model.SwitchId;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
-import org.projectfloodlight.openflow.protocol.action.OFActions;
-import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyActions;
-import org.projectfloodlight.openflow.protocol.match.Match;
-import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
 import org.projectfloodlight.openflow.types.OFPort;
-import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class InstallTransitRuleCommand extends FlowInstallCommand {
     final Integer transitEncapsulationId;
@@ -66,41 +54,23 @@ public class InstallTransitRuleCommand extends FlowInstallCommand {
     }
 
     @Override
-    public List<SessionProxy> getCommands(IOFSwitch sw, FloodlightModuleContext moduleContext)
-            throws SwitchOperationException {
-        OFFactory factory = sw.getOFFactory();
-        List<OFAction> actionList = new ArrayList<>();
+    protected CompletableFuture<FlowReport> makeExecutePlan() {
+        try (Session session = getSessionService().open(messageContext, getSw())) {
+            return session.write(makeOfFlowAddMessage())
+                    .thenApply(ignore -> new FlowReport(this));
+        }
+    }
 
-        Match match = matchFlow(inputPort, transitEncapsulationId, factory);
-        actionList.add(setOutputPort(factory, OFPort.of(outputPort)));
+    private OFFlowMod makeOfFlowAddMessage() {
+        OFFactory of = getSw().getOFFactory();
+        List<OFAction> applyActions = ImmutableList.of(
+                of.actions().buildOutput()
+                        .setPort(OFPort.of(outputPort))
+                        .build());
 
-        OFFlowMod flowMod = makeFlowAddMessageBuilder(factory)
-                .setInstructions(ImmutableList.of(applyActions(factory, actionList)))
-                .setMatch(match)
+        return makeFlowAddMessageBuilder(of)
+                .setInstructions(ImmutableList.of(of.instructions().applyActions(applyActions)))
+                .setMatch(matchFlow(inputPort, transitEncapsulationId, of))
                 .build();
-        return Collections.singletonList(new MessageWriter(flowMod));
-    }
-
-    final OFAction setOutputPort(OFFactory ofFactory) {
-        return setOutputPort(ofFactory, OFPort.of(outputPort));
-    }
-
-    final OFAction setOutputPort(OFFactory ofFactory, OFPort port) {
-        OFActions actions = ofFactory.actions();
-        return actions.buildOutput()
-                .setMaxLen(0xFFFFFFFF)
-                .setPort(port)
-                .build();
-    }
-
-    final OFAction makeSetVlanIdAction(final OFFactory factory, final int newVlan) {
-        OFOxms oxms = factory.oxms();
-        OFActions actions = factory.actions();
-        OFVlanVidMatch vlanMatch = factory.getVersion() == OF_12
-                ? OFVlanVidMatch.ofRawVid((short) newVlan) : OFVlanVidMatch.ofVlan(newVlan);
-
-        return actions.buildSetField().setField(oxms.buildVlanVid()
-                .setValue(vlanMatch)
-                .build()).build();
     }
 }
