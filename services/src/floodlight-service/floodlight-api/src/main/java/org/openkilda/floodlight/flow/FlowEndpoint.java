@@ -22,6 +22,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Value
 public class FlowEndpoint implements Serializable {
@@ -45,7 +49,32 @@ public class FlowEndpoint implements Serializable {
             @JsonProperty("inner_vlan_id") int innerVlanId) {
         this.datapath = datapath;
         this.portNumber = portNumber;
-        this.outerVlanId = outerVlanId;
-        this.innerVlanId = innerVlanId;
+
+        // normalize VLANs representation
+        List<Integer> vlanStack = makeVlanStack(innerVlanId, outerVlanId);
+        if (1 < vlanStack.size()) {
+            this.outerVlanId = vlanStack.get(1);
+            this.innerVlanId = vlanStack.get(0);
+        } else if (0 < vlanStack.size()) {
+            this.outerVlanId = vlanStack.get(0);
+            this.innerVlanId = 0;
+        } else {
+            this.outerVlanId = 0;
+            this.innerVlanId = 0;
+        }
+    }
+
+    public List<Integer> getVlanStack() {
+        return makeVlanStack(innerVlanId, outerVlanId);
+    }
+
+    public static List<Integer> makeVlanStack(Integer... sequence) {
+        return Stream.of(sequence)
+                .filter(FlowEndpoint::isVlanIdSet)
+                .collect(Collectors.toList());
+    }
+
+    public static boolean isVlanIdSet(Integer vlanId) {
+        return vlanId != null && 0 < vlanId;
     }
 }

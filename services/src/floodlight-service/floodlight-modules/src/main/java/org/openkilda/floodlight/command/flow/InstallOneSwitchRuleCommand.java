@@ -18,7 +18,6 @@ package org.openkilda.floodlight.command.flow;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
-import org.openkilda.model.OutputVlanType;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -29,13 +28,14 @@ import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
 public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
-
-    @JsonProperty("output_vlan_id")
-    private final Integer outputVlanId;
+    private final Integer outputOuterVlanId;
+    private final Integer outputInnerVlanId;
 
     @JsonCreator
     public InstallOneSwitchRuleCommand(@JsonProperty("command_id") UUID commandId,
@@ -46,42 +46,34 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
                                        @JsonProperty("input_port") Integer inputPort,
                                        @JsonProperty("output_port") Integer outputPort,
                                        @JsonProperty("bandwidth") Long bandwidth,
-                                       @JsonProperty("input_vlan_id") Integer inputVlanId,
-                                       @JsonProperty("output_vlan_type") OutputVlanType outputVlanType,
+                                       @JsonProperty("input_vlan_id") Integer inputOuterVlanId,
+                                       @JsonProperty("input_inner_vlan_id") Integer inputInnerVlanId,
                                        @JsonProperty("meter_id") MeterId meterId,
-                                       @JsonProperty("output_vlan_id") Integer outputVlanId) {
+                                       @JsonProperty("output_vlan_id") Integer outputOuterVlanId,
+                                       @JsonProperty("output_inner_vlan_id") Integer outputInnerVlanId) {
         super(commandId, flowid, messageContext, cookie, switchId, inputPort, outputPort, bandwidth,
-                inputVlanId, outputVlanType, meterId, null, null);
-        this.outputVlanId = outputVlanId;
+                inputOuterVlanId, inputInnerVlanId, meterId, null, null);
+        this.outputOuterVlanId = outputOuterVlanId;
+        this.outputInnerVlanId = outputInnerVlanId;
     }
 
     @Override
-    List<OFAction> makePacketTransformActions(OFFactory ofFactory) {
-        return pushSchemeOutputVlanTypeToOfActionList(ofFactory);
-    }
+    List<OFAction> makePacketTransformActions(OFFactory of) {
+        List<Integer> currentVlanStack = new ArrayList<>(2);
+        if (isVlanIdSet(inputInnerVlanId)) {
+            currentVlanStack.add(inputInnerVlanId);
+        }
+        // `inputOuterVlanId` was removed by pre-match rule
 
-    private List<OFAction> pushSchemeOutputVlanTypeToOfActionList(OFFactory ofFactory) {
-        List<OFAction> actionList = new ArrayList<>(2);
-
-        switch (getOutputVlanType()) {
-            case PUSH:      // No VLAN on packet so push a new one
-                actionList.add(ofFactory.actions().pushVlan(EthType.VLAN_FRAME));
-                actionList.add(makeSetVlanIdAction(ofFactory, outputVlanId));
-                break;
-            case REPLACE:   // VLAN on packet but needs to be replaced
-                actionList.add(makeSetVlanIdAction(ofFactory, outputVlanId));
-                break;
-            case POP:       // VLAN on packet, so remove it
-                actionList.add(ofFactory.actions().popVlan());
-                break;
-            case NONE:
-                break;
-            default:
-                throw new UnsupportedOperationException(String.format("Incorrect output vlan type: %s",
-                        getOutputVlanType()));
+        List<Integer> desiredVlanStack = new ArrayList<>(2);
+        if (isVlanIdSet(outputInnerVlanId)) {
+            desiredVlanStack.add(outputInnerVlanId);
+        }
+        if (isVlanIdSet(outputOuterVlanId)) {
+            desiredVlanStack.add(outputOuterVlanId);
         }
 
-        return actionList;
+        return makePacketVlanTransformActions(of, currentVlanStack, desiredVlanStack);
     }
 
     @Override

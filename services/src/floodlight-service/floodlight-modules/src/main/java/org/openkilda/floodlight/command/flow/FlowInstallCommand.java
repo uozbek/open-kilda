@@ -27,9 +27,13 @@ import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.action.OFActions;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
+import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.U64;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
@@ -57,11 +61,46 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
         return new FlowReport(this);
     }
 
-    final OFFlowAdd.Builder makeFlowAddMessageBuilder(OFFactory ofFactory) {
+    final OFFlowAdd.Builder makeOfFlowAddMessageBuilder(OFFactory ofFactory) {
         return ofFactory.buildFlowAdd()
                 .setCookie(U64.of(cookie.getValue()))
                 .setPriority(FLOW_PRIORITY);
     }
+
+    protected final List<OFAction> makePacketVlanTransformActions(
+            OFFactory of, List<Integer> currentVlanStack, List<Integer> desiredVlanStack) {
+        Iterator<Integer> currentIter = currentVlanStack.iterator();
+        Iterator<Integer> desiredIter = desiredVlanStack.iterator();
+
+        final List<OFAction> actions = new ArrayList<>();
+        while (currentIter.hasNext() && desiredIter.hasNext()) {
+            Integer current = currentIter.next();
+            Integer desired = desiredIter.next();
+            if (!current.equals(desired)) {
+                // remove all extra VLANs
+                while (currentIter.hasNext()) {
+                    currentIter.next();
+                    actions.add(of.actions().popVlan());
+                }
+                // rewrite existing VLAN stack "head"
+                actions.add(makeSetVlanIdAction(of, desired));
+                break;
+            }
+        }
+
+        // remove all extra VLANs (if previous loops ends with lack of desired VLANs
+        while (currentIter.hasNext()) {
+            currentIter.next();
+            actions.add(of.actions().popVlan());
+        }
+
+        while (desiredIter.hasNext()) {
+            actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
+            actions.add(makeSetVlanIdAction(of, desiredIter.next()));
+        }
+        return actions;
+    }
+
 
     protected final OFAction makeSetVlanIdAction(final OFFactory factory, final int newVlan) {
         OFOxms oxms = factory.oxms();

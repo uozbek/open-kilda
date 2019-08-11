@@ -64,7 +64,7 @@ public class InstallTransitRuleCommand extends FlowInstallCommand {
                         .setPort(OFPort.of(outputPort))
                         .build());
 
-        return makeFlowAddMessageBuilder(of)
+        return makeOfFlowAddMessageBuilder(of)
                 .setInstructions(ImmutableList.of(of.instructions().applyActions(applyActions)))
                 .setMatch(matchFlow(inputPort, transitEncapsulationId, of))
                 .build();

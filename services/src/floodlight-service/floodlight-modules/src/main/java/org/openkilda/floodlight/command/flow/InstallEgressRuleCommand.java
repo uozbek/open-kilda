@@ -15,6 +15,7 @@
 
 package org.openkilda.floodlight.command.flow;
 
+import org.openkilda.floodlight.flow.FlowEndpoint;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -31,14 +32,15 @@ import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class InstallEgressRuleCommand extends FlowInstallCommand {
-
-    private final OutputVlanType outputVlanType;
-    private final Integer outputVlanId;
+    private final Integer outputOuterVlanId;
+    private final Integer outputInnerVlanId;
+    private final FlowEndpoint ingressEndpoint;
 
     public InstallEgressRuleCommand(@JsonProperty("command_id") UUID commandId,
                                     @JsonProperty("flowid") String flowId,
@@ -47,15 +49,17 @@ public class InstallEgressRuleCommand extends FlowInstallCommand {
                                     @JsonProperty("switch_id") SwitchId switchId,
                                     @JsonProperty("input_port") Integer inputPort,
                                     @JsonProperty("output_port") Integer outputPort,
-                                    @JsonProperty("output_vlan_type") OutputVlanType outputVlanType,
-                                    @JsonProperty("output_vlan_id") Integer outputVlanId,
+                                    @JsonProperty("output_vlan_id") Integer outputOuterVlanId,
+                                    @JsonProperty("output_inner_vlan_id") Integer outputInnerVlanId,
+                                    @JsonProperty("flow_ingress_endpoint") FlowEndpoint ingressEndpoint,
                                     @JsonProperty("transit_encapsulation_id") Integer transitEncapsulationId,
                                     @JsonProperty("transit_encapsulation_type")
                                             FlowEncapsulationType transitEncapsulationType) {
         super(commandId, flowId, messageContext, cookie, switchId, inputPort, outputPort,
                 transitEncapsulationId, transitEncapsulationType);
-        this.outputVlanType = outputVlanType;
-        this.outputVlanId = outputVlanId;
+        this.outputOuterVlanId = outputOuterVlanId;
+        this.outputInnerVlanId = outputInnerVlanId;
+        this.ingressEndpoint = ingressEndpoint;
     }
 
     @Override
@@ -74,28 +78,28 @@ public class InstallEgressRuleCommand extends FlowInstallCommand {
                                  .setPort(OFPort.of(outputPort))
                                  .build());
 
-        return makeFlowAddMessageBuilder(of)
+        return makeOfFlowAddMessageBuilder(of)
                 .setMatch(matchFlow(inputPort, transitEncapsulationId, of))
                 .setInstructions(ImmutableList.of(of.instructions().applyActions(applyActions)))
                 .build();
     }
 
-    private List<OFAction> makePacketTransformActions(OFFactory ofFactory) {
-        OFAction action;
+    private List<OFAction> makePacketTransformActions(OFFactory of) {
+        List<Integer> currentVlanStack = makeCurrentVlanStack();
+        List<Integer> desiredVlanStack = FlowEndpoint.makeVlanStack(outputInnerVlanId, outputOuterVlanId);
 
-        switch (outputVlanType) {
-            case PUSH:
-            case REPLACE:
-                action = makeSetVlanIdAction(ofFactory, outputVlanId);
-                break;
-            case POP:
-            case NONE:
-                action = ofFactory.actions().popVlan();
-                break;
-            default:
-                throw new UnsupportedOperationException(String.format("Unknown OutputVlanType: %s", outputVlanType));
+        return makePacketVlanTransformActions(of, currentVlanStack, desiredVlanStack);
+    }
+
+    private List<Integer> makeCurrentVlanStack() {
+        final LinkedList<Integer> vlanStack = new LinkedList<>(ingressEndpoint.getVlanStack());
+        if (transitEncapsulationType == FlowEncapsulationType.TRANSIT_VLAN) {
+            // vlan encapsulation rewrite outer vlan if it exists
+            if (! vlanStack.isEmpty()) {
+                vlanStack.removeLast();
+            }
+            vlanStack.addLast(transitEncapsulationId);
         }
-
-        return Collections.singletonList(action);
+        return vlanStack;
     }
 }

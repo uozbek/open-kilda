@@ -20,6 +20,7 @@ import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
+import org.openkilda.floodlight.model.SwitchDescriptor;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
@@ -59,6 +60,8 @@ public abstract class FlowCommand<T extends SpeakerCommandReport> extends Speake
     @Getter(AccessLevel.PROTECTED)
     private FloodlightModuleContext moduleContext;
     @Getter(AccessLevel.PROTECTED)
+    private SwitchDescriptor switchDescriptor;
+    @Getter(AccessLevel.PROTECTED)
     private Set<SpeakerSwitchView.Feature> switchFeatures;
 
     final UUID commandId;
@@ -75,6 +78,8 @@ public abstract class FlowCommand<T extends SpeakerCommandReport> extends Speake
     @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         super.setup(moduleContext);
+
+        switchDescriptor = new SwitchDescriptor(getSw());
 
         FeatureDetectorService featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
         switchFeatures = featureDetectorService.detectSwitch(getSw());
