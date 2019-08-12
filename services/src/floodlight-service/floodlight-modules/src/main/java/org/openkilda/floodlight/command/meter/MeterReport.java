@@ -30,11 +30,11 @@ public class MeterReport extends SpeakerCommandReport {
         this(null, meterId);
     }
 
-    public MeterReport(Throwable error) {
+    public MeterReport(Exception error) {
         this(error, null);
     }
 
-    private MeterReport(Throwable error, MeterId meterId) {
+    private MeterReport(Exception error, MeterId meterId) {
         super(error);
         this.meterId = meterId;
     }

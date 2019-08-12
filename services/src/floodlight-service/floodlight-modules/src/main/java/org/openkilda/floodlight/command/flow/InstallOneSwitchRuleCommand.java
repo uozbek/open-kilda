@@ -15,6 +15,7 @@
 
 package org.openkilda.floodlight.command.flow;
 
+import org.openkilda.floodlight.flow.FlowEndpoint;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
@@ -60,16 +61,16 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
     @Override
     List<OFAction> makePacketTransformActions(OFFactory of) {
         List<Integer> currentVlanStack = new ArrayList<>(2);
-        if (isVlanIdSet(inputInnerVlanId)) {
+        if (FlowEndpoint.isVlanIdSet(inputInnerVlanId)) {
             currentVlanStack.add(inputInnerVlanId);
         }
         // `inputOuterVlanId` was removed by pre-match rule
 
         List<Integer> desiredVlanStack = new ArrayList<>(2);
-        if (isVlanIdSet(outputInnerVlanId)) {
+        if (FlowEndpoint.isVlanIdSet(outputInnerVlanId)) {
             desiredVlanStack.add(outputInnerVlanId);
         }
-        if (isVlanIdSet(outputOuterVlanId)) {
+        if (FlowEndpoint.isVlanIdSet(outputOuterVlanId)) {
             desiredVlanStack.add(outputOuterVlanId);
         }
 

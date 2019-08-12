@@ -20,6 +20,7 @@ import static org.projectfloodlight.openflow.protocol.OFVersion.OF_15;
 import org.openkilda.floodlight.command.meter.InstallMeterCommand;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
+import org.openkilda.floodlight.flow.FlowEndpoint;
 import org.openkilda.floodlight.model.SwitchDescriptor;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.switchmanager.SwitchManager;
@@ -124,9 +125,9 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
     private CompletableFuture<FlowReport> planForwardingRulesInstall(MeterId effectiveMeterId) {
         List<OFFlowMod> ofMessages = new ArrayList<>(2);
         OFFactory of = getSw().getOFFactory();
-        if (isVlanIdSet(inputOuterVlanId)) {
+        if (FlowEndpoint.isVlanIdSet(inputOuterVlanId)) {
             ofMessages.add(makeOuterVlanMatchMessage(of));
-            if (isVlanIdSet(inputInnerVlanId)) {
+            if (FlowEndpoint.isVlanIdSet(inputInnerVlanId)) {
                 ofMessages.add(makeInnerVlanMatchAndForwardMessage(of, effectiveMeterId));
             } else {
                 ofMessages.add(makeOuterVlanOnlyForwardMessage(of, effectiveMeterId));
@@ -220,7 +221,7 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
 
     List<OFAction> makePacketTransformActions(OFFactory of) {
         List<OFAction> actions = new ArrayList<>();
-        if (isVlanIdSet(inputOuterVlanId)) {
+        if (FlowEndpoint.isVlanIdSet(inputOuterVlanId)) {
             // restore outer vlan removed by 'pre-match' rule
             actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
             actions.add(makeSetVlanIdAction(of, inputOuterVlanId));
@@ -240,7 +241,7 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
 
     private List<OFAction> makePacketTransformForVlanEncapsulation(OFFactory of) {
         List<OFAction> actions = new ArrayList<>();
-        if (!isVlanIdSet(inputOuterVlanId)) {
+        if (! FlowEndpoint.isVlanIdSet(inputOuterVlanId)) {
             actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
         }
         actions.add(makeSetVlanIdAction(of, transitEncapsulationId));

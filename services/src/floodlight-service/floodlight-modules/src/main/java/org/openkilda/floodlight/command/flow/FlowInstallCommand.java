@@ -67,7 +67,7 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
                 .setPriority(FLOW_PRIORITY);
     }
 
-    protected final List<OFAction> makePacketVlanTransformActions(
+    static final List<OFAction> makePacketVlanTransformActions(
             OFFactory of, List<Integer> currentVlanStack, List<Integer> desiredVlanStack) {
         Iterator<Integer> currentIter = currentVlanStack.iterator();
         Iterator<Integer> desiredIter = desiredVlanStack.iterator();
@@ -101,8 +101,7 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
         return actions;
     }
 
-
-    protected final OFAction makeSetVlanIdAction(final OFFactory factory, final int newVlan) {
+    static final OFAction makeSetVlanIdAction(final OFFactory factory, final int newVlan) {
         OFOxms oxms = factory.oxms();
         OFActions actions = factory.actions();
         OFVlanVidMatch vlanMatch = factory.getVersion() == OFVersion.OF_12
