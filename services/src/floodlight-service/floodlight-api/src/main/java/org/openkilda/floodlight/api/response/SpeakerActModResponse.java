@@ -13,12 +13,8 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.flow.response;
+package org.openkilda.floodlight.api.response;
 
-import static org.openkilda.messaging.Utils.FLOW_ID;
-
-import org.openkilda.floodlight.FloodlightResponse;
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
@@ -34,12 +30,12 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class FlowResponse extends FloodlightResponse {
+public class SpeakerActModResponse extends SpeakerResponse {
 
     @JsonProperty("command_id")
     private final UUID commandId;
 
-    @JsonProperty(FLOW_ID)
+    @JsonProperty("flowid")
     private final String flowId;
 
     @JsonProperty("switch_id")
@@ -50,11 +46,11 @@ public class FlowResponse extends FloodlightResponse {
 
     @JsonCreator
     @Builder
-    public FlowResponse(@JsonProperty("success") boolean success,
-                        @JsonProperty("command_context") MessageContext messageContext,
-                        @JsonProperty("command_id") UUID commandId,
-                        @JsonProperty(FLOW_ID) String flowId,
-                        @JsonProperty("switch_id") SwitchId switchId) {
+    public SpeakerActModResponse(@JsonProperty("success") boolean success,
+                                 @JsonProperty("command_context") MessageContext messageContext,
+                                 @JsonProperty("command_id") UUID commandId,
+                                 @JsonProperty("flowid") String flowId,
+                                 @JsonProperty("switch_id") SwitchId switchId) {
         super(messageContext);
 
         this.commandId = commandId;
@@ -62,14 +58,4 @@ public class FlowResponse extends FloodlightResponse {
         this.switchId = switchId;
         this.success = success;
     }
-
-    public FlowResponse(SpeakerFlowRequest request, boolean success) {
-        super(request.getMessageContext());
-
-        this.commandId = request.getCommandId();
-        this.flowId = request.getFlowId();
-        this.switchId = request.getSwitchId();
-        this.success = success;
-    }
-
 }

@@ -13,7 +13,9 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.flow;
+package org.openkilda.floodlight.api;
+
+import static java.util.Objects.requireNonNull;
 
 import org.openkilda.model.SwitchId;
 
@@ -22,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
 import java.io.Serializable;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,7 +34,7 @@ public class FlowEndpoint implements Serializable {
     private final SwitchId datapath;
 
     @JsonProperty("port_number")
-    private final int portNumber;
+    private final Integer portNumber;
 
     @JsonProperty("outer_vlan_id")
     private final int outerVlanId;
@@ -44,9 +45,12 @@ public class FlowEndpoint implements Serializable {
     @JsonCreator
     public FlowEndpoint(
             @JsonProperty("datapath") SwitchId datapath,
-            @JsonProperty("port_number") int portNumber,
+            @JsonProperty("port_number") Integer portNumber,
             @JsonProperty("outer_vlan_id") int outerVlanId,
             @JsonProperty("inner_vlan_id") int innerVlanId) {
+        requireNonNull(datapath, "Argument datapath must no be null");
+        requireNonNull(portNumber, "Argument portNumber must no be null");
+
         this.datapath = datapath;
         this.portNumber = portNumber;
 
@@ -55,7 +59,7 @@ public class FlowEndpoint implements Serializable {
         if (1 < vlanStack.size()) {
             this.outerVlanId = vlanStack.get(1);
             this.innerVlanId = vlanStack.get(0);
-        } else if (0 < vlanStack.size()) {
+        } else if (! vlanStack.isEmpty()) {
             this.outerVlanId = vlanStack.get(0);
             this.innerVlanId = 0;
         } else {

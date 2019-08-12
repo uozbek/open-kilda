@@ -17,8 +17,8 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.flow.request.InstallTransitRule;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
@@ -37,18 +37,18 @@ public class ValidateNonIngressRulesAction extends RuleProcessingAction {
     @Override
     protected void perform(State from, State to,
                            Event event, FlowRerouteContext context, FlowRerouteFsm stateMachine) {
-        FlowResponse response = context.getFlowResponse();
+        SpeakerActModResponse response = context.getResponse();
         UUID commandId = response.getCommandId();
         stateMachine.getPendingCommands().remove(commandId);
 
-        InstallTransitRule expected = stateMachine.getNonIngressCommands().get(commandId);
+        SpeakerTransitActRequest expected = stateMachine.getNonIngressCommands().get(commandId);
         if (expected == null) {
             throw new IllegalStateException(format("Failed to find non ingress command with id %s", commandId));
         }
 
         if (response.isSuccess()) {
             RulesValidator validator =
-                    new NonIngressRulesValidator(expected, (FlowRuleResponse) context.getFlowResponse());
+                    new NonIngressRulesValidator(expected, (FlowRuleResponse) context.getResponse());
             if (validator.validate()) {
                 String message = format("Non ingress rule %s has been validated successfully on switch %s",
                         expected.getCookie(), expected.getSwitchId());

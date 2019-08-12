@@ -17,9 +17,9 @@ package org.openkilda.wfm.topology.flowhs.fsm.common;
 
 import static org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode.SWITCH_UNAVAILABLE;
 
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm.Event;
 import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm.State;
@@ -32,42 +32,42 @@ import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
 
 @Slf4j
 @Getter
-public final class SpeakerCommandFsm extends WithContextStateMachine<SpeakerCommandFsm, State, Event, FlowResponse> {
+public final class SpeakerCommandFsm extends WithContextStateMachine<SpeakerCommandFsm, State, Event, SpeakerActModResponse> {
 
-    private final SpeakerFlowRequest request;
+    private final AbstractSpeakerActRequest request;
     private final FlowCreateHubCarrier carrier;
     private int remainingRetries;
 
-    private SpeakerCommandFsm(SpeakerFlowRequest request, FlowCreateHubCarrier carrier, Integer retriesLimit) {
+    private SpeakerCommandFsm(AbstractSpeakerActRequest request, FlowCreateHubCarrier carrier, Integer retriesLimit) {
         super(new CommandContext(request.getMessageContext().getCorrelationId()));
         this.request = request;
         this.carrier = carrier;
         this.remainingRetries = retriesLimit;
     }
 
-    protected void processResponse(State from, State to, Event event, FlowResponse flowResponse) {
-        if (flowResponse.isSuccess()) {
-            log.debug("Successfully executed the command {}", flowResponse);
+    protected void processResponse(State from, State to, Event event, SpeakerActModResponse response) {
+        if (response.isSuccess()) {
+            log.debug("Successfully executed the command {}", response);
             fire(Event.NEXT);
         } else {
-            FlowErrorResponse errorResponse = (FlowErrorResponse) flowResponse;
+            FlowErrorResponse errorResponse = (FlowErrorResponse) response;
             if (errorResponse.getErrorCode() == SWITCH_UNAVAILABLE && remainingRetries-- > 0) {
-                log.debug("About to retry execution of the command {}", flowResponse);
+                log.debug("About to retry execution of the command {}", response);
                 fire(Event.RETRY);
             } else {
-                log.info("Failed to execute the command {}", flowResponse);
+                log.info("Failed to execute the command {}", response);
                 fire(Event.ERROR);
             }
         }
     }
 
-    protected void sendCommand(State from, State to, Event event, FlowResponse flowResponse) {
+    protected void sendCommand(State from, State to, Event event, SpeakerActModResponse response) {
         log.debug("Sending command {} to a speaker", request);
         carrier.sendSpeakerRequest(request);
     }
 
     @Override
-    public void fireNext(FlowResponse context) {
+    public void fireNext(SpeakerActModResponse context) {
         fire(Event.NEXT);
     }
 
@@ -100,16 +100,16 @@ public final class SpeakerCommandFsm extends WithContextStateMachine<SpeakerComm
     public static final class Builder {
         private final FlowCreateHubCarrier carrier;
         private final int retriesLimit;
-        private final StateMachineBuilder<SpeakerCommandFsm, State, Event, FlowResponse> builder;
+        private final StateMachineBuilder<SpeakerCommandFsm, State, Event, SpeakerActModResponse> builder;
 
         private Builder(FlowCreateHubCarrier carrier, int retriesLimit) {
             this.carrier = carrier;
             this.retriesLimit = retriesLimit;
 
             builder = StateMachineBuilderFactory.create(
-                    SpeakerCommandFsm.class, State.class, Event.class, FlowResponse.class,
+                    SpeakerCommandFsm.class, State.class, Event.class, SpeakerActModResponse.class,
                     // extra params
-                    SpeakerFlowRequest.class, FlowCreateHubCarrier.class, Integer.class
+                    AbstractSpeakerActRequest.class, FlowCreateHubCarrier.class, Integer.class
             );
 
             builder.transition()
@@ -137,7 +137,7 @@ public final class SpeakerCommandFsm extends WithContextStateMachine<SpeakerComm
             builder.defineFinalState(State.FAILED);
         }
 
-        public SpeakerCommandFsm newInstance(SpeakerFlowRequest request) {
+        public SpeakerCommandFsm newInstance(AbstractSpeakerActRequest request) {
             return builder.newStateMachine(State.INIT, request, carrier, retriesLimit);
         }
     }

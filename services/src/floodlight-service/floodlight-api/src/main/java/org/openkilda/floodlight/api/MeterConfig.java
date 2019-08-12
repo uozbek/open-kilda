@@ -13,27 +13,33 @@
  *   limitations under the License.
  */
 
-package org.openkilda.messaging;
+package org.openkilda.floodlight.api;
 
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
+import static java.util.Objects.requireNonNull;
 
+import org.openkilda.model.MeterId;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.Value;
 
 import java.io.Serializable;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = PROPERTY, property = "clazz")
-@Getter
-@EqualsAndHashCode
-public abstract class AbstractMessage implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Value
+public class MeterConfig implements Serializable {
+    @JsonProperty("meter_id")
+    private final MeterId meterId;
 
-    @JsonProperty("message_context")
-    private MessageContext messageContext;
+    @JsonProperty("bandwidth")
+    private final long bandwidth;
 
-    public AbstractMessage(MessageContext messageContext) {
-        this.messageContext = messageContext;
+    @JsonCreator
+    public MeterConfig(
+            @JsonProperty("meter_id") MeterId meterId,
+            @JsonProperty("bandwidth") long bandwidth) {
+        requireNonNull(meterId, "Argument meterId must no be null");
+
+        this.meterId = meterId;
+        this.bandwidth = bandwidth;
     }
 }

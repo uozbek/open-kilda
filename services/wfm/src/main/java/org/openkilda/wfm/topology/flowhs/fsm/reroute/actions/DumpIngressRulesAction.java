@@ -16,7 +16,7 @@
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.Event;
@@ -46,7 +46,7 @@ public class DumpIngressRulesAction extends
         dumpFlowRules.forEach(command -> stateMachine.getCarrier().sendSpeakerRequest(command));
 
         stateMachine.setPendingCommands(dumpFlowRules.stream()
-                .map(SpeakerFlowRequest::getCommandId)
+                .map(AbstractSpeakerActRequest::getCommandId)
                 .collect(Collectors.toSet()));
     }
 }

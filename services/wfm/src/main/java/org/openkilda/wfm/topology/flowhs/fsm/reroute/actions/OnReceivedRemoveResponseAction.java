@@ -18,7 +18,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 import static java.lang.String.format;
 
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.Event;
@@ -32,7 +32,7 @@ public class OnReceivedRemoveResponseAction extends RuleProcessingAction {
     @Override
     protected void perform(FlowRerouteFsm.State from, FlowRerouteFsm.State to,
                            Event event, FlowRerouteContext context, FlowRerouteFsm stateMachine) {
-        FlowResponse response = context.getFlowResponse();
+        SpeakerActModResponse response = context.getResponse();
         UUID commandId = response.getCommandId();
         if (stateMachine.getPendingCommands().remove(commandId)) {
             long cookie = getCookieForCommand(stateMachine, commandId);

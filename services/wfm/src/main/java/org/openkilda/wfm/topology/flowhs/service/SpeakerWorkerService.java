@@ -15,10 +15,10 @@
 
 package org.openkilda.wfm.topology.flowhs.service;
 
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.error.PipelineException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ import java.util.Map;
 public class SpeakerWorkerService {
     private final SpeakerCommandCarrier carrier;
 
-    private final Map<String, SpeakerFlowRequest> keyToRequest = new HashMap<>();
+    private final Map<String, AbstractSpeakerActRequest> keyToRequest = new HashMap<>();
 
     public SpeakerWorkerService(SpeakerCommandCarrier carrier) {
         this.carrier = carrier;
@@ -41,7 +41,7 @@ public class SpeakerWorkerService {
      * @param key unique operation's key.
      * @param command command to be executed.
      */
-    public void sendCommand(String key, SpeakerFlowRequest command) throws PipelineException {
+    public void sendCommand(String key, AbstractSpeakerActRequest command) throws PipelineException {
         log.debug("Got a request from hub bolt {}", command);
         keyToRequest.put(key, command);
         carrier.sendCommand(key, command);
@@ -52,10 +52,10 @@ public class SpeakerWorkerService {
      * @param key operation's key.
      * @param response response payload.
      */
-    public void handleResponse(String key, FlowResponse response)
+    public void handleResponse(String key, SpeakerActModResponse response)
             throws PipelineException {
         log.debug("Got a response from speaker {}", response);
-        SpeakerFlowRequest pendingRequest = keyToRequest.remove(key);
+        AbstractSpeakerActRequest pendingRequest = keyToRequest.remove(key);
         if (pendingRequest != null) {
             if (pendingRequest.getCommandId().equals(response.getCommandId())) {
                 carrier.sendResponse(key, response);
@@ -70,9 +70,9 @@ public class SpeakerWorkerService {
      * @param key operation identifier.
      */
     public void handleTimeout(String key) throws PipelineException {
-        SpeakerFlowRequest failedRequest = keyToRequest.remove(key);
+        AbstractSpeakerActRequest failedRequest = keyToRequest.remove(key);
 
-        FlowResponse response = FlowErrorResponse.errorBuilder()
+        SpeakerActModResponse response = FlowErrorResponse.errorBuilder()
                 .flowId(failedRequest.getFlowId())
                 .commandId(failedRequest.getCommandId())
                 .switchId(failedRequest.getSwitchId())

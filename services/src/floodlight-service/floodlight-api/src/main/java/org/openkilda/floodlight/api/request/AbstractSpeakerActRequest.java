@@ -13,16 +13,18 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.flow.request;
+package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
-import static org.openkilda.messaging.Utils.FLOW_ID;
 
+import org.openkilda.floodlight.api.ActOperation;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -30,33 +32,38 @@ import java.util.UUID;
 
 @Getter
 @ToString
-public abstract class SpeakerFlowRequest extends AbstractMessage {
+@EqualsAndHashCode(callSuper = true)
+public abstract class AbstractSpeakerActRequest extends AbstractMessage {
+    @JsonProperty("operation")
+    protected final ActOperation operation;
 
-    /**
-     * Unique identifier for the command.
-     */
     @JsonProperty("command_id")
     private final UUID commandId;
 
-    /**
-     * The flow id.
-     */
-    @JsonProperty(FLOW_ID)
+    @JsonProperty("flowid")
     private final String flowId;
 
-    /**
-     * The switch id to manage flow on. It is a mandatory parameter.
-     */
     @JsonProperty("switch_id")
     final SwitchId switchId;
 
-    public SpeakerFlowRequest(MessageContext context, UUID commandId, String flowId, SwitchId switchId) {
+    @JsonProperty("cookie")
+    private final Cookie cookie;
+
+    public AbstractSpeakerActRequest(
+            MessageContext context, ActOperation operation, UUID commandId, SwitchId switchId, String flowId,
+            Cookie cookie) {
         super(context);
 
-        requireNonNull(commandId, "Message id should be not null");
-        requireNonNull(flowId, "Flow id should be not null");
+        requireNonNull(operation, "Argument operation must no be null");
+        requireNonNull(commandId, "Argument commandId must not be null");
+        requireNonNull(switchId, "Argument switchId must not be null");
+        requireNonNull(flowId, "Argument flowId must not be null");
+
+        this.operation = operation;
+
         this.commandId = commandId;
-        this.flowId = flowId;
         this.switchId = switchId;
+        this.flowId = flowId;
+        this.cookie = cookie;
     }
 }

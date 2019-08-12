@@ -28,14 +28,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.flow.request.InstallEgressRule;
+import org.openkilda.floodlight.api.request.SpeakerEgressActRequest;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.flow.FlowRequest;
 import org.openkilda.model.FeatureToggles;
@@ -138,7 +138,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
             return flowPath;
         }).when(flowPathRepository).createOrUpdate(any(FlowPath.class));
 
-        doAnswer(getSpeakerCommandsAnswer()).when(carrier).sendSpeakerRequest(any(SpeakerFlowRequest.class));
+        doAnswer(getSpeakerCommandsAnswer()).when(carrier).sendSpeakerRequest(any(AbstractSpeakerActRequest.class));
         when(repositoryFactory.createSwitchFeaturesRepository()).thenReturn(switchFeaturesRepository);
         target = new FlowCreateService(carrier, persistenceManager, pathComputer, flowResourcesManager, 0, 0);
     }
@@ -180,7 +180,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        SpeakerFlowRequest flowRequest;
+        AbstractSpeakerActRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
@@ -226,7 +226,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        SpeakerFlowRequest command;
+        AbstractSpeakerActRequest command;
         while ((command = requests.poll()) != null) {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
@@ -271,7 +271,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        SpeakerFlowRequest command;
+        AbstractSpeakerActRequest command;
         int installCommands = 0;
         int deleteCommands = 0;
         while ((command = requests.poll()) != null) {
@@ -329,7 +329,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        SpeakerFlowRequest command;
+        AbstractSpeakerActRequest command;
         int installCommands = 0;
         int deleteCommands = 0;
         while ((command = requests.poll()) != null) {
@@ -337,7 +337,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
             } else if (command instanceof InstallFlowRule) {
                 installCommands++;
-                if (requests.size() > 1 || command instanceof InstallEgressRule) {
+                if (requests.size() > 1 || command instanceof SpeakerEgressActRequest) {
                     handleResponse(key, command);
                 } else {
                     handleErrorResponse(key, command);
@@ -390,12 +390,12 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
         int remainingRetries = retriesLimit;
-        SpeakerFlowRequest command;
+        AbstractSpeakerActRequest command;
         while ((command = requests.poll()) != null) {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
             } else {
-                if (command instanceof InstallEgressRule && remainingRetries > 0) {
+                if (command instanceof SpeakerEgressActRequest && remainingRetries > 0) {
                     handleErrorResponse(key, command, ErrorCode.SWITCH_UNAVAILABLE);
                     remainingRetries--;
                 } else {
@@ -446,12 +446,12 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
         int remainingRetries = retriesLimit;
-        SpeakerFlowRequest command;
+        AbstractSpeakerActRequest command;
         while ((command = requests.poll()) != null) {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
             } else {
-                if (command instanceof InstallIngressRule && remainingRetries > 0) {
+                if (command instanceof SpeakerIngressActModRequest && remainingRetries > 0) {
                     handleErrorResponse(key, command, ErrorCode.SWITCH_UNAVAILABLE);
                     remainingRetries--;
                 } else {
@@ -500,7 +500,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        SpeakerFlowRequest flowRequest;
+        AbstractSpeakerActRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
@@ -554,7 +554,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        SpeakerFlowRequest flowRequest;
+        AbstractSpeakerActRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
@@ -735,8 +735,8 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         return flowResources;
     }
 
-    private void handleResponse(String key, SpeakerFlowRequest request) {
-        target.handleAsyncResponse(key, FlowResponse.builder()
+    private void handleResponse(String key, AbstractSpeakerActRequest request) {
+        target.handleAsyncResponse(key, SpeakerActModResponse.builder()
                 .flowId(request.getFlowId())
                 .commandId(request.getCommandId())
                 .switchId(request.getSwitchId())
@@ -744,7 +744,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                 .build());
     }
 
-    private void handleErrorResponse(String key, SpeakerFlowRequest request) {
+    private void handleErrorResponse(String key, AbstractSpeakerActRequest request) {
         target.handleAsyncResponse(key, FlowErrorResponse.errorBuilder()
                 .flowId(request.getFlowId())
                 .commandId(request.getCommandId())
@@ -752,7 +752,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                 .build());
     }
 
-    private void handleErrorResponse(String key, SpeakerFlowRequest request, ErrorCode errorCode) {
+    private void handleErrorResponse(String key, AbstractSpeakerActRequest request, ErrorCode errorCode) {
         target.handleAsyncResponse(key, FlowErrorResponse.errorBuilder()
                 .flowId(request.getFlowId())
                 .commandId(request.getCommandId())

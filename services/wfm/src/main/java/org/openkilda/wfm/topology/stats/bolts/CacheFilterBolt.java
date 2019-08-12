@@ -18,11 +18,11 @@ package org.openkilda.wfm.topology.stats.bolts;
 import static org.openkilda.wfm.AbstractBolt.FIELD_ID_CONTEXT;
 import static org.openkilda.wfm.topology.stats.StatsStreamType.CACHE_UPDATE;
 
-import org.openkilda.floodlight.flow.request.InstallEgressRule;
-import org.openkilda.floodlight.flow.request.InstallMultiSwitchIngressRule;
-import org.openkilda.floodlight.flow.request.InstallSingleSwitchIngressRule;
+import org.openkilda.floodlight.api.request.SpeakerEgressActRequest;
+import org.openkilda.floodlight.api.request.SpeakerMultiSwitchIngressActRequest;
+import org.openkilda.floodlight.api.request.SpeakerSingleSwitchIngressActRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.BaseMessage;
 import org.openkilda.messaging.command.CommandData;
@@ -140,21 +140,21 @@ public class CacheFilterBolt extends BaseRichBolt {
     }
 
     private void handleAbstractMessage(Tuple tuple, AbstractMessage message) {
-        if (message instanceof InstallMultiSwitchIngressRule) {
-            InstallMultiSwitchIngressRule command = (InstallMultiSwitchIngressRule) message;
+        if (message instanceof SpeakerMultiSwitchIngressActRequest) {
+            SpeakerMultiSwitchIngressActRequest command = (SpeakerMultiSwitchIngressActRequest) message;
             logMatchedRecord(command, command.getCookie());
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), command.getMeterId().getValue(), MeasurePoint.INGRESS);
-        } else if (message instanceof InstallSingleSwitchIngressRule) {
-            InstallSingleSwitchIngressRule command = (InstallSingleSwitchIngressRule) message;
+        } else if (message instanceof SpeakerSingleSwitchIngressActRequest) {
+            SpeakerSingleSwitchIngressActRequest command = (SpeakerSingleSwitchIngressActRequest) message;
             logMatchedRecord(command, command.getCookie());
 
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), command.getMeterId().getValue(), MeasurePoint.INGRESS);
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), null, MeasurePoint.EGRESS);
-        } else if (message instanceof InstallEgressRule) {
-            InstallEgressRule command = (InstallEgressRule) message;
+        } else if (message instanceof SpeakerEgressActRequest) {
+            SpeakerEgressActRequest command = (SpeakerEgressActRequest) message;
             logMatchedRecord(command, command.getCookie());
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), null, MeasurePoint.EGRESS);
@@ -198,7 +198,7 @@ public class CacheFilterBolt extends BaseRichBolt {
                 flowCommand.getCookie());
     }
 
-    private void logMatchedRecord(SpeakerFlowRequest flowRule, Cookie cookie) {
+    private void logMatchedRecord(AbstractSpeakerActRequest flowRule, Cookie cookie) {
         logFlowDetails(flowRule.getClass().getCanonicalName(), flowRule.getFlowId(), flowRule.getSwitchId(),
                 cookie.getValue());
     }

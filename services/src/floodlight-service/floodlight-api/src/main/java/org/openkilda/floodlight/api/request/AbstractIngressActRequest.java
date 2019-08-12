@@ -13,12 +13,15 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.flow.request;
+package org.openkilda.floodlight.api.request;
 
+import static java.util.Objects.requireNonNull;
+
+import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.api.ActOperation;
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
-import org.openkilda.model.OutputVlanType;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,27 +34,21 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class InstallIngressRule extends InstallFlowRule {
+abstract class AbstractIngressActRequest extends AbstractSpeakerActRequest {
+    @JsonProperty("endpoint")
+    protected final FlowEndpoint endpoint;
 
-    /**
-     * Input vlan id value.
-     */
-    @JsonProperty("input_vlan_id")
-    private final Integer inputVlanId;
+    @JsonProperty("meter_config")
+    protected final MeterConfig meterConfig;
 
-    /**
-     * Output action on the vlan tag.
-     */
-    @JsonProperty("output_vlan_type")
-    private final OutputVlanType outputVlanType;
+    AbstractIngressActRequest(MessageContext context, ActOperation operation,
+                              UUID commandId, SwitchId switchId, String flowId, Cookie cookie,
+                              FlowEndpoint endpoint, MeterConfig meterConfig) {
+        super(context, operation, commandId, switchId, flowId, cookie);
 
-    // FIXME
-    public InstallIngressRule(MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
-                              SwitchId switchId, Integer inputPort, Integer outputPort, MeterId meterId, Long bandwidth,
-                              OutputVlanType outputVlanType, Integer inputVlanId) {
-        super(messageContext, commandId, flowId, cookie, switchId, inputPort, outputPort);
+        requireNonNull(endpoint, "Argument endpoint must no be null");
 
-        this.inputVlanId = inputVlanId;
-        this.outputVlanType = outputVlanType;
+        this.endpoint = endpoint;
+        this.meterConfig = meterConfig;
     }
 }

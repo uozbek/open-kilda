@@ -49,13 +49,13 @@ import java.util.concurrent.CompletionException;
 @JsonTypeInfo(use = Id.NAME, property = "clazz")
 @JsonSubTypes({
         @Type(value = InstallIngressRuleCommand.class,
-                name = "org.openkilda.floodlight.flow.request.InstallMultiSwitchIngressRule"),
+                name = "org.openkilda.floodlight.api.request.InstallMultiSwitchIngressRule"),
         @Type(value = InstallOneSwitchRuleCommand.class,
-                name = "org.openkilda.floodlight.flow.request.InstallSingleSwitchIngressRule"),
+                name = "org.openkilda.floodlight.api.request.InstallSingleSwitchIngressRule"),
         @Type(value = InstallTransitRuleCommand.class,
-                name = "org.openkilda.floodlight.flow.request.InstallTransitRule"),
+                name = "org.openkilda.floodlight.api.request.InstallTransitRule"),
         @Type(value = InstallEgressRuleCommand.class,
-                name = "org.openkilda.floodlight.flow.request.InstallEgressRule"),
+                name = "org.openkilda.floodlight.api.request.InstallEgressRule"),
         @Type(value = FlowRemoveCommand.class,
                 name = "org.openkilda.floodlight.flow.request.RemoveRule"),
         @Type(value = ReadRuleCommand.class,

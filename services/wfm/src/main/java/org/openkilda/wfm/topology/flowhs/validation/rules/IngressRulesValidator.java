@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.validation.rules;
 
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.SwitchFeatures;
 
@@ -28,7 +28,7 @@ public class IngressRulesValidator extends RulesValidator {
 
     private final SwitchFeatures switchFeatures;
 
-    public IngressRulesValidator(InstallIngressRule expected, FlowRuleResponse actual, SwitchFeatures switchFeatures) {
+    public IngressRulesValidator(SpeakerIngressActModRequest expected, FlowRuleResponse actual, SwitchFeatures switchFeatures) {
         super(expected, actual);
 
         this.switchFeatures = switchFeatures;
@@ -38,10 +38,10 @@ public class IngressRulesValidator extends RulesValidator {
     public boolean validate() {
         boolean valid = super.validate();
 
-        InstallIngressRule expectedIngress = (InstallIngressRule) expected;
-        if (!Objects.equals(expectedIngress.getInputVlanId(), actual.getInVlan())) {
+        SpeakerIngressActModRequest expectedIngress = (SpeakerIngressActModRequest) expected;
+        if (!Objects.equals(expectedIngress.getInputOuterVlanId(), actual.getInVlan())) {
             log.warn("Input vlan mismatch for the flow {} on the switch {}. Expected {}, actual {}",
-                    expected.getFlowId(), expected.getSwitchId(), expectedIngress.getInputVlanId(), actual.getInVlan());
+                     expected.getFlowId(), expected.getSwitchId(), expectedIngress.getInputOuterVlanId(), actual.getInVlan());
             valid = false;
         }
 

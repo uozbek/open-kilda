@@ -17,8 +17,8 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.SwitchFeatures;
 import org.openkilda.persistence.PersistenceManager;
@@ -46,11 +46,11 @@ public class ValidateIngressRulesAction extends RuleProcessingAction {
     @Override
     protected void perform(State from, State to,
                            Event event, FlowRerouteContext context, FlowRerouteFsm stateMachine) {
-        FlowResponse response = context.getFlowResponse();
+        SpeakerActModResponse response = context.getResponse();
         UUID commandId = response.getCommandId();
         stateMachine.getPendingCommands().remove(commandId);
 
-        InstallIngressRule expected = stateMachine.getIngressCommands().get(commandId);
+        SpeakerIngressActModRequest expected = stateMachine.getIngressCommands().get(commandId);
         if (expected == null) {
             throw new IllegalStateException(format("Failed to find ingress command with id %s", commandId));
         }
@@ -61,7 +61,7 @@ public class ValidateIngressRulesAction extends RuleProcessingAction {
                             expected.getSwitchId())));
 
             RulesValidator validator =
-                    new IngressRulesValidator(expected, (FlowRuleResponse) context.getFlowResponse(), switchFeatures);
+                    new IngressRulesValidator(expected, (FlowRuleResponse) context.getResponse(), switchFeatures);
             if (validator.validate()) {
                 String message = format("Ingress rule %s has been validated successfully on switch %s",
                         expected.getCookie(), expected.getSwitchId());

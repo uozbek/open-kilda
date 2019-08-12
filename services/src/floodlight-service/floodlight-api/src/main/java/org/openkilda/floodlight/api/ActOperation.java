@@ -13,13 +13,10 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight;
+package org.openkilda.floodlight.api;
 
-import org.openkilda.messaging.AbstractMessage;
-import org.openkilda.messaging.MessageContext;
-
-public class FloodlightResponse extends AbstractMessage {
-    public FloodlightResponse(MessageContext messageContext) {
-        super(messageContext);
-    }
+public enum ActOperation {
+    INSTALL,
+    DELETE,
+    VERIFY
 }

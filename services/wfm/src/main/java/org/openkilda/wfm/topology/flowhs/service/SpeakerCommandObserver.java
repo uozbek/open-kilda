@@ -15,8 +15,8 @@
 
 package org.openkilda.wfm.topology.flowhs.service;
 
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm.Event;
 
@@ -27,7 +27,7 @@ public class SpeakerCommandObserver {
 
     private final SpeakerCommandFsm commandExecutor;
 
-    public SpeakerCommandObserver(SpeakerCommandFsm.Builder builder, SpeakerFlowRequest request) {
+    public SpeakerCommandObserver(SpeakerCommandFsm.Builder builder, AbstractSpeakerActRequest request) {
         this.commandExecutor = builder.newInstance(request);
     }
 
@@ -43,7 +43,7 @@ public class SpeakerCommandObserver {
      * Processes a response. If command wasn't executed successfully then it will be retried if limit is not exceeded.
      * @param response a response from a speaker.
      */
-    public void handleResponse(FlowResponse response) {
+    public void handleResponse(SpeakerActModResponse response) {
         commandExecutor.fire(Event.REPLY, response);
     }
 

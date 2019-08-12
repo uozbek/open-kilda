@@ -19,7 +19,7 @@ import static java.lang.String.format;
 
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
@@ -53,7 +53,7 @@ public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
 
     @Override
     void handleResponse(FlowCreateFsm stateMachine, FlowCreateContext context) {
-        FlowResponse response = context.getSpeakerFlowResponse();
+        SpeakerActModResponse response = context.getActModResponse();
         UUID commandId = response.getCommandId();
 
         InstallFlowRule installRule;
@@ -75,7 +75,7 @@ public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
         }
     }
 
-    private void handleError(FlowCreateFsm stateMachine, FlowResponse response, InstallFlowRule command) {
+    private void handleError(FlowCreateFsm stateMachine, SpeakerActModResponse response, InstallFlowRule command) {
         stateMachine.getFailedCommands().add(command.getCommandId());
         FlowErrorResponse errorResponse = (FlowErrorResponse) response;
         String message = format("Failed to install rule %s, on the switch %s: %s. Description: %s",

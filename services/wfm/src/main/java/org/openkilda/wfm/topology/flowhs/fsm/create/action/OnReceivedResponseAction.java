@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.common.action.FlowProcessingAction;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
@@ -35,7 +35,7 @@ public class OnReceivedResponseAction extends FlowProcessingAction<FlowCreateFsm
 
     @Override
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
-        FlowResponse response = context.getSpeakerFlowResponse();
+        SpeakerActModResponse response = context.getActModResponse();
         if (!stateMachine.isPendingCommand(response.getCommandId())) {
             log.warn("Received response for non-pending command: ", response.getCommandId());
             return;
@@ -51,7 +51,7 @@ public class OnReceivedResponseAction extends FlowProcessingAction<FlowCreateFsm
     }
 
     void handleResponse(FlowCreateFsm stateMachine, FlowCreateContext context) {
-        FlowResponse response = context.getSpeakerFlowResponse();
+        SpeakerActModResponse response = context.getActModResponse();
         if (response.isSuccess()) {
             stateMachine.fire(Event.RULE_RECEIVED, context);
         } else {

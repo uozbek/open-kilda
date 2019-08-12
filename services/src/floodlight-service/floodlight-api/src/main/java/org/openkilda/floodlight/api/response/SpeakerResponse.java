@@ -13,15 +13,13 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.flowhs.fsm.common;
+package org.openkilda.floodlight.api.response;
 
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.messaging.AbstractMessage;
+import org.openkilda.messaging.MessageContext;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
-@Data
-@AllArgsConstructor
-public abstract class FlowContext {
-    private SpeakerActModResponse actModResponse;
+public class SpeakerResponse extends AbstractMessage {
+    public SpeakerResponse(MessageContext messageContext) {
+        super(messageContext);
+    }
 }

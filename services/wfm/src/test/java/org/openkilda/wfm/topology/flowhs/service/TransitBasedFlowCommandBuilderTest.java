@@ -20,10 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
-import org.openkilda.floodlight.flow.request.InstallEgressRule;
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
-import org.openkilda.floodlight.flow.request.InstallMultiSwitchIngressRule;
-import org.openkilda.floodlight.flow.request.InstallTransitRule;
+import org.openkilda.floodlight.api.request.SpeakerEgressActRequest;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
+import org.openkilda.floodlight.api.request.SpeakerMultiSwitchIngressActRequest;
+import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
 import org.openkilda.model.Cookie;
@@ -81,22 +81,22 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<InstallTransitRule> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerTransitActRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        InstallTransitRule command = commands.get(0);
-        assertThat("Should be command for egress rule", command, instanceOf(InstallEgressRule.class));
+        SpeakerTransitActRequest command = commands.get(0);
+        assertThat("Should be command for egress rule", command, instanceOf(SpeakerEgressActRequest.class));
 
-        InstallEgressRule installEgressRule = (InstallEgressRule) command;
-        assertEquals(flow.getFlowId(), installEgressRule.getFlowId());
-        assertEquals(destSwitch.getSwitchId(), installEgressRule.getSwitchId());
-        assertEquals(flow.getForwardPath().getCookie(), installEgressRule.getCookie());
+        SpeakerEgressActRequest egressRequest = (SpeakerEgressActRequest) command;
+        assertEquals(flow.getFlowId(), egressRequest.getFlowId());
+        assertEquals(destSwitch.getSwitchId(), egressRequest.getSwitchId());
+        assertEquals(flow.getForwardPath().getCookie(), egressRequest.getCookie());
         TransitVlan forwardVlan = vlanRepository.findByPathId(flow.getForwardPathId(), flow.getReversePathId())
                 .stream().findAny()
                 .orElseThrow(() -> new IllegalStateException("Vlan should be present"));
-        assertEquals(forwardVlan.getVlan(), (int) installEgressRule.getTransitEncapsulationId());
-        assertEquals(flow.getDestVlan(), (int) installEgressRule.getOutputVlanId());
-        assertEquals(OutputVlanType.NONE, installEgressRule.getOutputVlanType());
-        assertEquals(flow.getDestPort(), (int) installEgressRule.getOutputPort());
+        assertEquals(forwardVlan.getVlan(), (int) egressRequest.getTransitEncapsulationId());
+        assertEquals(flow.getDestVlan(), (int) egressRequest.getOutputVlanId());
+        assertEquals(OutputVlanType.NONE, egressRequest.getOutputVlanType());
+        assertEquals(flow.getDestPort(), (int) egressRequest.getOutputPort());
     }
 
     @Test
@@ -111,12 +111,12 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<InstallTransitRule> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerTransitActRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        InstallTransitRule command = commands.get(0);
-        assertThat("Should be command for egress rule", command, instanceOf(InstallEgressRule.class));
+        SpeakerTransitActRequest command = commands.get(0);
+        assertThat("Should be command for egress rule", command, instanceOf(SpeakerEgressActRequest.class));
 
-        InstallEgressRule forwardEgressRule = (InstallEgressRule) command;
+        SpeakerEgressActRequest forwardEgressRule = (SpeakerEgressActRequest) command;
         assertEquals(flow.getFlowId(), forwardEgressRule.getFlowId());
         assertEquals(destSwitch.getSwitchId(), forwardEgressRule.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), forwardEgressRule.getCookie());
@@ -130,8 +130,8 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         assertEquals(OutputVlanType.POP, forwardEgressRule.getOutputVlanType());
 
         command = commands.get(1);
-        assertThat("Should be command for egress rule", command, instanceOf(InstallEgressRule.class));
-        InstallEgressRule reverseEgressRule = (InstallEgressRule) command;
+        assertThat("Should be command for egress rule", command, instanceOf(SpeakerEgressActRequest.class));
+        SpeakerEgressActRequest reverseEgressRule = (SpeakerEgressActRequest) command;
         assertEquals(flow.getFlowId(), reverseEgressRule.getFlowId());
         assertEquals(srcSwitch.getSwitchId(), reverseEgressRule.getSwitchId());
         assertEquals(flow.getReversePath().getCookie(), reverseEgressRule.getCookie());
@@ -157,12 +157,12 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<InstallTransitRule> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerTransitActRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        InstallTransitRule command = commands.get(0);
-        assertThat("Should be command for egress rule", command, instanceOf(InstallEgressRule.class));
+        SpeakerTransitActRequest command = commands.get(0);
+        assertThat("Should be command for egress rule", command, instanceOf(SpeakerEgressActRequest.class));
 
-        InstallEgressRule srcSwitchRule = (InstallEgressRule) command;
+        SpeakerEgressActRequest srcSwitchRule = (SpeakerEgressActRequest) command;
         assertEquals(flow.getFlowId(), srcSwitchRule.getFlowId());
         assertEquals(destSwitch.getSwitchId(), srcSwitchRule.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), srcSwitchRule.getCookie());
@@ -189,10 +189,10 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithTransitSwitches(forward, reverse);
 
-        List<InstallTransitRule> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerTransitActRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(4, commands.size());
 
-        InstallTransitRule commandForTransitSwitch = commands.get(0);
+        SpeakerTransitActRequest commandForTransitSwitch = commands.get(0);
         assertEquals(flow.getFlowId(), commandForTransitSwitch.getFlowId());
         assertEquals(SWITCH_2, commandForTransitSwitch.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), commandForTransitSwitch.getCookie());
@@ -206,10 +206,10 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
                 .orElseThrow(() -> new IllegalStateException("Vlan should be present"));
         assertEquals(forwardVlan.getVlan(), (int) commandForTransitSwitch.getTransitEncapsulationId());
 
-        InstallTransitRule commandForDestSwitch = commands.get(1);
-        assertThat("Should be command for egress rule", commandForDestSwitch, instanceOf(InstallEgressRule.class));
+        SpeakerTransitActRequest commandForDestSwitch = commands.get(1);
+        assertThat("Should be command for egress rule", commandForDestSwitch, instanceOf(SpeakerEgressActRequest.class));
 
-        InstallEgressRule egressRule = (InstallEgressRule) commandForDestSwitch;
+        SpeakerEgressActRequest egressRule = (SpeakerEgressActRequest) commandForDestSwitch;
         assertEquals(flow.getFlowId(), egressRule.getFlowId());
         assertEquals(destSwitch.getSwitchId(), egressRule.getSwitchId());
         assertEquals(flow.getForwardPath().getSegments().get(1).getDestPort(), (int) egressRule.getInputPort());
@@ -232,14 +232,14 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<InstallIngressRule> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerIngressActModRequest> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
 
-        InstallMultiSwitchIngressRule sourceSwitchRule = (InstallMultiSwitchIngressRule) commands.get(0);
+        SpeakerMultiSwitchIngressActRequest sourceSwitchRule = (SpeakerMultiSwitchIngressActRequest) commands.get(0);
         assertEquals(srcSwitch.getSwitchId(), sourceSwitchRule.getSwitchId());
         assertEquals(flow.getFlowId(), sourceSwitchRule.getFlowId());
         assertEquals(flow.getForwardPath().getCookie(), sourceSwitchRule.getCookie());
-        assertEquals(flow.getSrcVlan(), (int) sourceSwitchRule.getInputVlanId());
+        assertEquals(flow.getSrcVlan(), (int) sourceSwitchRule.getInputOuterVlanId());
         TransitVlan forwardVlan = vlanRepository.findByPathId(flow.getForwardPathId(), flow.getReversePathId())
                 .stream().findAny()
                 .orElseThrow(() -> new IllegalStateException("Vlan should be present"));
@@ -247,11 +247,11 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         assertEquals(0, (long) sourceSwitchRule.getBandwidth());
         assertNull(sourceSwitchRule.getMeterId());
 
-        InstallMultiSwitchIngressRule destSwitchRule = (InstallMultiSwitchIngressRule) commands.get(1);
+        SpeakerMultiSwitchIngressActRequest destSwitchRule = (SpeakerMultiSwitchIngressActRequest) commands.get(1);
         assertEquals(destSwitch.getSwitchId(), destSwitchRule.getSwitchId());
         assertEquals(flow.getFlowId(), destSwitchRule.getFlowId());
         assertEquals(flow.getReversePath().getCookie(), destSwitchRule.getCookie());
-        assertEquals(flow.getDestVlan(), (int) destSwitchRule.getInputVlanId());
+        assertEquals(flow.getDestVlan(), (int) destSwitchRule.getInputOuterVlanId());
         TransitVlan reverseVlan = vlanRepository.findByPathId(flow.getReversePathId(), flow.getForwardPathId())
                 .stream().findAny()
                 .orElseThrow(() -> new IllegalStateException("Vlan should be present"));
@@ -272,13 +272,13 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<InstallIngressRule> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerIngressActModRequest> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        InstallMultiSwitchIngressRule sourceSwitchRule = (InstallMultiSwitchIngressRule) commands.get(0);
+        SpeakerMultiSwitchIngressActRequest sourceSwitchRule = (SpeakerMultiSwitchIngressActRequest) commands.get(0);
         assertEquals(srcSwitch.getSwitchId(), sourceSwitchRule.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), sourceSwitchRule.getCookie());
         assertEquals(flow.getFlowId(), sourceSwitchRule.getFlowId());
-        assertEquals(flow.getSrcVlan(), (int) sourceSwitchRule.getInputVlanId());
+        assertEquals(flow.getSrcVlan(), (int) sourceSwitchRule.getInputOuterVlanId());
         TransitVlan forwardVlan = vlanRepository.findByPathId(flow.getForwardPathId(), flow.getReversePathId())
                 .stream().findAny()
                 .orElseThrow(() -> new IllegalStateException("Vlan should be present"));
@@ -286,11 +286,11 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         assertEquals(flow.getBandwidth(), (long) sourceSwitchRule.getBandwidth());
         assertEquals(flow.getForwardPath().getMeterId(), sourceSwitchRule.getMeterId());
 
-        InstallMultiSwitchIngressRule destSwitchRule = (InstallMultiSwitchIngressRule) commands.get(1);
+        SpeakerMultiSwitchIngressActRequest destSwitchRule = (SpeakerMultiSwitchIngressActRequest) commands.get(1);
         assertEquals(destSwitchRule.getSwitchId(), destSwitchRule.getSwitchId());
         assertEquals(flow.getReversePath().getCookie(), destSwitchRule.getCookie());
         assertEquals(flow.getFlowId(), destSwitchRule.getFlowId());
-        assertEquals(flow.getDestVlan(), (int) destSwitchRule.getInputVlanId());
+        assertEquals(flow.getDestVlan(), (int) destSwitchRule.getInputOuterVlanId());
         TransitVlan reverseVlan = vlanRepository.findByPathId(flow.getReversePathId(), flow.getForwardPathId())
                 .stream().findAny()
                 .orElseThrow(() -> new IllegalStateException("Vlan should be present"));

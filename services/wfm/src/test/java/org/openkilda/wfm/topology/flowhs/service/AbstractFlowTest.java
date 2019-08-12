@@ -18,12 +18,12 @@ package org.openkilda.wfm.topology.flowhs.service;
 import static org.mockito.Mockito.when;
 
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.flow.request.InstallEgressRule;
+import org.openkilda.floodlight.api.request.SpeakerEgressActRequest;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
-import org.openkilda.floodlight.flow.request.InstallTransitRule;
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
+import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -61,7 +61,7 @@ public abstract class AbstractFlowTest {
     @Mock
     FlowResourcesManager flowResourcesManager;
 
-    final Queue<SpeakerFlowRequest> requests = new ArrayDeque<>();
+    final Queue<AbstractSpeakerActRequest> requests = new ArrayDeque<>();
     final Map<SwitchId, Map<Cookie, InstallFlowRule>> installedRules = new HashMap<>();
 
     @Before
@@ -95,7 +95,7 @@ public abstract class AbstractFlowTest {
 
     Answer getSpeakerCommandsAnswer() {
         return invocation -> {
-            SpeakerFlowRequest request = invocation.getArgument(0);
+            AbstractSpeakerActRequest request = invocation.getArgument(0);
             requests.offer(request);
 
             if (request instanceof InstallFlowRule) {
@@ -108,7 +108,7 @@ public abstract class AbstractFlowTest {
         };
     }
 
-    FlowResponse buildResponseOnGetInstalled(GetInstalledRule request) {
+    SpeakerActModResponse buildResponseOnGetInstalled(GetInstalledRule request) {
         Cookie cookie = request.getCookie();
 
         InstallFlowRule rule = Optional.ofNullable(installedRules.get(request.getSwitchId()))
@@ -122,15 +122,15 @@ public abstract class AbstractFlowTest {
                 .cookie(rule.getCookie())
                 .inPort(rule.getInputPort())
                 .outPort(rule.getOutputPort());
-        if (rule instanceof InstallEgressRule) {
-            builder.inVlan(((InstallEgressRule) rule).getTransitEncapsulationId());
-            builder.outVlan(((InstallEgressRule) rule).getOutputVlanId());
-        } else if (rule instanceof InstallTransitRule) {
-            builder.inVlan(((InstallTransitRule) rule).getTransitEncapsulationId());
-            builder.outVlan(((InstallTransitRule) rule).getTransitEncapsulationId());
-        } else if (rule instanceof InstallIngressRule) {
-            InstallIngressRule ingressRule = (InstallIngressRule) rule;
-            builder.inVlan(ingressRule.getInputVlanId())
+        if (rule instanceof SpeakerEgressActRequest) {
+            builder.inVlan(((SpeakerEgressActRequest) rule).getTransitEncapsulationId());
+            builder.outVlan(((SpeakerEgressActRequest) rule).getOutputVlanId());
+        } else if (rule instanceof SpeakerTransitActRequest) {
+            builder.inVlan(((SpeakerTransitActRequest) rule).getTransitEncapsulationId());
+            builder.outVlan(((SpeakerTransitActRequest) rule).getTransitEncapsulationId());
+        } else if (rule instanceof SpeakerIngressActModRequest) {
+            SpeakerIngressActModRequest ingressRule = (SpeakerIngressActModRequest) rule;
+            builder.inVlan(ingressRule.getInputOuterVlanId())
                     .meterId(ingressRule.getMeterId());
         }
 

@@ -15,11 +15,12 @@
 
 package org.openkilda.floodlight.flow.request;
 
+import org.openkilda.floodlight.api.ActOperation;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -29,32 +30,13 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class InstallFlowRule extends SpeakerFlowRequest {
+public class InstallFlowRule extends AbstractSpeakerActRequest {
+    public InstallFlowRule(MessageContext context,
+                           ActOperation operation, UUID commandId,
+                           SwitchId switchId, String flowId, Cookie cookie) {
+        super(context, operation, commandId, switchId, flowId, cookie);
 
-    /**
-     * Cookie allocated for flow.
-     */
-    @JsonProperty("cookie")
-    private final Cookie cookie;
-
-    /**
-     * Input port for flow action.
-     */
-    @JsonProperty("input_port")
-    private final Integer inputPort;
-
-    /**
-     * Output port for flow action.
-     */
-    @JsonProperty("output_port")
-    private Integer outputPort;
-
-    public InstallFlowRule(MessageContext context, UUID commandId, String id, Cookie cookie, SwitchId switchId,
-                           Integer inputPort, Integer outputPort) {
-        super(context, commandId, id, switchId);
-
-        this.cookie = cookie;
-        this.inputPort = inputPort;
-        this.outputPort = outputPort;
+        throw new IllegalStateException(String.format("**FIXME** class %s must be drop i.e. its usage is prohibited",
+                                                      getClass().getName()));
     }
 }

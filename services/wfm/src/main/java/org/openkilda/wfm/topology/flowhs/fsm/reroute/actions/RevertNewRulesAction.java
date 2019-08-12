@@ -15,9 +15,9 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
@@ -62,7 +62,7 @@ public class RevertNewRulesAction extends
                 ? stateMachine.getNewEncapsulationType() : flow.getEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<InstallIngressRule> installCommands = new ArrayList<>();
+        Collection<SpeakerIngressActModRequest> installCommands = new ArrayList<>();
 
         // Reinstall old ingress rules that may be overridden by new ingress.
         if (stateMachine.getOldPrimaryForwardPath() != null && stateMachine.getOldPrimaryReversePath() != null) {
@@ -73,7 +73,7 @@ public class RevertNewRulesAction extends
         }
 
         stateMachine.setIngressCommands(installCommands.stream()
-                .collect(Collectors.toMap(InstallIngressRule::getCommandId, Function.identity())));
+                .collect(Collectors.toMap(SpeakerIngressActModRequest::getCommandId, Function.identity())));
 
         Collection<RemoveRule> removeCommands = new ArrayList<>();
 
@@ -99,7 +99,7 @@ public class RevertNewRulesAction extends
 
         Set<UUID> commandIds = Stream.concat(installCommands.stream(), removeCommands.stream())
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
-                .map(SpeakerFlowRequest::getCommandId)
+                .map(AbstractSpeakerActRequest::getCommandId)
                 .collect(Collectors.toSet());
         stateMachine.setPendingCommands(commandIds);
 

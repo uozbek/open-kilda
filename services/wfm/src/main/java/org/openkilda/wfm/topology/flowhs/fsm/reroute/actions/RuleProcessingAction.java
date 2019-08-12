@@ -17,8 +17,8 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
-import org.openkilda.floodlight.flow.request.InstallTransitRule;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
+import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.wfm.share.history.model.FlowHistoryData;
 import org.openkilda.wfm.share.history.model.FlowHistoryHolder;
@@ -53,10 +53,10 @@ public abstract class RuleProcessingAction
     protected long getCookieForCommand(FlowRerouteFsm stateMachine, UUID commandId) {
         long cookie;
         if (stateMachine.getNonIngressCommands().containsKey(commandId)) {
-            InstallTransitRule installRule = stateMachine.getNonIngressCommands().get(commandId);
+            SpeakerTransitActRequest installRule = stateMachine.getNonIngressCommands().get(commandId);
             cookie = installRule.getCookie().getValue();
         } else if (stateMachine.getIngressCommands().containsKey(commandId)) {
-            InstallIngressRule installRule = stateMachine.getIngressCommands().get(commandId);
+            SpeakerIngressActModRequest installRule = stateMachine.getIngressCommands().get(commandId);
             cookie = installRule.getCookie().getValue();
         } else if (stateMachine.getRemoveCommands().containsKey(commandId)) {
             RemoveRule removeRule = stateMachine.getRemoveCommands().get(commandId);

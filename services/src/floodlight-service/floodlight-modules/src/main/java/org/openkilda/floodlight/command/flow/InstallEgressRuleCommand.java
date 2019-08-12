@@ -15,12 +15,11 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.floodlight.flow.FlowEndpoint;
+import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
-import org.openkilda.model.OutputVlanType;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,7 +30,6 @@ import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;

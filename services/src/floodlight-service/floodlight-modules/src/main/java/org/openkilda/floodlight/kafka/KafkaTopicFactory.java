@@ -15,8 +15,8 @@
 
 package org.openkilda.floodlight.kafka;
 
-import org.openkilda.floodlight.FloodlightResponse;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 
 public class KafkaTopicFactory {
 
@@ -31,8 +31,8 @@ public class KafkaTopicFactory {
      * @param response response message.
      * @return kafka topic name.
      */
-    public String getTopic(FloodlightResponse response) {
-        if (response instanceof FlowResponse) {
+    public String getTopic(SpeakerResponse response) {
+        if (response instanceof SpeakerActModResponse) {
             return context.getKafkaFlowHsWorkerTopic();
         } else {
             throw new UnsupportedOperationException(String.format("Failed to find kafka topic for %s", response));

@@ -23,7 +23,7 @@ import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.FlowErrorResponseBuilder;
-import org.openkilda.floodlight.flow.response.FlowResponse;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.messaging.AbstractMessage;
 
@@ -74,7 +74,7 @@ public class FlowReport extends SpeakerCommandReport {
     }
 
     protected AbstractMessage assembleSuccessResponse() {
-        return FlowResponse.builder()
+        return SpeakerActModResponse.builder()
                 .commandId(command.getCommandId())
                 .flowId(command.getFlowId())
                 .messageContext(command.getMessageContext())

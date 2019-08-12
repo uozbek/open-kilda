@@ -17,11 +17,11 @@ package org.openkilda.wfm.topology.flowhs.service;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.flow.request.InstallEgressRule;
-import org.openkilda.floodlight.flow.request.InstallIngressRule;
-import org.openkilda.floodlight.flow.request.InstallMultiSwitchIngressRule;
-import org.openkilda.floodlight.flow.request.InstallSingleSwitchIngressRule;
-import org.openkilda.floodlight.flow.request.InstallTransitRule;
+import org.openkilda.floodlight.api.request.SpeakerEgressActRequest;
+import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
+import org.openkilda.floodlight.api.request.SpeakerMultiSwitchIngressActRequest;
+import org.openkilda.floodlight.api.request.SpeakerSingleSwitchIngressActRequest;
+import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
@@ -59,36 +59,36 @@ public class TransitBasedFlowCommandBuilder implements FlowCommandBuilder {
     }
 
     @Override
-    public List<InstallTransitRule> createInstallNonIngressRules(CommandContext context, Flow flow) {
+    public List<SpeakerTransitActRequest> createInstallNonIngressRules(CommandContext context, Flow flow) {
         return createInstallNonIngressRules(context, flow, flow.getForwardPath(), flow.getReversePath());
     }
 
     @Override
-    public List<InstallTransitRule> createInstallNonIngressRules(CommandContext context, Flow flow,
-                                                                 FlowPath forwardPath, FlowPath reversePath) {
+    public List<SpeakerTransitActRequest> createInstallNonIngressRules(CommandContext context, Flow flow,
+                                                                       FlowPath forwardPath, FlowPath reversePath) {
         if (flow.isOneSwitchFlow()) {
             return Collections.emptyList();
         }
 
-        List<InstallTransitRule> forwardRules = collectNonIngressRules(context, forwardPath,
-                flow.getDestPort(), flow.getSrcVlan(), flow.getDestVlan(),
-                getEncapsulation(forwardPath.getPathId(), reversePath.getPathId()));
-        List<InstallTransitRule> reverseRules = collectNonIngressRules(context, reversePath,
-                flow.getSrcPort(), flow.getDestVlan(), flow.getSrcVlan(),
-                getEncapsulation(reversePath.getPathId(), forwardPath.getPathId()));
+        List<SpeakerTransitActRequest> forwardRules = collectNonIngressRules(context, forwardPath,
+                                                                             flow.getDestPort(), flow.getSrcVlan(), flow.getDestVlan(),
+                                                                             getEncapsulation(forwardPath.getPathId(), reversePath.getPathId()));
+        List<SpeakerTransitActRequest> reverseRules = collectNonIngressRules(context, reversePath,
+                                                                             flow.getSrcPort(), flow.getDestVlan(), flow.getSrcVlan(),
+                                                                             getEncapsulation(reversePath.getPathId(), forwardPath.getPathId()));
         return ListUtils.union(forwardRules, reverseRules);
     }
 
     @Override
-    public List<InstallIngressRule> createInstallIngressRules(CommandContext context, Flow flow) {
+    public List<SpeakerIngressActModRequest> createInstallIngressRules(CommandContext context, Flow flow) {
         return createInstallIngressRules(context, flow, flow.getForwardPath(), flow.getReversePath());
     }
 
     @Override
-    public List<InstallIngressRule> createInstallIngressRules(CommandContext context, Flow flow,
-                                                              FlowPath forwardPath, FlowPath reversePath) {
-        InstallIngressRule forwardRule;
-        InstallIngressRule reverseRule;
+    public List<SpeakerIngressActModRequest> createInstallIngressRules(CommandContext context, Flow flow,
+                                                                       FlowPath forwardPath, FlowPath reversePath) {
+        SpeakerIngressActModRequest forwardRule;
+        SpeakerIngressActModRequest reverseRule;
         if (flow.isOneSwitchFlow()) {
             forwardRule = buildInstallOneSwitchRule(context, forwardPath,
                     flow.getSrcPort(), flow.getDestPort(), flow.getSrcVlan(), flow.getDestVlan());
@@ -143,9 +143,9 @@ public class TransitBasedFlowCommandBuilder implements FlowCommandBuilder {
         return ImmutableList.of(removeForwardIngress, removeReverseIngress);
     }
 
-    private InstallMultiSwitchIngressRule buildInstallIngressRule(CommandContext context, FlowPath flowPath,
-                                                                  int inputPort, int inputVlanId, int outputVlanId,
-                                                                  EncapsulationResources encapsulationResources) {
+    private SpeakerMultiSwitchIngressActRequest buildInstallIngressRule(CommandContext context, FlowPath flowPath,
+                                                                        int inputPort, int inputVlanId, int outputVlanId,
+                                                                        EncapsulationResources encapsulationResources) {
         PathSegment ingressSegment = flowPath.getSegments().stream()
                 .filter(segment -> segment.getSrcSwitch().equals(flowPath.getSrcSwitch()))
                 .findFirst()
@@ -154,7 +154,7 @@ public class TransitBasedFlowCommandBuilder implements FlowCommandBuilder {
                                 flowPath.getFlow().getFlowId())));
 
         String commandId = commandIdGenerator.generate().toString();
-        return InstallMultiSwitchIngressRule.builder()
+        return SpeakerMultiSwitchIngressActRequest.builder()
                 .messageContext(new MessageContext(commandId, context.getCorrelationId()))
                 .commandId(commandIdGenerator.generate())
                 .flowId(flowPath.getFlow().getFlowId())
@@ -171,11 +171,11 @@ public class TransitBasedFlowCommandBuilder implements FlowCommandBuilder {
                 .build();
     }
 
-    private InstallSingleSwitchIngressRule buildInstallOneSwitchRule(CommandContext context, FlowPath flowPath,
-                                                                     int inputPort, int outputPort,
-                                                                     int inputVlanId, int outputVlanId) {
+    private SpeakerSingleSwitchIngressActRequest buildInstallOneSwitchRule(CommandContext context, FlowPath flowPath,
+                                                                           int inputPort, int outputPort,
+                                                                           int inputVlanId, int outputVlanId) {
         String commandId = commandIdGenerator.generate().toString();
-        return InstallSingleSwitchIngressRule.builder()
+        return SpeakerSingleSwitchIngressActRequest.builder()
                 .messageContext(new MessageContext(commandId, context.getCorrelationId()))
                 .commandId(commandIdGenerator.generate())
                 .flowId(flowPath.getFlow().getFlowId())
@@ -191,23 +191,23 @@ public class TransitBasedFlowCommandBuilder implements FlowCommandBuilder {
                 .build();
     }
 
-    private List<InstallTransitRule> collectNonIngressRules(CommandContext context, FlowPath flowPath,
-                                                            int outputPort, int srcVlan, int destVlan,
-                                                            EncapsulationResources encapsulationResources) {
+    private List<SpeakerTransitActRequest> collectNonIngressRules(CommandContext context, FlowPath flowPath,
+                                                                  int outputPort, int srcVlan, int destVlan,
+                                                                  EncapsulationResources encapsulationResources) {
         if (flowPath == null || CollectionUtils.isEmpty(flowPath.getSegments())) {
             throw new IllegalArgumentException("Flow path with segments is required");
         }
 
         List<PathSegment> segments = flowPath.getSegments();
-        List<InstallTransitRule> commands = new ArrayList<>(segments.size());
+        List<SpeakerTransitActRequest> commands = new ArrayList<>(segments.size());
 
         for (int i = 1; i < segments.size(); i++) {
             PathSegment income = segments.get(i - 1);
             PathSegment outcome = segments.get(i);
 
-            InstallTransitRule transitRule = buildInstallTransitRule(context, flowPath,
-                    income.getDestSwitch().getSwitchId(), income.getDestPort(), outcome.getSrcPort(),
-                    encapsulationResources);
+            SpeakerTransitActRequest transitRule = buildInstallTransitRule(context, flowPath,
+                                                                           income.getDestSwitch().getSwitchId(), income.getDestPort(), outcome.getSrcPort(),
+                                                                           encapsulationResources);
             commands.add(transitRule);
         }
 
@@ -217,30 +217,30 @@ public class TransitBasedFlowCommandBuilder implements FlowCommandBuilder {
                     flowPath.getPathId()));
         }
 
-        InstallEgressRule egressRule = buildInstallEgressRule(context, flowPath,
-                egressSegment.getDestPort(), outputPort, srcVlan, destVlan,
-                encapsulationResources);
+        SpeakerEgressActRequest egressRule = buildInstallEgressRule(context, flowPath,
+                                                                    egressSegment.getDestPort(), outputPort, srcVlan, destVlan,
+                                                                    encapsulationResources);
         commands.add(egressRule);
 
         return commands;
     }
 
-    private InstallTransitRule buildInstallTransitRule(CommandContext context, FlowPath flowPath,
-                                                       SwitchId switchId, int inputPort, int outputPort,
-                                                       EncapsulationResources encapsulationResources) {
+    private SpeakerTransitActRequest buildInstallTransitRule(CommandContext context, FlowPath flowPath,
+                                                             SwitchId switchId, int inputPort, int outputPort,
+                                                             EncapsulationResources encapsulationResources) {
         UUID commandId = commandIdGenerator.generate();
         MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
 
-        return new InstallTransitRule(messageContext, commandId, flowPath.getFlow().getFlowId(), flowPath.getCookie(),
-                switchId, inputPort, outputPort,
-                encapsulationResources.getTransitEncapsulationId(), encapsulationResources.getEncapsulationType());
+        return new SpeakerTransitActRequest(messageContext, commandId, flowPath.getFlow().getFlowId(), flowPath.getCookie(),
+                                            switchId, inputPort, outputPort,
+                                            encapsulationResources.getTransitEncapsulationId(), encapsulationResources.getEncapsulationType());
     }
 
-    private InstallEgressRule buildInstallEgressRule(CommandContext context, FlowPath flowPath,
-                                                     int inputPort, int outputPort, int srcVlan, int destVlan,
-                                                     EncapsulationResources encapsulationResources) {
+    private SpeakerEgressActRequest buildInstallEgressRule(CommandContext context, FlowPath flowPath,
+                                                           int inputPort, int outputPort, int srcVlan, int destVlan,
+                                                           EncapsulationResources encapsulationResources) {
         UUID commandId = commandIdGenerator.generate();
-        return InstallEgressRule.builder()
+        return SpeakerEgressActRequest.builder()
                 .messageContext(new MessageContext(commandId.toString(), context.getCorrelationId()))
                 .commandId(commandId)
                 .flowId(flowPath.getFlow().getFlowId())

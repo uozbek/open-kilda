@@ -16,8 +16,8 @@
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.flow.request.InstallTransitRule;
-import org.openkilda.floodlight.flow.request.SpeakerFlowRequest;
+import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.Event;
@@ -42,7 +42,7 @@ public class DumpNonIngressRulesAction extends
         log.debug("Validating installed non ingress rules for the flow {}",
                 stateMachine.getFlowId());
 
-        Map<UUID, InstallTransitRule> nonIngressCommands = stateMachine.getNonIngressCommands();
+        Map<UUID, SpeakerTransitActRequest> nonIngressCommands = stateMachine.getNonIngressCommands();
 
         if (nonIngressCommands.isEmpty()) {
             log.debug("No need to validate non ingress rules for one switch flow");
@@ -56,7 +56,7 @@ public class DumpNonIngressRulesAction extends
 
             dumpFlowRules.forEach(command -> stateMachine.getCarrier().sendSpeakerRequest(command));
             Set<UUID> commandIds = dumpFlowRules.stream()
-                    .map(SpeakerFlowRequest::getCommandId)
+                    .map(AbstractSpeakerActRequest::getCommandId)
                     .collect(Collectors.toSet());
             stateMachine.setPendingCommands(commandIds);
         }

@@ -17,6 +17,8 @@ package org.openkilda.floodlight.flow.request;
 
 import static org.openkilda.messaging.Utils.FLOW_ID;
 
+import org.openkilda.floodlight.api.ActOperation;
+import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
 import org.openkilda.model.Cookie;
@@ -35,10 +37,7 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class RemoveRule extends SpeakerFlowRequest {
-    @JsonProperty("cookie")
-    private Cookie cookie;
-
+public class RemoveRule extends AbstractSpeakerActRequest {
     @JsonProperty("criteria")
     private DeleteRulesCriteria criteria;
 
@@ -54,9 +53,11 @@ public class RemoveRule extends SpeakerFlowRequest {
                       @JsonProperty("cookie") final Cookie cookie,
                       @JsonProperty("criteria") DeleteRulesCriteria criteria,
                       @JsonProperty("meter_id") MeterId meterId) {
-        super(messageContext, commandId, flowId, switchId);
+        super(messageContext, ActOperation.DELETE, commandId, switchId, flowId, cookie);
         this.criteria = criteria;
-        this.cookie = cookie;
         this.meterId = meterId;
+
+        throw new IllegalStateException(String.format("**FIXME** class %s must be drop i.e. its usage is prohibited",
+                                                      getClass().getName()));
     }
 }
