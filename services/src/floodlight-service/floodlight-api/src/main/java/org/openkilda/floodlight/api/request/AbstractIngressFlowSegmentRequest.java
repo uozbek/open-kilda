@@ -17,16 +17,14 @@ package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.ActOperation;
 import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -36,26 +34,21 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SpeakerSingleSwitchIngressActRequest extends AbstractIngressActRequest {
-    @JsonProperty("egress_endpoint")
-    private final FlowEndpoint egressEndpoint;
+abstract class AbstractIngressFlowSegmentRequest extends AbstractFlowSegmentRequest {
+    @JsonProperty("endpoint")
+    protected final FlowEndpoint endpoint;
 
-    @JsonCreator
-    @Builder(toBuilder = true)
-    public SpeakerSingleSwitchIngressActRequest(
-            @JsonProperty("message_context") MessageContext context,
-            @JsonProperty("operation") ActOperation operation,
-            @JsonProperty("command_id") UUID commandId,
-            @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("flowid") String flowId,
-            @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("endpoint") FlowEndpoint endpoint,
-            @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(context, operation, commandId, switchId, flowId, cookie, endpoint, meterConfig);
+    @JsonProperty("meter_config")
+    protected final MeterConfig meterConfig;
 
-        requireNonNull(egressEndpoint, "Argument egressEndpoint must no be null");
+    AbstractIngressFlowSegmentRequest(MessageContext context, SwitchId switchId, FlowSegmentOperation operation,
+                                      UUID commandId, String flowId, Cookie cookie,
+                                      FlowEndpoint endpoint, MeterConfig meterConfig) {
+        super(context, switchId, operation, commandId, flowId, cookie);
 
-        this.egressEndpoint = egressEndpoint;
+        requireNonNull(endpoint, "Argument endpoint must no be null");
+
+        this.endpoint = endpoint;
+        this.meterConfig = meterConfig;
     }
 }

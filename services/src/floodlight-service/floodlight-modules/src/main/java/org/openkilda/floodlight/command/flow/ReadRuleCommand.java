@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class ReadRuleCommand extends FlowCommand<ReadRuleReport> {
+public class ReadRuleCommand extends AbstractFlowSegmentCommand<ReadRuleReport> {
 
     public ReadRuleCommand(@JsonProperty("command_id") UUID commandId,
                            @JsonProperty("flowid") String flowId,

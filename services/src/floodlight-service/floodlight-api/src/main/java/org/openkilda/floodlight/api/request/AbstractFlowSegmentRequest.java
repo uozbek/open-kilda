@@ -17,7 +17,7 @@ package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.ActOperation;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -31,11 +31,11 @@ import lombok.ToString;
 import java.util.UUID;
 
 @Getter
-@ToString
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public abstract class AbstractSpeakerActRequest extends AbstractMessage {
+public abstract class AbstractFlowSegmentRequest extends AbstractSpeakerRequest {
     @JsonProperty("operation")
-    protected final ActOperation operation;
+    protected final FlowSegmentOperation operation;
 
     @JsonProperty("command_id")
     private final UUID commandId;
@@ -43,26 +43,21 @@ public abstract class AbstractSpeakerActRequest extends AbstractMessage {
     @JsonProperty("flowid")
     private final String flowId;
 
-    @JsonProperty("switch_id")
-    final SwitchId switchId;
-
     @JsonProperty("cookie")
     private final Cookie cookie;
 
-    public AbstractSpeakerActRequest(
-            MessageContext context, ActOperation operation, UUID commandId, SwitchId switchId, String flowId,
+    public AbstractFlowSegmentRequest(
+            MessageContext context, SwitchId switchId, FlowSegmentOperation operation, UUID commandId, String flowId,
             Cookie cookie) {
-        super(context);
+        super(context, switchId);
 
         requireNonNull(operation, "Argument operation must no be null");
         requireNonNull(commandId, "Argument commandId must not be null");
-        requireNonNull(switchId, "Argument switchId must not be null");
         requireNonNull(flowId, "Argument flowId must not be null");
 
         this.operation = operation;
 
         this.commandId = commandId;
-        this.switchId = switchId;
         this.flowId = flowId;
         this.cookie = cookie;
     }

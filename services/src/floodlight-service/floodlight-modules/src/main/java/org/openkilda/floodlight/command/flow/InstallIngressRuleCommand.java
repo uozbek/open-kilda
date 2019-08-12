@@ -86,8 +86,8 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
     }
 
     @Override
-    protected CompletableFuture<FlowReport> makeExecutePlan() {
-        CompletableFuture<FlowReport> future;
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
+        CompletableFuture<FlowSegmentReport> future;
         if (meterId != null) {
             future = planMeterInstall()
                     .thenCompose(this::planToUseMeter);
@@ -102,7 +102,7 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
         return meterCommand.execute(getModuleContext());
     }
 
-    private CompletableFuture<FlowReport> planToUseMeter(MeterReport report) {
+    private CompletableFuture<FlowSegmentReport> planToUseMeter(MeterReport report) {
         MeterId effectiveMeterId;
         try {
             report.raiseError();
@@ -117,7 +117,7 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
         return planForwardingRulesInstall(effectiveMeterId);
     }
 
-    private CompletableFuture<FlowReport> planForwardingRulesInstall(MeterId effectiveMeterId) {
+    private CompletableFuture<FlowSegmentReport> planForwardingRulesInstall(MeterId effectiveMeterId) {
         List<OFFlowMod> ofMessages = new ArrayList<>(2);
         OFFactory of = getSw().getOFFactory();
         if (FlowEndpoint.isVlanIdSet(inputOuterVlanId)) {

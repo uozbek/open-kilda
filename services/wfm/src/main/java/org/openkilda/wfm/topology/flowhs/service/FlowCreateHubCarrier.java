@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.service;
 
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.messaging.Message;
 
 public interface FlowCreateHubCarrier extends FlowHistorySupportingCarrier {
@@ -23,7 +23,7 @@ public interface FlowCreateHubCarrier extends FlowHistorySupportingCarrier {
      * Sends commands to speaker.
      * @param command command to be executed.
      */
-    void sendSpeakerRequest(AbstractSpeakerActRequest command);
+    void sendSpeakerRequest(AbstractFlowSegmentRequest command);
 
     /**
      * Sends response to northbound component.

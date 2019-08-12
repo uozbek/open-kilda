@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
-import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.CommandContext;
@@ -53,7 +53,7 @@ public class InstallNonIngressRulesAction extends FlowProcessingAction<FlowCreat
         CommandContext commandContext = stateMachine.getCommandContext();
         Flow flow = getFlow(stateMachine.getFlowId());
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
-        List<SpeakerTransitActRequest> commands =
+        List<TransitFlowSegmentRequest> commands =
                 commandBuilder.createInstallNonIngressRules(commandContext, flow);
         if (flow.isAllocateProtectedPath()) {
             commands.addAll(commandBuilder.createInstallNonIngressRules(commandContext, flow,

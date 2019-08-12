@@ -16,12 +16,15 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
+import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -35,36 +38,34 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class InstallEgressRuleCommand extends FlowInstallCommand {
-    private final Integer outputOuterVlanId;
-    private final Integer outputInnerVlanId;
-    private final FlowEndpoint ingressEndpoint;
+public class EgressFlowSegmentCommand extends AbstractFlowSegmentCommand {
+    // payload
+    private final FlowEndpoint endpoint;
+    private final Integer islPort;
+    private final FlowTransitEncapsulation encapsulation;
 
-    public InstallEgressRuleCommand(@JsonProperty("command_id") UUID commandId,
-                                    @JsonProperty("flowid") String flowId,
-                                    @JsonProperty("message_context") MessageContext messageContext,
-                                    @JsonProperty("cookie") Cookie cookie,
-                                    @JsonProperty("switch_id") SwitchId switchId,
-                                    @JsonProperty("input_port") Integer inputPort,
-                                    @JsonProperty("output_port") Integer outputPort,
-                                    @JsonProperty("output_vlan_id") Integer outputOuterVlanId,
-                                    @JsonProperty("output_inner_vlan_id") Integer outputInnerVlanId,
-                                    @JsonProperty("flow_ingress_endpoint") FlowEndpoint ingressEndpoint,
-                                    @JsonProperty("transit_encapsulation_id") Integer transitEncapsulationId,
-                                    @JsonProperty("transit_encapsulation_type")
-                                            FlowEncapsulationType transitEncapsulationType) {
-        super(commandId, flowId, messageContext, cookie, switchId, inputPort, outputPort,
-                transitEncapsulationId, transitEncapsulationType);
-        this.outputOuterVlanId = outputOuterVlanId;
-        this.outputInnerVlanId = outputInnerVlanId;
-        this.ingressEndpoint = ingressEndpoint;
+    @JsonCreator
+    public EgressFlowSegmentCommand(
+            @JsonProperty("message_context") MessageContext messageContext,
+            @JsonProperty("switch_id") SwitchId switchId,
+            @JsonProperty("operation") FlowSegmentOperation operation,
+            @JsonProperty("command_id") UUID commandId,
+            @JsonProperty("flowid") String flowId,
+            @JsonProperty("cookie") Cookie cookie,
+            @JsonProperty("endpoint") FlowEndpoint endpoint,
+            @JsonProperty("islPort") Integer islPort,
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
+        super(messageContext, switchId, operation, commandId, flowId, cookie);
+        this.endpoint = endpoint;
+        this.islPort = islPort;
+        this.encapsulation = encapsulation;
     }
 
     @Override
-    protected CompletableFuture<FlowReport> makeExecutePlan() throws Exception {
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return session.write(makeEgressRuleAddMessage())
-                    .thenApply(ignore -> new FlowReport(this));
+                    .thenApply(ignore -> new FlowSegmentReport(this));
         }
     }
 
@@ -86,7 +87,7 @@ public class InstallEgressRuleCommand extends FlowInstallCommand {
         List<Integer> currentVlanStack = makeCurrentVlanStack();
         List<Integer> desiredVlanStack = FlowEndpoint.makeVlanStack(outputInnerVlanId, outputOuterVlanId);
 
-        return makePacketVlanTransformActions(of, currentVlanStack, desiredVlanStack);
+        return makeVlanTransformActions(of, currentVlanStack, desiredVlanStack);
     }
 
     private List<Integer> makeCurrentVlanStack() {

@@ -20,7 +20,7 @@ import static org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream.HUB_TO_NB_
 import static org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream.HUB_TO_SPEAKER_WORKER;
 import static org.openkilda.wfm.topology.utils.KafkaRecordTranslator.FIELD_ID_PAYLOAD;
 
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.flow.FlowRequest;
@@ -99,7 +99,7 @@ public class FlowCreateHubBolt extends HubBolt implements FlowCreateHubCarrier {
     }
 
     @Override
-    public void sendSpeakerRequest(AbstractSpeakerActRequest command) {
+    public void sendSpeakerRequest(AbstractFlowSegmentRequest command) {
         String commandKey = KeyProvider.joinKeys(command.getCommandId().toString(), currentKey);
 
         Values values = new Values(commandKey, command);

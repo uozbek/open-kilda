@@ -50,10 +50,10 @@ public class InstallTransitRuleCommand extends FlowInstallCommand {
     }
 
     @Override
-    protected CompletableFuture<FlowReport> makeExecutePlan() {
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return session.write(makeTransitRuleAddMessage())
-                    .thenApply(ignore -> new FlowReport(this));
+                    .thenApply(ignore -> new FlowSegmentReport(this));
         }
     }
 

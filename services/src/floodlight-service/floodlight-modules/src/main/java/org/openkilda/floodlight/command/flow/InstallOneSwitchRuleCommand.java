@@ -71,7 +71,7 @@ public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
             desiredVlanStack.add(outputOuterVlanId);
         }
 
-        return makePacketVlanTransformActions(of, currentVlanStack, desiredVlanStack);
+        return makeVlanTransformActions(of, currentVlanStack, desiredVlanStack);
     }
 
     @Override

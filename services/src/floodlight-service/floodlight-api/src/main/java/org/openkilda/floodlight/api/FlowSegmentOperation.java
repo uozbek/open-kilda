@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.api;
 
-public enum ActOperation {
+public enum FlowSegmentOperation {
     INSTALL,
     DELETE,
     VERIFY

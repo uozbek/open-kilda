@@ -34,7 +34,7 @@ abstract class MeterCommand extends SpeakerCommand<MeterReport> {
     MeterId meterId;
 
     MeterCommand(SwitchId switchId, MessageContext messageContext, MeterId meterId) {
-        super(switchId, messageContext);
+        super(messageContext, switchId);
         this.meterId = meterId;
     }
 

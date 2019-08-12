@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.flow;
 
 
+import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
@@ -36,7 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
+public abstract class FlowInstallCommand extends AbstractFlowSegmentCommand<FlowSegmentReport> {
 
     final Integer inputPort;
     final Integer outputPort;
@@ -53,21 +54,13 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
         this.transitEncapsulationType = transitEncapsulationType;
     }
 
-    protected FlowReport makeReport(Exception error) {
-        return new FlowReport(this, error);
-    }
-
-    protected FlowReport makeSuccessReport() {
-        return new FlowReport(this);
-    }
-
     final OFFlowAdd.Builder makeOfFlowAddMessageBuilder(OFFactory ofFactory) {
         return ofFactory.buildFlowAdd()
                 .setCookie(U64.of(cookie.getValue()))
                 .setPriority(FLOW_PRIORITY);
     }
 
-    static final List<OFAction> makePacketVlanTransformActions(
+    static List<OFAction> makeVlanTransformActions(
             OFFactory of, List<Integer> currentVlanStack, List<Integer> desiredVlanStack) {
         Iterator<Integer> currentIter = currentVlanStack.iterator();
         Iterator<Integer> desiredIter = desiredVlanStack.iterator();
@@ -83,7 +76,7 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
                     actions.add(of.actions().popVlan());
                 }
                 // rewrite existing VLAN stack "head"
-                actions.add(makeSetVlanIdAction(of, desired));
+                actions.add(OfAdapter.INSTANCE.setVlanIdAction(of, desired));
                 break;
             }
         }
@@ -96,19 +89,8 @@ public abstract class FlowInstallCommand extends FlowCommand<FlowReport> {
 
         while (desiredIter.hasNext()) {
             actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
-            actions.add(makeSetVlanIdAction(of, desiredIter.next()));
+            actions.add(OfAdapter.INSTANCE.setVlanIdAction(of, desiredIter.next()));
         }
         return actions;
-    }
-
-    static final OFAction makeSetVlanIdAction(final OFFactory factory, final int newVlan) {
-        OFOxms oxms = factory.oxms();
-        OFActions actions = factory.actions();
-        OFVlanVidMatch vlanMatch = factory.getVersion() == OFVersion.OF_12
-                ? OFVlanVidMatch.ofRawVid((short) newVlan) : OFVlanVidMatch.ofVlan(newVlan);
-
-        return actions.buildSetField().setField(oxms.buildVlanVid()
-                                                        .setValue(vlanMatch)
-                                                        .build()).build();
     }
 }

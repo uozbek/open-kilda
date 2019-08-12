@@ -15,6 +15,8 @@
 
 package org.openkilda.floodlight.command.flow;
 
+import org.openkilda.floodlight.utils.OfAdapter;
+
 import com.google.common.collect.ImmutableList;
 import org.easymock.EasyMockSupport;
 import org.junit.Assert;
@@ -28,7 +30,7 @@ import org.projectfloodlight.openflow.types.EthType;
 import java.util.Arrays;
 import java.util.List;
 
-public class PacketVlanTransformationTest extends EasyMockSupport {
+public class VlanTransformationTest extends EasyMockSupport {
     private OFFactory ofFactory;
 
     @Before
@@ -38,14 +40,14 @@ public class PacketVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void noInNoOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(), ImmutableList.of());
         verifyActions(transform);
     }
 
     @Test
     public void oneInNoOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(1), ImmutableList.of());
         verifyActions(transform,
                       ofFactory.actions().popVlan());
@@ -53,7 +55,7 @@ public class PacketVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInNoOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(1, 2), ImmutableList.of());
         verifyActions(transform,
                       ofFactory.actions().popVlan(),
@@ -62,16 +64,16 @@ public class PacketVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInOneOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(1, 2), ImmutableList.of(3));
         verifyActions(transform,
                       ofFactory.actions().popVlan(),
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 3));
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 3));
     }
 
     @Test
     public void twoInOutOutOneMatch() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(5, 2), ImmutableList.of(5));
         verifyActions(transform,
                       ofFactory.actions().popVlan());
@@ -79,71 +81,71 @@ public class PacketVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInTwoOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(1, 2), ImmutableList.of(3, 4));
         verifyActions(transform,
                       ofFactory.actions().popVlan(),
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 3),
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 3),
                       ofFactory.actions().pushVlan(EthType.VLAN_FRAME),
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 4));
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 4));
     }
 
     @Test
     public void oneInTwoOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(1), ImmutableList.of(3, 4));
         verifyActions(transform,
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 3),
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 3),
                       ofFactory.actions().pushVlan(EthType.VLAN_FRAME),
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 4));
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 4));
     }
 
     @Test
     public void oneInTwoOutOneMatch() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(5), ImmutableList.of(5, 4));
         verifyActions(transform,
                       ofFactory.actions().pushVlan(EthType.VLAN_FRAME),
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 4));
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 4));
     }
 
     @Test
     public void noInTwoOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(), ImmutableList.of(3, 4));
         verifyActions(transform,
                       ofFactory.actions().pushVlan(EthType.VLAN_FRAME),
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 3),
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 3),
                       ofFactory.actions().pushVlan(EthType.VLAN_FRAME),
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 4));
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 4));
     }
 
     @Test
     public void oneInOneOut() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(1), ImmutableList.of(3));
         verifyActions(transform,
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 3));
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 3));
     }
 
     @Test
     public void oneInOneOutOneMatch() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(5), ImmutableList.of(5));
         verifyActions(transform);
     }
 
     @Test
     public void twoInTwoOutOneMatch() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(5, 2), ImmutableList.of(5, 4));
         verifyActions(transform,
-                      FlowInstallCommand.makeSetVlanIdAction(ofFactory, 4));
+                      OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 4));
     }
 
     @Test
     public void twoInTwoOutTwoMatch() {
-        List<OFAction> transform = FlowInstallCommand.makePacketVlanTransformActions(
+        List<OFAction> transform = FlowInstallCommand.makeVlanTransformActions(
                 ofFactory, ImmutableList.of(5, 6), ImmutableList.of(5, 6));
         verifyActions(transform);
     }

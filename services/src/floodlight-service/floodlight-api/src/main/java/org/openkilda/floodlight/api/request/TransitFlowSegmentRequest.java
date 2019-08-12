@@ -17,7 +17,7 @@ package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.ActOperation;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -35,7 +35,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SpeakerTransitActRequest extends AbstractSpeakerActRequest {
+public class TransitFlowSegmentRequest extends AbstractFlowSegmentRequest {
     @JsonProperty("ingressIslPort")
     protected final Integer ingressIslPort;
 
@@ -47,17 +47,17 @@ public class SpeakerTransitActRequest extends AbstractSpeakerActRequest {
 
     @JsonCreator
     @Builder(toBuilder = true)
-    public SpeakerTransitActRequest(
+    public TransitFlowSegmentRequest(
             @JsonProperty("message_context") MessageContext context,
-            @JsonProperty("operation") ActOperation operation,
-            @JsonProperty("command_id") UUID commandId,
             @JsonProperty("switch_id") SwitchId switchId,
+            @JsonProperty("operation") FlowSegmentOperation operation,
+            @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("ingressIslPort") Integer ingressIslPort,
             @JsonProperty("egressIslPort") Integer egressIslPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, operation, commandId, switchId, flowId, cookie);
+        super(context, switchId, operation, commandId, flowId, cookie);
 
         requireNonNull(ingressIslPort, "Argument ingressIslPort must no be null");
         requireNonNull(egressIslPort, "Argument egressIslPort must no be null");

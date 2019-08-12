@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.service;
 
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm.Event;
@@ -27,7 +27,7 @@ public class SpeakerCommandObserver {
 
     private final SpeakerCommandFsm commandExecutor;
 
-    public SpeakerCommandObserver(SpeakerCommandFsm.Builder builder, AbstractSpeakerActRequest request) {
+    public SpeakerCommandObserver(SpeakerCommandFsm.Builder builder, AbstractFlowSegmentRequest request) {
         this.commandExecutor = builder.newInstance(request);
     }
 

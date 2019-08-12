@@ -17,7 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
@@ -99,7 +99,7 @@ public class RevertNewRulesAction extends
 
         Set<UUID> commandIds = Stream.concat(installCommands.stream(), removeCommands.stream())
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
-                .map(AbstractSpeakerActRequest::getCommandId)
+                .map(AbstractFlowSegmentRequest::getCommandId)
                 .collect(Collectors.toSet());
         stateMachine.setPendingCommands(commandIds);
 

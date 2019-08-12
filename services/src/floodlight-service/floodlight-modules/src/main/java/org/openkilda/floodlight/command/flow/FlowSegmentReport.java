@@ -34,15 +34,15 @@ import org.projectfloodlight.openflow.protocol.OFErrorMsg;
 import org.projectfloodlight.openflow.protocol.errormsg.OFFlowModFailedErrorMsg;
 
 @Slf4j
-public class FlowReport extends SpeakerCommandReport {
+public class FlowSegmentReport extends SpeakerCommandReport {
     @Getter(AccessLevel.PROTECTED)
-    private final FlowCommand<?> command;
+    private final AbstractFlowSegmentCommand command;
 
-    protected FlowReport(FlowCommand<?> command) {
+    protected FlowSegmentReport(AbstractFlowSegmentCommand command) {
         this(command, null);
     }
 
-    protected FlowReport(FlowCommand<?> command, Exception error) {
+    protected FlowSegmentReport(AbstractFlowSegmentCommand command, Exception error) {
         super(error);
         this.command = command;
     }

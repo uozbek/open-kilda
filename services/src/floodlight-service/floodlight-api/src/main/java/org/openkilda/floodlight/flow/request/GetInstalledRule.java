@@ -17,8 +17,8 @@ package org.openkilda.floodlight.flow.request;
 
 import static org.openkilda.messaging.Utils.FLOW_ID;
 
-import org.openkilda.floodlight.api.ActOperation;
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -33,7 +33,7 @@ import java.util.UUID;
 
 @Getter
 @ToString(callSuper = true)
-public class GetInstalledRule extends AbstractSpeakerActRequest {
+public class GetInstalledRule extends AbstractFlowSegmentRequest {
     @JsonCreator
     @Builder
     public GetInstalledRule(@JsonProperty("message_context") MessageContext messageContext,
@@ -41,7 +41,7 @@ public class GetInstalledRule extends AbstractSpeakerActRequest {
                             @JsonProperty(FLOW_ID) String flowId,
                             @JsonProperty("switch_id") SwitchId switchId,
                             @JsonProperty("cookie") Cookie cookie) {
-        super(messageContext, ActOperation.VERIFY, commandId, switchId, flowId, cookie);
+        super(messageContext, switchId, FlowSegmentOperation.VERIFY, commandId, flowId, cookie);
 
         throw new IllegalStateException(String.format("**FIXME** class %s must be drop i.e. its usage is prohibited",
                                                       getClass().getName()));

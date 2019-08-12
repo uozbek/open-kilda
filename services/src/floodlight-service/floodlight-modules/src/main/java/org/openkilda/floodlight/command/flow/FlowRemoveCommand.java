@@ -40,7 +40,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class FlowRemoveCommand extends FlowCommand<FlowReport> {
+public class FlowRemoveCommand extends AbstractFlowSegmentCommand<FlowSegmentReport> {
 
     private final MeterId meterId;
     private final DeleteRulesCriteria criteria;
@@ -58,7 +58,7 @@ public class FlowRemoveCommand extends FlowCommand<FlowReport> {
     }
 
     @Override
-    protected CompletableFuture<FlowReport> makeExecutePlan() throws Exception {
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() throws Exception {
         CompletableFuture<List<OFFlowStatsEntry>> ofFlowBefore = planOfFlowTableDump();
         CompletableFuture<List<OFFlowStatsEntry>> ofFlowAfter = ofFlowBefore
                 .thenCompose(ignored -> planDelete())
@@ -66,12 +66,12 @@ public class FlowRemoveCommand extends FlowCommand<FlowReport> {
 
         return ofFlowAfter
                 .thenAcceptBoth(ofFlowBefore, (after, before) -> ensureRulesDeleted(before, after))
-                .thenApply(ignore -> new FlowReport(this));
+                .thenApply(ignore -> new FlowSegmentReport(this));
     }
 
     @Override
-    protected FlowReport makeReport(Exception error) {
-        return new FlowReport(this, error);
+    protected FlowSegmentReport makeReport(Exception error) {
+        return new FlowSegmentReport(this, error);
     }
 
     private CompletableFuture<Void> planDelete() {

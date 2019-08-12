@@ -19,7 +19,7 @@ import static org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream.SPEAKER_WO
 import static org.openkilda.wfm.topology.utils.KafkaRecordTranslator.FIELD_ID_KEY;
 import static org.openkilda.wfm.topology.utils.KafkaRecordTranslator.FIELD_ID_PAYLOAD;
 
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
@@ -52,7 +52,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarri
         this.currentTuple = input;
 
         String key = input.getStringByField(FIELD_ID_KEY);
-        AbstractSpeakerActRequest command = (AbstractSpeakerActRequest) input.getValueByField(FIELD_ID_PAYLOAD);
+        AbstractFlowSegmentRequest command = (AbstractFlowSegmentRequest) input.getValueByField(FIELD_ID_PAYLOAD);
 
         service.sendCommand(key, command);
     }
@@ -90,7 +90,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarri
     }
 
     @Override
-    public void sendCommand(String key, AbstractSpeakerActRequest command) {
+    public void sendCommand(String key, AbstractFlowSegmentRequest command) {
         emitWithContext(SPEAKER_WORKER_REQUEST_SENDER.name(), currentTuple, new Values(key, command));
     }
 

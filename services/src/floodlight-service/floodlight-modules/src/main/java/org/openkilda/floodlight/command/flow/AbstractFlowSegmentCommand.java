@@ -17,8 +17,8 @@ package org.openkilda.floodlight.command.flow;
 
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
 
+import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.command.SpeakerCommand;
-import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.model.SwitchDescriptor;
 import org.openkilda.floodlight.service.FeatureDetectorService;
@@ -28,6 +28,7 @@ import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Getter;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
@@ -49,40 +50,53 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-@Getter
-public abstract class FlowCommand<T extends SpeakerCommandReport> extends SpeakerCommand<T> {
-    // This is invalid VID mask - it cut of highest bit that indicate presence of VLAN tag on package. But valid mask
-    // 0x1FFF lead to rule reject during install attempt on accton based switches.
-    private static short OF10_VLAN_MASK = 0x0FFF;
+public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegmentReport> {
     protected static final long FLOW_COOKIE_MASK = 0x7FFFFFFFFFFFFFFFL;
     protected static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
 
+    // payload
+    protected final FlowSegmentOperation operation;
+    protected final UUID commandId;
+    protected final String flowId;
+    protected final Cookie cookie;
+
+    // operation data
     @Getter(AccessLevel.PROTECTED)
     private FloodlightModuleContext moduleContext;
-    @Getter(AccessLevel.PROTECTED)
-    private SwitchDescriptor switchDescriptor;
+
     @Getter(AccessLevel.PROTECTED)
     private Set<SpeakerSwitchView.Feature> switchFeatures;
+    @Getter(AccessLevel.PROTECTED)
+    private SwitchDescriptor switchDescriptor;
 
-    final UUID commandId;
-    final String flowId;
-    final Cookie cookie;
-
-    FlowCommand(UUID commandId, String flowId, MessageContext messageContext, Cookie cookie, SwitchId switchId) {
-        super(switchId, messageContext);
+    public AbstractFlowSegmentCommand(
+            MessageContext messageContext, SwitchId switchId, FlowSegmentOperation operation, UUID commandId,
+            String flowId, Cookie cookie) {
+        super(messageContext, switchId);
+        this.operation = operation;
         this.commandId = commandId;
         this.flowId = flowId;
         this.cookie = cookie;
+    }
+
+    protected FlowSegmentReport makeReport(Exception error) {
+        return new FlowSegmentReport(this, error);
+    }
+
+    protected FlowSegmentReport makeSuccessReport() {
+        return new FlowSegmentReport(this);
     }
 
     @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         super.setup(moduleContext);
 
-        switchDescriptor = new SwitchDescriptor(getSw());
+        this.moduleContext = moduleContext;
 
         FeatureDetectorService featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
         switchFeatures = featureDetectorService.detectSwitch(getSw());
+
+        switchDescriptor = new SwitchDescriptor(getSw());
     }
 
     final Match matchFlow(Integer inputPort, Integer inputVlan, OFFactory ofFactory) {
@@ -97,8 +111,11 @@ public abstract class FlowCommand<T extends SpeakerCommandReport> extends Speake
 
     final void matchVlan(OFFactory ofFactory, Match.Builder matchBuilder, int vlanId) {
         if (OF_12.compareTo(ofFactory.getVersion()) >= 0) {
+            // This is invalid VID mask - it cut of highest bit that indicate presence of VLAN tag on package. But valid
+            // mask 0x1FFF lead to rule reject during install attempt on accton based switches.
+            // TODO(surabujin): we should use exact match here
             matchBuilder.setMasked(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(vlanId),
-                    OFVlanVidMatch.ofRawVid(OF10_VLAN_MASK));
+                                   OFVlanVidMatch.ofRawVid((short) 0x0FFF));
         } else {
             matchBuilder.setExact(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(vlanId));
         }

@@ -18,11 +18,11 @@ package org.openkilda.wfm.topology.flowhs.service;
 import static org.mockito.Mockito.when;
 
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.api.request.SpeakerEgressActRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentRequest;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.Cookie;
@@ -61,7 +61,7 @@ public abstract class AbstractFlowTest {
     @Mock
     FlowResourcesManager flowResourcesManager;
 
-    final Queue<AbstractSpeakerActRequest> requests = new ArrayDeque<>();
+    final Queue<AbstractFlowSegmentRequest> requests = new ArrayDeque<>();
     final Map<SwitchId, Map<Cookie, InstallFlowRule>> installedRules = new HashMap<>();
 
     @Before
@@ -95,7 +95,7 @@ public abstract class AbstractFlowTest {
 
     Answer getSpeakerCommandsAnswer() {
         return invocation -> {
-            AbstractSpeakerActRequest request = invocation.getArgument(0);
+            AbstractFlowSegmentRequest request = invocation.getArgument(0);
             requests.offer(request);
 
             if (request instanceof InstallFlowRule) {
@@ -122,12 +122,12 @@ public abstract class AbstractFlowTest {
                 .cookie(rule.getCookie())
                 .inPort(rule.getInputPort())
                 .outPort(rule.getOutputPort());
-        if (rule instanceof SpeakerEgressActRequest) {
-            builder.inVlan(((SpeakerEgressActRequest) rule).getTransitEncapsulationId());
-            builder.outVlan(((SpeakerEgressActRequest) rule).getOutputVlanId());
-        } else if (rule instanceof SpeakerTransitActRequest) {
-            builder.inVlan(((SpeakerTransitActRequest) rule).getTransitEncapsulationId());
-            builder.outVlan(((SpeakerTransitActRequest) rule).getTransitEncapsulationId());
+        if (rule instanceof EgressFlowSegmentRequest) {
+            builder.inVlan(((EgressFlowSegmentRequest) rule).getTransitEncapsulationId());
+            builder.outVlan(((EgressFlowSegmentRequest) rule).getOutputVlanId());
+        } else if (rule instanceof TransitFlowSegmentRequest) {
+            builder.inVlan(((TransitFlowSegmentRequest) rule).getTransitEncapsulationId());
+            builder.outVlan(((TransitFlowSegmentRequest) rule).getTransitEncapsulationId());
         } else if (rule instanceof SpeakerIngressActModRequest) {
             SpeakerIngressActModRequest ingressRule = (SpeakerIngressActModRequest) rule;
             builder.inVlan(ingressRule.getInputOuterVlanId())

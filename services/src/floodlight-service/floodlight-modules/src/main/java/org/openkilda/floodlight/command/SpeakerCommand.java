@@ -15,9 +15,7 @@
 
 package org.openkilda.floodlight.command;
 
-import org.openkilda.floodlight.command.flow.FlowRemoveCommand;
-import org.openkilda.floodlight.command.flow.ReadRuleCommand;
-import org.openkilda.floodlight.command.flow.InstallEgressRuleCommand;
+import org.openkilda.floodlight.command.flow.EgressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.InstallIngressRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallOneSwitchRuleCommand;
 import org.openkilda.floodlight.command.flow.InstallTransitRuleCommand;
@@ -54,29 +52,26 @@ import java.util.concurrent.CompletionException;
                 name = "org.openkilda.floodlight.api.request.InstallSingleSwitchIngressRule"),
         @Type(value = InstallTransitRuleCommand.class,
                 name = "org.openkilda.floodlight.api.request.InstallTransitRule"),
-        @Type(value = InstallEgressRuleCommand.class,
-                name = "org.openkilda.floodlight.api.request.InstallEgressRule"),
-        @Type(value = FlowRemoveCommand.class,
-                name = "org.openkilda.floodlight.flow.request.RemoveRule"),
-        @Type(value = ReadRuleCommand.class,
-                name = "org.openkilda.floodlight.flow.request.GetInstalledRule")
+        @Type(value = EgressFlowSegmentCommand.class,
+                name = "org.openkilda.floodlight.api.request.InstallEgressRule")
 })
-@Getter
 public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
-    protected final SwitchId switchId;
-    protected final MessageContext messageContext;
-
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
+    // payload
+    protected final MessageContext messageContext;
+    protected final SwitchId switchId;
+
+    // operation data
     @Getter(AccessLevel.PROTECTED)
     private SessionService sessionService;
 
     @Getter(AccessLevel.PROTECTED)
     private IOFSwitch sw;
 
-    public SpeakerCommand(SwitchId switchId, MessageContext messageContext) {
-        this.switchId = switchId;
+    public SpeakerCommand(MessageContext messageContext, SwitchId switchId) {
         this.messageContext = messageContext;
+        this.switchId = switchId;
     }
 
     public CompletableFuture<T> execute(FloodlightModuleContext moduleContext) {

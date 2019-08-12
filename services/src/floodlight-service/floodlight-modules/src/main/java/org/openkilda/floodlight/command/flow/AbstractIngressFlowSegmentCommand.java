@@ -13,41 +13,30 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.request;
-
-import static java.util.Objects.requireNonNull;
+package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.ActOperation;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
 
 import java.util.UUID;
 
-@Getter
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-abstract class AbstractIngressActRequest extends AbstractSpeakerActRequest {
-    @JsonProperty("endpoint")
+public abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentCommand {
+    // payload
     protected final FlowEndpoint endpoint;
 
     @JsonProperty("meter_config")
     protected final MeterConfig meterConfig;
 
-    AbstractIngressActRequest(MessageContext context, ActOperation operation,
-                              UUID commandId, SwitchId switchId, String flowId, Cookie cookie,
-                              FlowEndpoint endpoint, MeterConfig meterConfig) {
-        super(context, operation, commandId, switchId, flowId, cookie);
-
-        requireNonNull(endpoint, "Argument endpoint must no be null");
-
+    public AbstractIngressFlowSegmentCommand(
+            MessageContext messageContext, SwitchId switchId, FlowSegmentOperation operation, UUID commandId,
+            String flowId, Cookie cookie, FlowEndpoint endpoint, MeterConfig meterConfig) {
+        super(messageContext, switchId, operation, commandId, flowId, cookie);
         this.endpoint = endpoint;
         this.meterConfig = meterConfig;
     }

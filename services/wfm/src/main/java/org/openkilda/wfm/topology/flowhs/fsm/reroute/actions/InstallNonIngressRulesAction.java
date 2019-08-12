@@ -15,8 +15,8 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.api.request.SpeakerTransitActRequest;
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
@@ -60,7 +60,7 @@ public class InstallNonIngressRulesAction extends
                 ? stateMachine.getNewEncapsulationType() : flow.getEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<SpeakerTransitActRequest> commands = new ArrayList<>();
+        Collection<TransitFlowSegmentRequest> commands = new ArrayList<>();
 
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
@@ -76,7 +76,7 @@ public class InstallNonIngressRulesAction extends
         }
 
         stateMachine.setNonIngressCommands(commands.stream()
-                .collect(Collectors.toMap(SpeakerTransitActRequest::getCommandId, Function.identity())));
+                .collect(Collectors.toMap(TransitFlowSegmentRequest::getCommandId, Function.identity())));
 
         if (commands.isEmpty()) {
             log.debug("No need to install non ingress rules for one switch flow {}", stateMachine.getFlowId());
@@ -88,7 +88,7 @@ public class InstallNonIngressRulesAction extends
         } else {
             Set<UUID> commandIds = commands.stream()
                     .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
-                    .map(AbstractSpeakerActRequest::getCommandId)
+                    .map(AbstractFlowSegmentRequest::getCommandId)
                     .collect(Collectors.toSet());
             stateMachine.setPendingCommands(commandIds);
 

@@ -17,7 +17,7 @@ package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.ActOperation;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
@@ -37,7 +37,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SpeakerMultiSwitchIngressActRequest extends AbstractIngressActRequest {
+public class IngressFlowSegmentRequest extends AbstractIngressFlowSegmentRequest {
     @JsonProperty("islPort")
     protected final Integer islPort;
 
@@ -46,18 +46,18 @@ public class SpeakerMultiSwitchIngressActRequest extends AbstractIngressActReque
 
     @JsonCreator
     @Builder(toBuilder = true)
-    public SpeakerMultiSwitchIngressActRequest(
+    public IngressFlowSegmentRequest(
             @JsonProperty("message_context") MessageContext context,
-            @JsonProperty("operation") ActOperation operation,
-            @JsonProperty("command_id") UUID commandId,
             @JsonProperty("switch_id") SwitchId switchId,
+            @JsonProperty("operation") FlowSegmentOperation operation,
+            @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, operation, commandId, switchId, flowId, cookie, endpoint, meterConfig);
+        super(context, switchId, operation, commandId, flowId, cookie, endpoint, meterConfig);
 
         requireNonNull(islPort, "Argument islPort must no be null");
         requireNonNull(encapsulation, "Argument encapsulation must no be null");

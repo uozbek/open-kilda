@@ -17,8 +17,8 @@ package org.openkilda.floodlight.flow.request;
 
 import static org.openkilda.messaging.Utils.FLOW_ID;
 
-import org.openkilda.floodlight.api.ActOperation;
-import org.openkilda.floodlight.api.request.AbstractSpeakerActRequest;
+import org.openkilda.floodlight.api.FlowSegmentOperation;
+import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
 import org.openkilda.model.Cookie;
@@ -37,7 +37,7 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class RemoveRule extends AbstractSpeakerActRequest {
+public class RemoveRule extends AbstractFlowSegmentRequest {
     @JsonProperty("criteria")
     private DeleteRulesCriteria criteria;
 
@@ -53,7 +53,7 @@ public class RemoveRule extends AbstractSpeakerActRequest {
                       @JsonProperty("cookie") final Cookie cookie,
                       @JsonProperty("criteria") DeleteRulesCriteria criteria,
                       @JsonProperty("meter_id") MeterId meterId) {
-        super(messageContext, ActOperation.DELETE, commandId, switchId, flowId, cookie);
+        super(messageContext, switchId, FlowSegmentOperation.DELETE, commandId, flowId, cookie);
         this.criteria = criteria;
         this.meterId = meterId;
 
