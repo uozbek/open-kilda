@@ -15,10 +15,9 @@
 
 package org.openkilda.floodlight.api.request;
 
-import static java.util.Objects.requireNonNull;
-
-import org.openkilda.floodlight.api.FlowSegmentOperation;
+import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -35,36 +34,19 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class TransitFlowSegmentRequest extends AbstractFlowSegmentRequest {
-    @JsonProperty("ingressIslPort")
-    protected final Integer ingressIslPort;
-
-    @JsonProperty("egressIslPort")
-    protected final Integer egressIslPort;
-
-    @JsonProperty("encapsulation")
-    protected FlowTransitEncapsulation encapsulation;
-
+public class IngressFlowSegmentRemoveRequest extends IngressFlowSegmentBlankRequest {
     @JsonCreator
     @Builder(toBuilder = true)
-    public TransitFlowSegmentRequest(
+    public IngressFlowSegmentRemoveRequest(
             @JsonProperty("message_context") MessageContext context,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("operation") FlowSegmentOperation operation,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("ingressIslPort") Integer ingressIslPort,
-            @JsonProperty("egressIslPort") Integer egressIslPort,
+            @JsonProperty("endpoint") FlowEndpoint endpoint,
+            @JsonProperty("meter_config") MeterConfig meterConfig,
+            @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, operation, commandId, flowId, cookie);
-
-        requireNonNull(ingressIslPort, "Argument ingressIslPort must no be null");
-        requireNonNull(egressIslPort, "Argument egressIslPort must no be null");
-        requireNonNull(encapsulation, "Argument encapsulation must no be null");
-
-        this.ingressIslPort = ingressIslPort;
-        this.egressIslPort = egressIslPort;
-        this.encapsulation = encapsulation;
+        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
 }

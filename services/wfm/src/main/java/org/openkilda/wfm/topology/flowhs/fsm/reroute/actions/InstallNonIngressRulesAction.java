@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
@@ -60,7 +60,7 @@ public class InstallNonIngressRulesAction extends
                 ? stateMachine.getNewEncapsulationType() : flow.getEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<TransitFlowSegmentRequest> commands = new ArrayList<>();
+        Collection<TransitFlowSegmentInstallRequest> commands = new ArrayList<>();
 
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
@@ -76,7 +76,7 @@ public class InstallNonIngressRulesAction extends
         }
 
         stateMachine.setNonIngressCommands(commands.stream()
-                .collect(Collectors.toMap(TransitFlowSegmentRequest::getCommandId, Function.identity())));
+                .collect(Collectors.toMap(TransitFlowSegmentInstallRequest::getCommandId, Function.identity())));
 
         if (commands.isEmpty()) {
             log.debug("No need to install non ingress rules for one switch flow {}", stateMachine.getFlowId());

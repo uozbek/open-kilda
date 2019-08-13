@@ -19,10 +19,49 @@ import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.action.OFActions;
+import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class OfAdapter {
     public static OfAdapter INSTANCE = new OfAdapter();
+
+    public List<OFAction> makeVlanTransformActions(
+            OFFactory of, List<Integer> currentVlanStack, List<Integer> desiredVlanStack) {
+        Iterator<Integer> currentIter = currentVlanStack.iterator();
+        Iterator<Integer> desiredIter = desiredVlanStack.iterator();
+
+        final List<OFAction> actions = new ArrayList<>();
+        while (currentIter.hasNext() && desiredIter.hasNext()) {
+            Integer current = currentIter.next();
+            Integer desired = desiredIter.next();
+            if (!current.equals(desired)) {
+                // remove all extra VLANs
+                while (currentIter.hasNext()) {
+                    currentIter.next();
+                    actions.add(of.actions().popVlan());
+                }
+                // rewrite existing VLAN stack "head"
+                actions.add(setVlanIdAction(of, desired));
+                break;
+            }
+        }
+
+        // remove all extra VLANs (if previous loops ends with lack of desired VLANs
+        while (currentIter.hasNext()) {
+            currentIter.next();
+            actions.add(of.actions().popVlan());
+        }
+
+        while (desiredIter.hasNext()) {
+            actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
+            actions.add(setVlanIdAction(of, desiredIter.next()));
+        }
+        return actions;
+    }
 
     public OFAction setVlanIdAction(OFFactory of, int vlanId) {
         OFActions actions = of.actions();

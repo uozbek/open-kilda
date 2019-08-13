@@ -13,41 +13,30 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.request;
-
-import static java.util.Objects.requireNonNull;
+package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
 
 import java.util.UUID;
 
-@Getter
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-abstract class AbstractIngressFlowSegmentRequest extends AbstractFlowSegmentRequest {
-    @JsonProperty("endpoint")
-    protected final FlowEndpoint endpoint;
-
-    @JsonProperty("meter_config")
-    protected final MeterConfig meterConfig;
-
-    AbstractIngressFlowSegmentRequest(
-            MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
-            FlowEndpoint endpoint, MeterConfig meterConfig) {
-        super(context, switchId, commandId, flowId, cookie);
-
-        requireNonNull(endpoint, "Argument endpoint must no be null");
-
-        this.endpoint = endpoint;
-        this.meterConfig = meterConfig;
+public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentBlankCommand {
+    public IngressFlowSegmentRemoveCommand(
+            @JsonProperty("message_context") MessageContext context,
+            @JsonProperty("switch_id") SwitchId switchId,
+            @JsonProperty("command_id") UUID commandId,
+            @JsonProperty("flowid") String flowId,
+            @JsonProperty("cookie") Cookie cookie,
+            @JsonProperty("endpoint") FlowEndpoint endpoint,
+            @JsonProperty("meter_config") MeterConfig meterConfig,
+            @JsonProperty("islPort") Integer islPort,
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
+        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
 }

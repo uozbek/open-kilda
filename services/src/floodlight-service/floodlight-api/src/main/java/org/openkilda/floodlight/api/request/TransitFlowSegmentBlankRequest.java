@@ -17,8 +17,7 @@ package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -33,21 +32,27 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-abstract class AbstractIngressFlowSegmentRequest extends AbstractFlowSegmentRequest {
-    @JsonProperty("endpoint")
-    protected final FlowEndpoint endpoint;
+abstract class TransitFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
+    @JsonProperty("ingressIslPort")
+    protected final Integer ingressIslPort;
 
-    @JsonProperty("meter_config")
-    protected final MeterConfig meterConfig;
+    @JsonProperty("egressIslPort")
+    protected final Integer egressIslPort;
 
-    AbstractIngressFlowSegmentRequest(
+    @JsonProperty("encapsulation")
+    protected FlowTransitEncapsulation encapsulation;
+
+    TransitFlowSegmentBlankRequest(
             MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
-            FlowEndpoint endpoint, MeterConfig meterConfig) {
+            Integer ingressIslPort, Integer egressIslPort, FlowTransitEncapsulation encapsulation) {
         super(context, switchId, commandId, flowId, cookie);
 
-        requireNonNull(endpoint, "Argument endpoint must no be null");
+        requireNonNull(ingressIslPort, "Argument ingressIslPort must no be null");
+        requireNonNull(egressIslPort, "Argument egressIslPort must no be null");
+        requireNonNull(encapsulation, "Argument encapsulation must no be null");
 
-        this.endpoint = endpoint;
-        this.meterConfig = meterConfig;
+        this.ingressIslPort = ingressIslPort;
+        this.egressIslPort = egressIslPort;
+        this.encapsulation = encapsulation;
     }
 }

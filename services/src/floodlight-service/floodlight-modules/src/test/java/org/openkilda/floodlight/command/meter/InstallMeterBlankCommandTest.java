@@ -28,7 +28,6 @@ import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.messaging.info.meter.SwitchMeterUnsupported;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
@@ -64,11 +63,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-public class InstallMeterCommandTest extends AbstractSpeakerCommandTest {
+public class InstallMeterBlankCommandTest extends AbstractSpeakerCommandTest {
     private MessageContext messageContext = new MessageContext();
     private MeterId meterId = new MeterId(2);
     private long bandwidth = 1000;
-    private InstallMeterCommand command = new InstallMeterCommand(
+    private MeterInstallCommand command = new MeterInstallCommand(
             messageContext, new SwitchId(dpId.getLong()), meterId, bandwidth);
 
     private final SwitchDescription swDesc = SwitchDescription.builder()

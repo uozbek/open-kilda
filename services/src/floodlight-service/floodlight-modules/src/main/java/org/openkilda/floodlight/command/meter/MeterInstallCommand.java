@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.meter;
 
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_13;
 
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.IOfErrorResponseHandler;
 import org.openkilda.floodlight.config.provider.FloodlightModuleConfigurationProvider;
 import org.openkilda.floodlight.error.InvalidMeterIdException;
@@ -30,10 +31,8 @@ import org.openkilda.floodlight.switchmanager.SwitchManagerConfig;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Meter;
-import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
@@ -56,26 +55,20 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-public class InstallMeterCommand extends MeterCommand implements IOfErrorResponseHandler {
+public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorResponseHandler {
     private SwitchManagerConfig switchManagerConfig;
 
-    private Long bandwidth;
-
-    public InstallMeterCommand(@JsonProperty("message_context") MessageContext messageContext,
-                               @JsonProperty("switch_id") SwitchId switchId,
-                               @JsonProperty("meter_id") MeterId meterId,
-                               @JsonProperty("bandwidth") Long bandwidth) {
-        super(switchId, messageContext, meterId);
-        this.bandwidth = bandwidth;
+    public MeterInstallCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
+        super(switchId, messageContext, meterConfig);
     }
 
     @Override
     protected CompletableFuture<MeterReport> makeExecutePlan()
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         final OFMeterMod meterAddMessage = makeMeterAddMessage();
-        try (Session session = getSessionService().open(getMessageContext(), getSw())) {
+        try (Session session = getSessionService().open(messageContext, getSw())) {
             return setupErrorHandler(session.write(meterAddMessage), this)
-                    .thenApply(result -> new MeterReport(meterId));
+                    .thenApply(result -> new MeterReport(meterConfig.getMeterId()));
         }
     }
 
@@ -84,12 +77,12 @@ public class InstallMeterCommand extends MeterCommand implements IOfErrorRespons
         CompletableFuture<Optional<OFMessage>> future = new CompletableFuture<>();
         if (!isAddConflict(response)) {
             future.completeExceptionally(new SwitchErrorResponseException(getSw().getId(), String.format(
-                    "Can't install meter %s - %s", meterId, response)));
+                    "Can't install meter %s - %s", meterConfig.getMeterId(), response)));
             return future;
         }
 
         CompletableFuture<Optional<OFMessage>> lookupExistingBranch = new CompletableFutureAdapter<>(
-                getMessageContext(), getSw().writeStatsRequest(makeMeterReadCommand()))
+                 messageContext, getSw().writeStatsRequest(makeMeterReadCommand()))
                 .thenAccept(this::ensureSameMeterExists)
                 .thenApply(Void -> Optional.empty());
         propagateFutureResponse(future, lookupExistingBranch);

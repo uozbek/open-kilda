@@ -13,30 +13,26 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command.flow;
+package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.command.flow.AbstractFlowSegmentCommand;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.UUID;
 
-public abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentCommand {
+abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentCommand {
     // payload
     protected final FlowEndpoint endpoint;
-
-    @JsonProperty("meter_config")
     protected final MeterConfig meterConfig;
 
-    public AbstractIngressFlowSegmentCommand(
-            MessageContext messageContext, SwitchId switchId, FlowSegmentOperation operation, UUID commandId,
-            String flowId, Cookie cookie, FlowEndpoint endpoint, MeterConfig meterConfig) {
-        super(messageContext, switchId, operation, commandId, flowId, cookie);
+    AbstractIngressFlowSegmentCommand(
+            MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            FlowEndpoint endpoint, MeterConfig meterConfig) {
+        super(messageContext, switchId, commandId, flowId, cookie);
         this.endpoint = endpoint;
         this.meterConfig = meterConfig;
     }

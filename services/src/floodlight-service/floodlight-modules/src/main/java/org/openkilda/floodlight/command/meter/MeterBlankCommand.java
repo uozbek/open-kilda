@@ -15,27 +15,33 @@
 
 package org.openkilda.floodlight.command.meter;
 
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
-import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 
 import java.util.Set;
 
-abstract class MeterCommand extends SpeakerCommand<MeterReport> {
-    private FeatureDetectorService featureDetectorService;
+abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
+    // payload
+    protected MeterConfig meterConfig;
 
-    MeterId meterId;
+    // operation data
+    @Getter(AccessLevel.PROTECTED)
+    private Set<SpeakerSwitchView.Feature> switchFeatures;
 
-    MeterCommand(SwitchId switchId, MessageContext messageContext, MeterId meterId) {
+    MeterBlankCommand(SwitchId switchId, MessageContext messageContext, MeterConfig meterConfig) {
         super(messageContext, switchId);
-        this.meterId = meterId;
+        this.meterConfig = meterConfig;
     }
 
     @Override
@@ -46,12 +52,12 @@ abstract class MeterCommand extends SpeakerCommand<MeterReport> {
     @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         super.setup(moduleContext);
-        featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
+        FeatureDetectorService featuresDetector = moduleContext.getServiceImpl(FeatureDetectorService.class);
+        switchFeatures = featuresDetector.detectSwitch(getSw());
     }
 
     void ensureSwitchSupportMeters() throws UnsupportedSwitchOperationException {
-        Set<Feature> supportedFeatures = featureDetectorService.detectSwitch(getSw());
-        if (!supportedFeatures.contains(Feature.METERS)) {
+        if (!switchFeatures.contains(Feature.METERS)) {
             throw new UnsupportedSwitchOperationException(getSw().getId(), "Switch doesn't support meters");
         }
     }

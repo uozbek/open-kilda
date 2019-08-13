@@ -18,9 +18,9 @@ package org.openkilda.wfm.topology.stats.bolts;
 import static org.openkilda.wfm.AbstractBolt.FIELD_ID_CONTEXT;
 import static org.openkilda.wfm.topology.stats.StatsStreamType.CACHE_UPDATE;
 
-import org.openkilda.floodlight.api.request.EgressFlowSegmentRequest;
-import org.openkilda.floodlight.api.request.IngressFlowSegmentRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowModRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.messaging.AbstractMessage;
@@ -140,21 +140,21 @@ public class CacheFilterBolt extends BaseRichBolt {
     }
 
     private void handleAbstractMessage(Tuple tuple, AbstractMessage message) {
-        if (message instanceof IngressFlowSegmentRequest) {
-            IngressFlowSegmentRequest command = (IngressFlowSegmentRequest) message;
+        if (message instanceof IngressFlowSegmentInstallRequest) {
+            IngressFlowSegmentInstallRequest command = (IngressFlowSegmentInstallRequest) message;
             logMatchedRecord(command, command.getCookie());
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), command.getMeterId().getValue(), MeasurePoint.INGRESS);
-        } else if (message instanceof SingleSwitchFlowModRequest) {
-            SingleSwitchFlowModRequest command = (SingleSwitchFlowModRequest) message;
+        } else if (message instanceof SingleSwitchFlowInstallRequest) {
+            SingleSwitchFlowInstallRequest command = (SingleSwitchFlowInstallRequest) message;
             logMatchedRecord(command, command.getCookie());
 
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), command.getMeterId().getValue(), MeasurePoint.INGRESS);
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), null, MeasurePoint.EGRESS);
-        } else if (message instanceof EgressFlowSegmentRequest) {
-            EgressFlowSegmentRequest command = (EgressFlowSegmentRequest) message;
+        } else if (message instanceof EgressFlowSegmentInstallRequest) {
+            EgressFlowSegmentInstallRequest command = (EgressFlowSegmentInstallRequest) message;
             logMatchedRecord(command, command.getCookie());
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), null, MeasurePoint.EGRESS);

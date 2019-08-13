@@ -17,17 +17,13 @@ package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
-import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -37,31 +33,26 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class IngressFlowSegmentRequest extends AbstractIngressFlowSegmentRequest {
+abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
+    @JsonProperty("endpoint")
+    protected final FlowEndpoint endpoint;
+
     @JsonProperty("islPort")
     protected final Integer islPort;
 
     @JsonProperty("encapsulation")
     protected FlowTransitEncapsulation encapsulation;
 
-    @JsonCreator
-    @Builder(toBuilder = true)
-    public IngressFlowSegmentRequest(
-            @JsonProperty("message_context") MessageContext context,
-            @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("operation") FlowSegmentOperation operation,
-            @JsonProperty("command_id") UUID commandId,
-            @JsonProperty("flowid") String flowId,
-            @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("endpoint") FlowEndpoint endpoint,
-            @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("islPort") Integer islPort,
-            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, operation, commandId, flowId, cookie, endpoint, meterConfig);
+    EgressFlowSegmentBlankRequest(
+            MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            FlowEndpoint endpoint, Integer islPort, FlowTransitEncapsulation encapsulation) {
+        super(context, switchId, commandId, flowId, cookie);
 
+        requireNonNull(endpoint, "Argument endpoint must no be null");
         requireNonNull(islPort, "Argument islPort must no be null");
         requireNonNull(encapsulation, "Argument encapsulation must no be null");
 
+        this.endpoint = endpoint;
         this.islPort = islPort;
         this.encapsulation = encapsulation;
     }

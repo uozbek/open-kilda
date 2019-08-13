@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class InstallTransitRuleCommand extends FlowInstallCommand {
+public class InstallTransitRuleCommand extends AbstractFlowSegmentCommand {
     @JsonCreator
     public InstallTransitRuleCommand(@JsonProperty("command_id") UUID commandId,
                                      @JsonProperty("flowid") String flowId,

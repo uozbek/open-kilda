@@ -17,7 +17,6 @@ package org.openkilda.floodlight.command.flow;
 
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
 
-import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.model.SwitchDescriptor;
@@ -28,12 +27,12 @@ import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Getter;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFFactory;
+import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsRequest;
@@ -55,7 +54,6 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
     protected static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
 
     // payload
-    protected final FlowSegmentOperation operation;
     protected final UUID commandId;
     protected final String flowId;
     protected final Cookie cookie;
@@ -70,10 +68,8 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
     private SwitchDescriptor switchDescriptor;
 
     public AbstractFlowSegmentCommand(
-            MessageContext messageContext, SwitchId switchId, FlowSegmentOperation operation, UUID commandId,
-            String flowId, Cookie cookie) {
+            MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie) {
         super(messageContext, switchId);
-        this.operation = operation;
         this.commandId = commandId;
         this.flowId = flowId;
         this.cookie = cookie;
@@ -86,6 +82,8 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
     protected FlowSegmentReport makeSuccessReport() {
         return new FlowSegmentReport(this);
     }
+
+    protected abstract OFFlowMod.Builder makeFlowModBuilder();
 
     @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {

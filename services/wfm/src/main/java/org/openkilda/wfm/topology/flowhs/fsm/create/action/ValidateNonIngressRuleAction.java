@@ -17,7 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.common.action.FlowProcessingAction;
@@ -42,7 +42,7 @@ public class ValidateNonIngressRuleAction extends FlowProcessingAction<FlowCreat
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
         UUID commandId = context.getActModResponse().getCommandId();
 
-        TransitFlowSegmentRequest expected = stateMachine.getNonIngressCommands().get(commandId);
+        TransitFlowSegmentInstallRequest expected = stateMachine.getNonIngressCommands().get(commandId);
         FlowRuleResponse actual = (FlowRuleResponse) context.getActModResponse();
         if (!new NonIngressRulesValidator(expected, actual).validate()) {
             stateMachine.getFailedCommands().add(commandId);
@@ -56,7 +56,7 @@ public class ValidateNonIngressRuleAction extends FlowProcessingAction<FlowCreat
         }
     }
 
-    private void saveHistory(FlowCreateFsm stateMachine, TransitFlowSegmentRequest expected) {
+    private void saveHistory(FlowCreateFsm stateMachine, TransitFlowSegmentInstallRequest expected) {
         String action = format("Rule is valid: switch %s, cookie %s",
                 expected.getSwitchId().toString(), expected.getCookie());
         String description = format("Non ingress rule has been validated successfully: switch %s, cookie %s",

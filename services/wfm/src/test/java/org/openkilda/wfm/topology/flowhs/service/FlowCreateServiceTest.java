@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.api.request.EgressFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
@@ -337,7 +337,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
             } else if (command instanceof InstallFlowRule) {
                 installCommands++;
-                if (requests.size() > 1 || command instanceof EgressFlowSegmentRequest) {
+                if (requests.size() > 1 || command instanceof EgressFlowSegmentInstallRequest) {
                     handleResponse(key, command);
                 } else {
                     handleErrorResponse(key, command);
@@ -395,7 +395,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
             } else {
-                if (command instanceof EgressFlowSegmentRequest && remainingRetries > 0) {
+                if (command instanceof EgressFlowSegmentInstallRequest && remainingRetries > 0) {
                     handleErrorResponse(key, command, ErrorCode.SWITCH_UNAVAILABLE);
                     remainingRetries--;
                 } else {

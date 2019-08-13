@@ -17,7 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
@@ -41,7 +41,7 @@ public class ValidateNonIngressRulesAction extends RuleProcessingAction {
         UUID commandId = response.getCommandId();
         stateMachine.getPendingCommands().remove(commandId);
 
-        TransitFlowSegmentRequest expected = stateMachine.getNonIngressCommands().get(commandId);
+        TransitFlowSegmentInstallRequest expected = stateMachine.getNonIngressCommands().get(commandId);
         if (expected == null) {
             throw new IllegalStateException(format("Failed to find non ingress command with id %s", commandId));
         }

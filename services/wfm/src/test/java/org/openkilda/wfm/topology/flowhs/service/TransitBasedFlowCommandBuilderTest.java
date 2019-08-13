@@ -20,10 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
-import org.openkilda.floodlight.api.request.EgressFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.IngressFlowSegmentRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
 import org.openkilda.model.Cookie;
@@ -81,12 +81,12 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        TransitFlowSegmentRequest command = commands.get(0);
-        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentRequest.class));
+        TransitFlowSegmentInstallRequest command = commands.get(0);
+        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
 
-        EgressFlowSegmentRequest egressRequest = (EgressFlowSegmentRequest) command;
+        EgressFlowSegmentInstallRequest egressRequest = (EgressFlowSegmentInstallRequest) command;
         assertEquals(flow.getFlowId(), egressRequest.getFlowId());
         assertEquals(destSwitch.getSwitchId(), egressRequest.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), egressRequest.getCookie());
@@ -111,12 +111,12 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        TransitFlowSegmentRequest command = commands.get(0);
-        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentRequest.class));
+        TransitFlowSegmentInstallRequest command = commands.get(0);
+        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
 
-        EgressFlowSegmentRequest forwardEgressRule = (EgressFlowSegmentRequest) command;
+        EgressFlowSegmentInstallRequest forwardEgressRule = (EgressFlowSegmentInstallRequest) command;
         assertEquals(flow.getFlowId(), forwardEgressRule.getFlowId());
         assertEquals(destSwitch.getSwitchId(), forwardEgressRule.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), forwardEgressRule.getCookie());
@@ -130,8 +130,8 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         assertEquals(OutputVlanType.POP, forwardEgressRule.getOutputVlanType());
 
         command = commands.get(1);
-        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentRequest.class));
-        EgressFlowSegmentRequest reverseEgressRule = (EgressFlowSegmentRequest) command;
+        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
+        EgressFlowSegmentInstallRequest reverseEgressRule = (EgressFlowSegmentInstallRequest) command;
         assertEquals(flow.getFlowId(), reverseEgressRule.getFlowId());
         assertEquals(srcSwitch.getSwitchId(), reverseEgressRule.getSwitchId());
         assertEquals(flow.getReversePath().getCookie(), reverseEgressRule.getCookie());
@@ -157,12 +157,12 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        TransitFlowSegmentRequest command = commands.get(0);
-        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentRequest.class));
+        TransitFlowSegmentInstallRequest command = commands.get(0);
+        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
 
-        EgressFlowSegmentRequest srcSwitchRule = (EgressFlowSegmentRequest) command;
+        EgressFlowSegmentInstallRequest srcSwitchRule = (EgressFlowSegmentInstallRequest) command;
         assertEquals(flow.getFlowId(), srcSwitchRule.getFlowId());
         assertEquals(destSwitch.getSwitchId(), srcSwitchRule.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), srcSwitchRule.getCookie());
@@ -189,10 +189,10 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(4, commands.size());
 
-        TransitFlowSegmentRequest commandForTransitSwitch = commands.get(0);
+        TransitFlowSegmentInstallRequest commandForTransitSwitch = commands.get(0);
         assertEquals(flow.getFlowId(), commandForTransitSwitch.getFlowId());
         assertEquals(SWITCH_2, commandForTransitSwitch.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), commandForTransitSwitch.getCookie());
@@ -206,11 +206,11 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
                 .orElseThrow(() -> new IllegalStateException("Vlan should be present"));
         assertEquals(forwardVlan.getVlan(), (int) commandForTransitSwitch.getTransitEncapsulationId());
 
-        TransitFlowSegmentRequest commandForDestSwitch = commands.get(1);
+        TransitFlowSegmentInstallRequest commandForDestSwitch = commands.get(1);
         assertThat("Should be command for egress rule", commandForDestSwitch, instanceOf(
-                EgressFlowSegmentRequest.class));
+                EgressFlowSegmentInstallRequest.class));
 
-        EgressFlowSegmentRequest egressRule = (EgressFlowSegmentRequest) commandForDestSwitch;
+        EgressFlowSegmentInstallRequest egressRule = (EgressFlowSegmentInstallRequest) commandForDestSwitch;
         assertEquals(flow.getFlowId(), egressRule.getFlowId());
         assertEquals(destSwitch.getSwitchId(), egressRule.getSwitchId());
         assertEquals(flow.getForwardPath().getSegments().get(1).getDestPort(), (int) egressRule.getInputPort());
@@ -236,7 +236,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         List<SpeakerIngressActModRequest> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
 
-        IngressFlowSegmentRequest sourceSwitchRule = (IngressFlowSegmentRequest) commands.get(0);
+        IngressFlowSegmentInstallRequest sourceSwitchRule = (IngressFlowSegmentInstallRequest) commands.get(0);
         assertEquals(srcSwitch.getSwitchId(), sourceSwitchRule.getSwitchId());
         assertEquals(flow.getFlowId(), sourceSwitchRule.getFlowId());
         assertEquals(flow.getForwardPath().getCookie(), sourceSwitchRule.getCookie());
@@ -248,7 +248,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         assertEquals(0, (long) sourceSwitchRule.getBandwidth());
         assertNull(sourceSwitchRule.getMeterId());
 
-        IngressFlowSegmentRequest destSwitchRule = (IngressFlowSegmentRequest) commands.get(1);
+        IngressFlowSegmentInstallRequest destSwitchRule = (IngressFlowSegmentInstallRequest) commands.get(1);
         assertEquals(destSwitch.getSwitchId(), destSwitchRule.getSwitchId());
         assertEquals(flow.getFlowId(), destSwitchRule.getFlowId());
         assertEquals(flow.getReversePath().getCookie(), destSwitchRule.getCookie());
@@ -275,7 +275,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
 
         List<SpeakerIngressActModRequest> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        IngressFlowSegmentRequest sourceSwitchRule = (IngressFlowSegmentRequest) commands.get(0);
+        IngressFlowSegmentInstallRequest sourceSwitchRule = (IngressFlowSegmentInstallRequest) commands.get(0);
         assertEquals(srcSwitch.getSwitchId(), sourceSwitchRule.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), sourceSwitchRule.getCookie());
         assertEquals(flow.getFlowId(), sourceSwitchRule.getFlowId());
@@ -287,7 +287,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         assertEquals(flow.getBandwidth(), (long) sourceSwitchRule.getBandwidth());
         assertEquals(flow.getForwardPath().getMeterId(), sourceSwitchRule.getMeterId());
 
-        IngressFlowSegmentRequest destSwitchRule = (IngressFlowSegmentRequest) commands.get(1);
+        IngressFlowSegmentInstallRequest destSwitchRule = (IngressFlowSegmentInstallRequest) commands.get(1);
         assertEquals(destSwitchRule.getSwitchId(), destSwitchRule.getSwitchId());
         assertEquals(flow.getReversePath().getCookie(), destSwitchRule.getCookie());
         assertEquals(flow.getFlowId(), destSwitchRule.getFlowId());

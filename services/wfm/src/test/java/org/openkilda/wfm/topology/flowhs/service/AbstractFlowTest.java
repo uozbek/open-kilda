@@ -18,10 +18,10 @@ package org.openkilda.wfm.topology.flowhs.service;
 import static org.mockito.Mockito.when;
 
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.api.request.EgressFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
@@ -122,12 +122,12 @@ public abstract class AbstractFlowTest {
                 .cookie(rule.getCookie())
                 .inPort(rule.getInputPort())
                 .outPort(rule.getOutputPort());
-        if (rule instanceof EgressFlowSegmentRequest) {
-            builder.inVlan(((EgressFlowSegmentRequest) rule).getTransitEncapsulationId());
-            builder.outVlan(((EgressFlowSegmentRequest) rule).getOutputVlanId());
-        } else if (rule instanceof TransitFlowSegmentRequest) {
-            builder.inVlan(((TransitFlowSegmentRequest) rule).getTransitEncapsulationId());
-            builder.outVlan(((TransitFlowSegmentRequest) rule).getTransitEncapsulationId());
+        if (rule instanceof EgressFlowSegmentInstallRequest) {
+            builder.inVlan(((EgressFlowSegmentInstallRequest) rule).getTransitEncapsulationId());
+            builder.outVlan(((EgressFlowSegmentInstallRequest) rule).getOutputVlanId());
+        } else if (rule instanceof TransitFlowSegmentInstallRequest) {
+            builder.inVlan(((TransitFlowSegmentInstallRequest) rule).getTransitEncapsulationId());
+            builder.outVlan(((TransitFlowSegmentInstallRequest) rule).getTransitEncapsulationId());
         } else if (rule instanceof SpeakerIngressActModRequest) {
             SpeakerIngressActModRequest ingressRule = (SpeakerIngressActModRequest) rule;
             builder.inVlan(ingressRule.getInputOuterVlanId())

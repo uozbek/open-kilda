@@ -16,7 +16,6 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
@@ -48,14 +47,13 @@ public class EgressFlowSegmentCommand extends AbstractFlowSegmentCommand {
     public EgressFlowSegmentCommand(
             @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("operation") FlowSegmentOperation operation,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(messageContext, switchId, operation, commandId, flowId, cookie);
+        super(messageContext, switchId, commandId, flowId, cookie);
         this.endpoint = endpoint;
         this.islPort = islPort;
         this.encapsulation = encapsulation;

@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentInstallCommand;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class InstallOneSwitchRuleCommand extends InstallIngressRuleCommand {
+public class InstallOneSwitchRuleCommand extends IngressFlowSegmentInstallCommand {
     private final Integer outputOuterVlanId;
     private final Integer outputInnerVlanId;
 

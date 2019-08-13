@@ -17,7 +17,6 @@ package org.openkilda.floodlight.flow.request;
 
 import static org.openkilda.messaging.Utils.FLOW_ID;
 
-import org.openkilda.floodlight.api.FlowSegmentOperation;
 import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
@@ -53,7 +52,7 @@ public class RemoveRule extends AbstractFlowSegmentRequest {
                       @JsonProperty("cookie") final Cookie cookie,
                       @JsonProperty("criteria") DeleteRulesCriteria criteria,
                       @JsonProperty("meter_id") MeterId meterId) {
-        super(messageContext, switchId, FlowSegmentOperation.DELETE, commandId, flowId, cookie);
+        super(messageContext, switchId, commandId, flowId, cookie);
         this.criteria = criteria;
         this.meterId = meterId;
 

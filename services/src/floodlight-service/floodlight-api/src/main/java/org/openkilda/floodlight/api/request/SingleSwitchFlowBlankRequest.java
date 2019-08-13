@@ -13,13 +13,17 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.flow.request;
+package org.openkilda.floodlight.api.request;
 
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import static java.util.Objects.requireNonNull;
+
+import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -29,12 +33,17 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class InstallFlowRule extends AbstractFlowSegmentRequest {
-    public InstallFlowRule(MessageContext context, UUID commandId,
-                           SwitchId switchId, String flowId, Cookie cookie) {
-        super(context, switchId, commandId, flowId, cookie);
+abstract class SingleSwitchFlowBlankRequest extends AbstractIngressFlowSegmentRequest {
+    @JsonProperty("egress_endpoint")
+    private final FlowEndpoint egressEndpoint;
 
-        throw new IllegalStateException(String.format("**FIXME** class %s must be drop i.e. its usage is prohibited",
-                                                      getClass().getName()));
+    SingleSwitchFlowBlankRequest(
+            MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            FlowEndpoint endpoint, MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
+        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig);
+
+        requireNonNull(egressEndpoint, "Argument egressEndpoint must no be null");
+
+        this.egressEndpoint = egressEndpoint;
     }
 }

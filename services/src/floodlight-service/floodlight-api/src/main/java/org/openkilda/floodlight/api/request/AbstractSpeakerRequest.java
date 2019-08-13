@@ -22,7 +22,13 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
+@Getter
+@ToString
+@EqualsAndHashCode(callSuper = false)
 public abstract class AbstractSpeakerRequest extends AbstractMessage {
     @JsonProperty("switch_id")
     protected final SwitchId switchId;

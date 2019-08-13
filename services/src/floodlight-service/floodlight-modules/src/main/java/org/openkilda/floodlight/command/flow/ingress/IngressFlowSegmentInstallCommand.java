@@ -13,14 +13,17 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command.flow;
+package org.openkilda.floodlight.command.flow.ingress;
 
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_15;
 
-import org.openkilda.floodlight.command.meter.InstallMeterCommand;
+import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.command.flow.FlowSegmentReport;
+import org.openkilda.floodlight.command.meter.MeterInstallCommand;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
-import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.model.SwitchDescriptor;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.utils.MetadataAdapter;
@@ -28,7 +31,6 @@ import org.openkilda.floodlight.utils.MetadataAdapter.MetadataMatch;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
@@ -56,39 +58,25 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-public class InstallIngressRuleCommand extends FlowInstallCommand {
-    protected final Long bandwidth;
-    protected final Integer inputOuterVlanId;
-    protected final Integer inputInnerVlanId;
-    protected final MeterId meterId;
-
+public class IngressFlowSegmentInstallCommand extends IngressFlowSegmentBlankCommand {
     @JsonCreator
-    public InstallIngressRuleCommand(@JsonProperty("command_id") UUID commandId,
-                                     @JsonProperty("flowid") String flowId,
-                                     @JsonProperty("message_context") MessageContext messageContext,
-                                     @JsonProperty("cookie") Cookie cookie,
-                                     @JsonProperty("switch_id") SwitchId switchId,
-                                     @JsonProperty("input_port") Integer inputPort,
-                                     @JsonProperty("output_port") Integer outputPort,
-                                     @JsonProperty("bandwidth") Long bandwidth,
-                                     @JsonProperty("input_vlan_id") Integer inputOuterVlanId,
-                                     @JsonProperty("input_inner_vlan_id") Integer inputInnerVlanId,
-                                     @JsonProperty("meter_id") MeterId meterId,
-                                     @JsonProperty("transit_encapsulation_id") Integer transitEncapsulationId,
-                                     @JsonProperty("transit_encapsulation_type")
-                                             FlowEncapsulationType transitEncapsulationType) {
-        super(commandId, flowId, messageContext, cookie, switchId, inputPort, outputPort,
-              transitEncapsulationId, transitEncapsulationType);
-        this.bandwidth = bandwidth;
-        this.inputOuterVlanId = inputOuterVlanId;
-        this.inputInnerVlanId = inputInnerVlanId;
-        this.meterId = meterId;
+    public IngressFlowSegmentInstallCommand(
+            @JsonProperty("message_context") MessageContext context,
+            @JsonProperty("switch_id") SwitchId switchId,
+            @JsonProperty("command_id") UUID commandId,
+            @JsonProperty("flowid") String flowId,
+            @JsonProperty("cookie") Cookie cookie,
+            @JsonProperty("endpoint") FlowEndpoint endpoint,
+            @JsonProperty("meter_config") MeterConfig meterConfig,
+            @JsonProperty("islPort") Integer islPort,
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
+        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
 
     @Override
     protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
         CompletableFuture<FlowSegmentReport> future;
-        if (meterId != null) {
+        if (meterConfig != null) {
             future = planMeterInstall()
                     .thenCompose(this::planToUseMeter);
         } else {
@@ -98,7 +86,7 @@ public class InstallIngressRuleCommand extends FlowInstallCommand {
     }
 
     private CompletableFuture<MeterReport> planMeterInstall() {
-        InstallMeterCommand meterCommand = new InstallMeterCommand(messageContext, switchId, meterId, bandwidth);
+        MeterInstallCommand meterCommand = new MeterInstallCommand(messageContext, switchId, meterConfig);
         return meterCommand.execute(getModuleContext());
     }
 

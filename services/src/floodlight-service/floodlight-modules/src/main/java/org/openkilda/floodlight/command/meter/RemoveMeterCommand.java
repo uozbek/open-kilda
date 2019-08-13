@@ -27,7 +27,7 @@ import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 
 import java.util.concurrent.CompletableFuture;
 
-public class RemoveMeterCommand extends MeterCommand {
+public class RemoveMeterCommand extends MeterBlankCommand {
 
     public RemoveMeterCommand(@JsonProperty("message_context") MessageContext messageContext,
                               @JsonProperty("switch_id") SwitchId switchId,
