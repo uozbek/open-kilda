@@ -32,6 +32,9 @@ import lombok.Getter;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFFactory;
+import org.projectfloodlight.openflow.protocol.OFFlowAdd;
+import org.projectfloodlight.openflow.protocol.OFFlowDelete;
+import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
@@ -49,6 +52,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+@Getter
 public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegmentReport> {
     protected static final long FLOW_COOKIE_MASK = 0x7FFFFFFFFFFFFFFFL;
     protected static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
@@ -83,7 +87,7 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
         return new FlowSegmentReport(this);
     }
 
-    protected abstract OFFlowMod.Builder makeFlowModBuilder();
+    protected abstract OFFlowMod.Builder makeFlowModBuilder(OFFactory of);
 
     @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
@@ -97,26 +101,16 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
         switchDescriptor = new SwitchDescriptor(getSw());
     }
 
-    final Match matchFlow(Integer inputPort, Integer inputVlan, OFFactory ofFactory) {
-        Match.Builder mb = ofFactory.buildMatch();
-        mb.setExact(MatchField.IN_PORT, OFPort.of(inputPort));
-        if (inputVlan > 0) {
-            matchVlan(ofFactory, mb, inputVlan);
-        }
-
-        return mb.build();
+    protected OFFlowAdd.Builder makeFlowAddBuilder(OFFactory of) {
+        return of.buildFlowAdd()
+                .setPriority(FLOW_PRIORITY)
+                .setCookie(U64.of(cookie.getValue()));
     }
 
-    final void matchVlan(OFFactory ofFactory, Match.Builder matchBuilder, int vlanId) {
-        if (OF_12.compareTo(ofFactory.getVersion()) >= 0) {
-            // This is invalid VID mask - it cut of highest bit that indicate presence of VLAN tag on package. But valid
-            // mask 0x1FFF lead to rule reject during install attempt on accton based switches.
-            // TODO(surabujin): we should use exact match here
-            matchBuilder.setMasked(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(vlanId),
-                                   OFVlanVidMatch.ofRawVid((short) 0x0FFF));
-        } else {
-            matchBuilder.setExact(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(vlanId));
-        }
+    protected OFFlowDeleteStrict.Builder makeFlowDelBuilder(OFFactory of) {
+        return of.buildFlowDeleteStrict()
+                .setPriority(FLOW_PRIORITY)
+                .setCookie(U64.of(cookie.getValue()));
     }
 
     protected final CompletableFuture<List<OFFlowStatsEntry>> planOfFlowTableDump() {

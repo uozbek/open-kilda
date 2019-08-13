@@ -17,8 +17,8 @@ package org.openkilda.floodlight.command;
 
 import org.openkilda.floodlight.command.flow.EgressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentInstallCommand;
-import org.openkilda.floodlight.command.flow.InstallOneSwitchRuleCommand;
-import org.openkilda.floodlight.command.flow.InstallTransitRuleCommand;
+import org.openkilda.floodlight.command.flow.ingress.SingleSwitchFlowInstallCommand;
+import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentInstallCommand;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.service.session.SessionService;
@@ -48,9 +48,9 @@ import java.util.concurrent.CompletionException;
 @JsonSubTypes({
         @Type(value = IngressFlowSegmentInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.InstallMultiSwitchIngressRule"),
-        @Type(value = InstallOneSwitchRuleCommand.class,
+        @Type(value = SingleSwitchFlowInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.InstallSingleSwitchIngressRule"),
-        @Type(value = InstallTransitRuleCommand.class,
+        @Type(value = TransitFlowSegmentInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.InstallTransitRule"),
         @Type(value = EgressFlowSegmentCommand.class,
                 name = "org.openkilda.floodlight.api.request.InstallEgressRule")

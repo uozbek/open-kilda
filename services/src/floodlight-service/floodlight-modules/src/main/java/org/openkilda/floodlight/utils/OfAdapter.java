@@ -15,10 +15,18 @@
 
 package org.openkilda.floodlight.utils;
 
+import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
+import static org.projectfloodlight.openflow.protocol.OFVersion.OF_15;
+
+import org.openkilda.model.MeterId;
+
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.action.OFActions;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
+import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 
@@ -26,10 +34,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class OfAdapter {
+public final class OfAdapter {
     public static OfAdapter INSTANCE = new OfAdapter();
 
-    public List<OFAction> makeVlanTransformActions(
+    public List<OFAction> makeVlanReplaceActions(
             OFFactory of, List<Integer> currentVlanStack, List<Integer> desiredVlanStack) {
         Iterator<Integer> currentIter = currentVlanStack.iterator();
         Iterator<Integer> desiredIter = desiredVlanStack.iterator();
@@ -63,12 +71,36 @@ public class OfAdapter {
         return actions;
     }
 
+    public Match.Builder matchVlanId(OFFactory of, Match.Builder match, int vlanId) {
+        if (OF_12.compareTo(of.getVersion()) >= 0) {
+            // This is invalid VID mask - it cut of highest bit that indicate presence of VLAN tag on package. But valid
+            // mask 0x1FFF lead to rule reject during install attempt on accton based switches.
+            // TODO(surabujin): we should use exact match here
+            match.setMasked(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(vlanId),
+                                   OFVlanVidMatch.ofRawVid((short) 0x0FFF));
+        } else {
+            match.setExact(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(vlanId));
+        }
+        return match;
+    }
+
     public OFAction setVlanIdAction(OFFactory of, int vlanId) {
         OFActions actions = of.actions();
         OFVlanVidMatch vlanMatch = of.getVersion() == OFVersion.OF_12
                 ? OFVlanVidMatch.ofRawVid((short) vlanId) : OFVlanVidMatch.ofVlan(vlanId);
 
         return actions.setField(of.oxms().vlanVid(vlanMatch));
+    }
+
+    public void makeMeterCall(OFFactory of, MeterId effectiveMeterId,
+                              List<OFAction> actionList, List<OFInstruction> instructions) {
+        if (of.getVersion().compareTo(OF_15) == 0) {
+            actionList.add(of.actions().buildMeter().setMeterId(effectiveMeterId.getValue()).build());
+        } else /* OF_13, OF_14 */ {
+            instructions.add(of.instructions().buildMeter()
+                                     .setMeterId(effectiveMeterId.getValue())
+                                     .build());
+        }
     }
 
     private OfAdapter() { }

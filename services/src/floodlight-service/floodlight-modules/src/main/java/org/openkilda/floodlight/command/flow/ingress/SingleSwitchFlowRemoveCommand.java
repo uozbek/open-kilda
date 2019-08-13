@@ -16,22 +16,23 @@
 package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.projectfloodlight.openflow.protocol.OFFactory;
-import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import org.projectfloodlight.openflow.protocol.OFFlowMod.Builder;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentBlankCommand {
-    public IngressFlowSegmentRemoveCommand(
+public class SingleSwitchFlowRemoveCommand extends SingleSwitchFlowBlankCommand {
+    @JsonCreator
+    public SingleSwitchFlowRemoveCommand(
             @JsonProperty("message_context") MessageContext context,
             @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
@@ -39,9 +40,8 @@ public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentBlankComm
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("islPort") Integer islPort,
-            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
+            @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
+        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentBlankComm
     }
 
     @Override
-    protected OFFlowMod.Builder makeFlowModBuilder(OFFactory of) {
+    protected Builder makeFlowModBuilder(OFFactory of) {
         return makeFlowDelBuilder(of);
     }
 }

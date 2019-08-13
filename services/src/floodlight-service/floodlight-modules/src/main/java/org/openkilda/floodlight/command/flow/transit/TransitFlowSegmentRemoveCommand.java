@@ -13,44 +13,36 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command.flow.ingress;
+package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
-import org.openkilda.floodlight.api.MeterConfig;
-import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.projectfloodlight.openflow.protocol.OFFactory;
-import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import org.projectfloodlight.openflow.protocol.OFFlowMod.Builder;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
-public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentBlankCommand {
-    public IngressFlowSegmentRemoveCommand(
+public class TransitFlowSegmentRemoveCommand extends TransitFlowSegmentBlankCommand {
+    @JsonCreator
+    public TransitFlowSegmentRemoveCommand(
             @JsonProperty("message_context") MessageContext context,
             @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("endpoint") FlowEndpoint endpoint,
-            @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("islPort") Integer islPort,
+            @JsonProperty("ingressIslPort") Integer ingressIslPort,
+            @JsonProperty("egressIslPort") Integer egressIslPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
+        super(context, switchId, commandId, flowId, cookie, ingressIslPort, egressIslPort, encapsulation);
     }
 
     @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
-        return makeRemovePlan();
-    }
-
-    @Override
-    protected OFFlowMod.Builder makeFlowModBuilder(OFFactory of) {
+    protected Builder makeFlowModBuilder(OFFactory of) {
         return makeFlowDelBuilder(of);
     }
 }

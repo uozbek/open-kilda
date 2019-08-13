@@ -38,14 +38,14 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void noInNoOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(), ImmutableList.of());
         verifyActions(transform);
     }
 
     @Test
     public void oneInNoOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(1), ImmutableList.of());
         verifyActions(transform,
                       ofFactory.actions().popVlan());
@@ -53,7 +53,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInNoOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(1, 2), ImmutableList.of());
         verifyActions(transform,
                       ofFactory.actions().popVlan(),
@@ -62,7 +62,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInOneOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(1, 2), ImmutableList.of(3));
         verifyActions(transform,
                       ofFactory.actions().popVlan(),
@@ -71,7 +71,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInOutOutOneMatch() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(5, 2), ImmutableList.of(5));
         verifyActions(transform,
                       ofFactory.actions().popVlan());
@@ -79,7 +79,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInTwoOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(1, 2), ImmutableList.of(3, 4));
         verifyActions(transform,
                       ofFactory.actions().popVlan(),
@@ -90,7 +90,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void oneInTwoOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(1), ImmutableList.of(3, 4));
         verifyActions(transform,
                       OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 3),
@@ -100,7 +100,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void oneInTwoOutOneMatch() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(5), ImmutableList.of(5, 4));
         verifyActions(transform,
                       ofFactory.actions().pushVlan(EthType.VLAN_FRAME),
@@ -109,7 +109,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void noInTwoOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(), ImmutableList.of(3, 4));
         verifyActions(transform,
                       ofFactory.actions().pushVlan(EthType.VLAN_FRAME),
@@ -120,7 +120,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void oneInOneOut() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(1), ImmutableList.of(3));
         verifyActions(transform,
                       OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 3));
@@ -128,14 +128,14 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void oneInOneOutOneMatch() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(5), ImmutableList.of(5));
         verifyActions(transform);
     }
 
     @Test
     public void twoInTwoOutOneMatch() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(5, 2), ImmutableList.of(5, 4));
         verifyActions(transform,
                       OfAdapter.INSTANCE.setVlanIdAction(ofFactory, 4));
@@ -143,7 +143,7 @@ public class OfAdapterVlanTransformationTest extends EasyMockSupport {
 
     @Test
     public void twoInTwoOutTwoMatch() {
-        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanTransformActions(
+        List<OFAction> transform = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 ofFactory, ImmutableList.of(5, 6), ImmutableList.of(5, 6));
         verifyActions(transform);
     }

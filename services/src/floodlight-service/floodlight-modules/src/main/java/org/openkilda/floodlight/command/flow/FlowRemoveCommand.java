@@ -16,7 +16,7 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.command.meter.MeterReport;
-import org.openkilda.floodlight.command.meter.RemoveMeterCommand;
+import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
 import org.openkilda.floodlight.error.OfDeleteException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.session.Session;
@@ -83,7 +83,7 @@ public class FlowRemoveCommand extends AbstractFlowSegmentCommand<FlowSegmentRep
     }
 
     private CompletableFuture<Void> planMeterDelete() {
-        RemoveMeterCommand meterRemoveCommand = new RemoveMeterCommand(messageContext, switchId, meterId);
+        MeterRemoveCommand meterRemoveCommand = new MeterRemoveCommand(messageContext, switchId, meterId);
         return meterRemoveCommand.execute(getModuleContext())
                 .thenAccept(this::handleMeterDelete);
     }

@@ -31,6 +31,7 @@ import org.openkilda.floodlight.switchmanager.SwitchManagerConfig;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Meter;
+import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
@@ -68,7 +69,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         final OFMeterMod meterAddMessage = makeMeterAddMessage();
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return setupErrorHandler(session.write(meterAddMessage), this)
-                    .thenApply(result -> new MeterReport(meterConfig.getMeterId()));
+                    .thenApply(ignore -> new MeterReport(meterConfig.getMeterId()));
         }
     }
 
@@ -84,7 +85,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         CompletableFuture<Optional<OFMessage>> lookupExistingBranch = new CompletableFutureAdapter<>(
                  messageContext, getSw().writeStatsRequest(makeMeterReadCommand()))
                 .thenAccept(this::ensureSameMeterExists)
-                .thenApply(Void -> Optional.empty());
+                .thenApply(ignore -> Optional.empty());
         propagateFutureResponse(future, lookupExistingBranch);
 
         return future;
@@ -106,7 +107,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         final OFFactory ofFactory = getSw().getOFFactory();
 
         OFMeterMod.Builder meterModBuilder = ofFactory.buildMeterMod()
-                .setMeterId(meterId.getValue())
+                .setMeterId(meterConfig.getMeterId().getValue())
                 .setCommand(OFMeterModCommand.ADD)
                 .setFlags(makeMeterFlags());
 
@@ -123,7 +124,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
 
     private OFMeterConfigStatsRequest makeMeterReadCommand() {
         return getSw().getOFFactory().buildMeterConfigStatsRequest()
-                .setMeterId(meterId.getValue())
+                .setMeterId(meterConfig.getMeterId().getValue())
                 .build();
     }
 
@@ -135,6 +136,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
     }
 
     private void ensureMeterIdIsValid() throws InvalidMeterIdException {
+        MeterId meterId = meterConfig.getMeterId();
         if (meterId == null || meterId.getValue() <= 0L) {
             throw new InvalidMeterIdException(getSw().getId(), String.format(
                     "Invalid meterId value - expect not negative integer, got - %s", meterId));
@@ -154,12 +156,13 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
             validateMeterConfig(target.get());
         } else {
             throw maskCallbackException(new SwitchMeterConflictException(
-                    getSw().getId(), meterId,
+                    getSw().getId(), meterConfig.getMeterId(),
                     "switch report id conflict, but validation procedure can't locate it on switch (race condition?)"));
         }
     }
 
     private Optional<OFMeterConfig> findMeter(OFMeterConfigStatsReply meterConfigReply) {
+        MeterId meterId = meterConfig.getMeterId();
         for (OFMeterConfig entry : meterConfigReply.getEntries()) {
             if (meterId.getValue() == entry.getMeterId()) {
                 return Optional.of(entry);
@@ -173,18 +176,18 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         validateMeterConfigBands(meterConfig);
     }
 
-    private void validateMeterConfigFlags(OFMeterConfig meterConfig) {
-        if (! makeMeterFlags().equals(meterConfig.getFlags())) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterId));
+    private void validateMeterConfigFlags(OFMeterConfig config) {
+        if (! makeMeterFlags().equals(config.getFlags())) {
+            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getMeterId()));
         }
     }
 
-    private void validateMeterConfigBands(OFMeterConfig meterConfig) {
+    private void validateMeterConfigBands(OFMeterConfig config) {
         List<OFMeterBand> expectBands = makeMeterBands(0);  // to ignore burst value comparison
-        List<OFMeterBand> actualBands = meterConfig.getEntries();
+        List<OFMeterBand> actualBands = config.getEntries();
 
         if (expectBands.size() != actualBands.size()) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterId));
+            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getMeterId()));
         }
 
         boolean mismatch = false;
@@ -205,7 +208,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         }
 
         if (mismatch) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterId));
+            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getMeterId()));
         }
     }
 
@@ -215,16 +218,17 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
 
     private List<OFMeterBand> makeMeterBands() {
         long burstSize = Meter.calculateBurstSize(
-                bandwidth, switchManagerConfig.getFlowMeterMinBurstSizeInKbits(),
+                meterConfig.getBandwidth(), switchManagerConfig.getFlowMeterMinBurstSizeInKbits(),
                 switchManagerConfig.getFlowMeterBurstCoefficient(),
                 getSw().getSwitchDescription().getManufacturerDescription(),
                 getSw().getSwitchDescription().getSoftwareDescription());
         return makeMeterBands(burstSize);
     }
+
     private List<OFMeterBand> makeMeterBands(long burstSize) {
         return ImmutableList.of(getSw().getOFFactory().meterBands()
                 .buildDrop()
-                .setRate(bandwidth)
+                .setRate(meterConfig.getBandwidth())
                 .setBurstSize(burstSize)
                 .build());
     }

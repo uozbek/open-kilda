@@ -19,19 +19,14 @@ import lombok.Value;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.U64;
 
-public class MetadataAdapter {
+public final class MetadataAdapter {
     public static final MetadataAdapter INSTANCE = new MetadataAdapter();
 
     // bits layout
-    // 0x00000000_00000000
     // 0x01000000_00000fff - outer vlan presence flag and value
 
     private static final U64 OUTER_VLAN_PRESENCE_FLAG = U64.of(0x01000000_00000000L);
     private static final U64 OUTER_VLAN_MASK          = U64.of(0x00000000_00000fffL);
-
-    private MetadataAdapter() {
-        // nothing to do here
-    }
 
     public MetadataMatch addressOuterVlan(OFVlanVidMatch vlanMatch) {
         return addressOuterVlan(MetadataMatch.ZERO, vlanMatch);
@@ -55,5 +50,9 @@ public class MetadataAdapter {
                     value.or(extendValue),
                     mask.or(extendMask));
         }
+    }
+
+    private MetadataAdapter() {
+        // nothing to do here
     }
 }

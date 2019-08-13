@@ -39,7 +39,7 @@ abstract class IngressFlowSegmentBlankRequest extends AbstractIngressFlowSegment
     protected final Integer islPort;
 
     @JsonProperty("encapsulation")
-    protected FlowTransitEncapsulation encapsulation;
+    protected final FlowTransitEncapsulation encapsulation;
 
     IngressFlowSegmentBlankRequest(
             MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,

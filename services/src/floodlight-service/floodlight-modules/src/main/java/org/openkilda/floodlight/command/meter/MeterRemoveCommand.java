@@ -15,6 +15,7 @@
 
 package org.openkilda.floodlight.command.meter;
 
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
@@ -27,12 +28,10 @@ import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 
 import java.util.concurrent.CompletableFuture;
 
-public class RemoveMeterCommand extends MeterBlankCommand {
+public class MeterRemoveCommand extends MeterBlankCommand {
 
-    public RemoveMeterCommand(@JsonProperty("message_context") MessageContext messageContext,
-                              @JsonProperty("switch_id") SwitchId switchId,
-                              @JsonProperty("meter_id") MeterId meterId) {
-        super(switchId, messageContext, meterId);
+    public MeterRemoveCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
+        super(switchId, messageContext, meterConfig);
     }
 
     @Override
@@ -40,6 +39,7 @@ public class RemoveMeterCommand extends MeterBlankCommand {
         ensureSwitchSupportMeters();
 
         IOFSwitch sw = getSw();
+        MeterId meterId = meterConfig.getMeterId();
         OFMeterMod meterDeleteMessage = sw.getOFFactory().buildMeterMod()
                 .setMeterId(meterId.getValue())
                 .setCommand(OFMeterModCommand.DELETE)
