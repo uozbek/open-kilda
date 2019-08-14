@@ -37,6 +37,9 @@ abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentRequest 
     @JsonProperty("endpoint")
     protected final FlowEndpoint endpoint;
 
+    @JsonProperty("ingress_endpoint")
+    protected final FlowEndpoint ingressEndpoint;
+
     @JsonProperty("islPort")
     protected final Integer islPort;
 
@@ -45,14 +48,17 @@ abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentRequest 
 
     EgressFlowSegmentBlankRequest(
             MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
-            FlowEndpoint endpoint, Integer islPort, FlowTransitEncapsulation encapsulation) {
+            FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, Integer islPort,
+            FlowTransitEncapsulation encapsulation) {
         super(context, switchId, commandId, flowId, cookie);
 
         requireNonNull(endpoint, "Argument endpoint must no be null");
+        requireNonNull(ingressEndpoint, "Argument ingressEndpoint must no be null");
         requireNonNull(islPort, "Argument islPort must no be null");
         requireNonNull(encapsulation, "Argument encapsulation must no be null");
 
         this.endpoint = endpoint;
+        this.ingressEndpoint = ingressEndpoint;
         this.islPort = islPort;
         this.encapsulation = encapsulation;
     }

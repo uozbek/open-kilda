@@ -69,7 +69,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         final OFMeterMod meterAddMessage = makeMeterAddMessage();
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return setupErrorHandler(session.write(meterAddMessage), this)
-                    .thenApply(ignore -> new MeterReport(meterConfig.getMeterId()));
+                    .thenApply(ignore -> new MeterReport(meterConfig.getId()));
         }
     }
 
@@ -78,7 +78,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         CompletableFuture<Optional<OFMessage>> future = new CompletableFuture<>();
         if (!isAddConflict(response)) {
             future.completeExceptionally(new SwitchErrorResponseException(getSw().getId(), String.format(
-                    "Can't install meter %s - %s", meterConfig.getMeterId(), response)));
+                    "Can't install meter %s - %s", meterConfig.getId(), response)));
             return future;
         }
 
@@ -107,7 +107,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         final OFFactory ofFactory = getSw().getOFFactory();
 
         OFMeterMod.Builder meterModBuilder = ofFactory.buildMeterMod()
-                .setMeterId(meterConfig.getMeterId().getValue())
+                .setMeterId(meterConfig.getId().getValue())
                 .setCommand(OFMeterModCommand.ADD)
                 .setFlags(makeMeterFlags());
 
@@ -124,7 +124,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
 
     private OFMeterConfigStatsRequest makeMeterReadCommand() {
         return getSw().getOFFactory().buildMeterConfigStatsRequest()
-                .setMeterId(meterConfig.getMeterId().getValue())
+                .setMeterId(meterConfig.getId().getValue())
                 .build();
     }
 
@@ -136,7 +136,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
     }
 
     private void ensureMeterIdIsValid() throws InvalidMeterIdException {
-        MeterId meterId = meterConfig.getMeterId();
+        MeterId meterId = meterConfig.getId();
         if (meterId == null || meterId.getValue() <= 0L) {
             throw new InvalidMeterIdException(getSw().getId(), String.format(
                     "Invalid meterId value - expect not negative integer, got - %s", meterId));
@@ -156,13 +156,13 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
             validateMeterConfig(target.get());
         } else {
             throw maskCallbackException(new SwitchMeterConflictException(
-                    getSw().getId(), meterConfig.getMeterId(),
+                    getSw().getId(), meterConfig.getId(),
                     "switch report id conflict, but validation procedure can't locate it on switch (race condition?)"));
         }
     }
 
     private Optional<OFMeterConfig> findMeter(OFMeterConfigStatsReply meterConfigReply) {
-        MeterId meterId = meterConfig.getMeterId();
+        MeterId meterId = meterConfig.getId();
         for (OFMeterConfig entry : meterConfigReply.getEntries()) {
             if (meterId.getValue() == entry.getMeterId()) {
                 return Optional.of(entry);
@@ -178,7 +178,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
 
     private void validateMeterConfigFlags(OFMeterConfig config) {
         if (! makeMeterFlags().equals(config.getFlags())) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getMeterId()));
+            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getId()));
         }
     }
 
@@ -187,7 +187,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         List<OFMeterBand> actualBands = config.getEntries();
 
         if (expectBands.size() != actualBands.size()) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getMeterId()));
+            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getId()));
         }
 
         boolean mismatch = false;
@@ -208,7 +208,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         }
 
         if (mismatch) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getMeterId()));
+            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getId()));
         }
     }
 

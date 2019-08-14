@@ -15,8 +15,6 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import static org.projectfloodlight.openflow.protocol.OFVersion.OF_12;
-
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.model.SwitchDescriptor;
@@ -33,17 +31,12 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
-import org.projectfloodlight.openflow.protocol.OFFlowDelete;
 import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsRequest;
-import org.projectfloodlight.openflow.protocol.match.Match;
-import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.OFGroup;
-import org.projectfloodlight.openflow.types.OFPort;
-import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.U64;
 
 import java.util.List;

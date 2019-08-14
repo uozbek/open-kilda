@@ -54,19 +54,6 @@ public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentBlankComm
     }
 
     @Override
-    protected List<OFFlowMod> makeFlowModMessages(MeterId effectiveMeterId) {
-        List<OFFlowMod> ofMessages = new ArrayList<>(super.makeFlowModMessages(effectiveMeterId));
-        // remove old (pre qinq) rule by cookie to make smooth migration between different ingress rules format
-
-        OFFactory of = getSw().getOFFactory();
-        ofMessages.add(of.buildFlowDelete()
-                               .setTableId(getSwitchDescriptor().getTableDispatch())
-                               .setCookie(U64.of(cookie.getValue()))
-                               .build());
-        return ofMessages;
-    }
-
-    @Override
     protected OFFlowMod.Builder makeFlowModBuilder(OFFactory of) {
         return makeFlowDelBuilder(of);
     }

@@ -36,9 +36,9 @@ public class TransitFlowSegmentRemoveCommand extends TransitFlowSegmentBlankComm
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("ingressIslPort") Integer ingressIslPort,
-            @JsonProperty("egressIslPort") Integer egressIslPort,
-            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, ingressIslPort, egressIslPort, encapsulation);
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation,
+            @JsonProperty("egressIslPort") Integer egressIslPort) {
+        super(context, switchId, commandId, flowId, cookie, ingressIslPort, encapsulation, egressIslPort);
     }
 
     @Override

@@ -21,7 +21,6 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import net.floodlightcontroller.core.IOFSwitch;
 import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
@@ -39,7 +38,7 @@ public class MeterRemoveCommand extends MeterBlankCommand {
         ensureSwitchSupportMeters();
 
         IOFSwitch sw = getSw();
-        MeterId meterId = meterConfig.getMeterId();
+        MeterId meterId = meterConfig.getId();
         OFMeterMod meterDeleteMessage = sw.getOFFactory().buildMeterMod()
                 .setMeterId(meterId.getValue())
                 .setCommand(OFMeterModCommand.DELETE)

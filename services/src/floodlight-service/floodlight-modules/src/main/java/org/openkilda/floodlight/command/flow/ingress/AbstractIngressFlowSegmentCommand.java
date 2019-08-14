@@ -47,6 +47,7 @@ import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.OFMetadata;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
+import org.projectfloodlight.openflow.types.U64;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,7 +114,7 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
     }
 
     private CompletableFuture<FlowSegmentReport> planForwardingRulesInstall(MeterId effectiveMeterId) {
-        List<OFFlowMod> ofMessages = makeFlowModMessages(effectiveMeterId);
+        List<OFFlowMod> ofMessages = makeIngressModMessages(effectiveMeterId);
         List<CompletableFuture<Optional<OFMessage>>> writeResults = new ArrayList<>(ofMessages.size());
         try (Session session = getSessionService().open(messageContext, getSw())) {
             for (OFFlowMod message : ofMessages) {
@@ -127,9 +128,18 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
     private CompletableFuture<Void> planForwardingRulesRemove() {
         MeterId meterId = null;
         if (meterConfig != null) {
-            meterId = meterConfig.getMeterId();
+            meterId = meterConfig.getId();
         }
-        List<OFFlowMod> ofMessages = makeFlowModMessages(meterId);
+        List<OFFlowMod> ofMessages = new ArrayList<>(makeIngressModMessages(meterId));
+
+        // TODO(surabujin): drop after migration
+        // to make smooth migration between different ingress rules format remove old (pre QinQ) rule by cookie match
+        OFFactory of = getSw().getOFFactory();
+        ofMessages.add(of.buildFlowDelete()
+                               .setTableId(getSwitchDescriptor().getTableDispatch())
+                               .setCookie(U64.of(cookie.getValue()))
+                               .build());
+
         List<CompletableFuture<?>> requests = new ArrayList<>(ofMessages.size());
         try (Session session = getSessionService().open(messageContext, getSw())) {
             for (OFFlowMod message : ofMessages) {
@@ -140,7 +150,7 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         return CompletableFuture.allOf(requests.toArray(new CompletableFuture<?>[0]));
     }
 
-    protected List<OFFlowMod> makeFlowModMessages(MeterId effectiveMeterId) {
+    private List<OFFlowMod> makeIngressModMessages(MeterId effectiveMeterId) {
         List<OFFlowMod> ofMessages = new ArrayList<>(2);
         OFFactory of = getSw().getOFFactory();
         if (FlowEndpoint.isVlanIdSet(endpoint.getOuterVlanId())) {

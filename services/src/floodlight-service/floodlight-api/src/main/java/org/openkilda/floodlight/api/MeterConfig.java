@@ -28,18 +28,18 @@ import java.io.Serializable;
 @Value
 public class MeterConfig implements Serializable {
     @JsonProperty("meter_id")
-    private final MeterId meterId;
+    private final MeterId id;
 
     @JsonProperty("bandwidth")
     private final long bandwidth;
 
     @JsonCreator
     public MeterConfig(
-            @JsonProperty("meter_id") MeterId meterId,
+            @JsonProperty("meter_id") MeterId id,
             @JsonProperty("bandwidth") long bandwidth) {
-        requireNonNull(meterId, "Argument meterId must no be null");
+        requireNonNull(id, "Argument meterId must no be null");
 
-        this.meterId = meterId;
+        this.id = id;
         this.bandwidth = bandwidth;
     }
 }

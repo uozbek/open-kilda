@@ -16,51 +16,42 @@
 package org.openkilda.floodlight.command.flow.transit;
 
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
-import org.openkilda.floodlight.command.flow.AbstractFlowSegmentCommand;
+import org.openkilda.floodlight.command.flow.AbstractNotIngressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.service.session.Session;
-import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
-import org.projectfloodlight.openflow.protocol.match.Match;
-import org.projectfloodlight.openflow.protocol.match.Match.Builder;
-import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-abstract class TransitFlowSegmentBlankCommand extends AbstractFlowSegmentCommand {
-    protected final Integer ingressIslPort;
+abstract class TransitFlowSegmentBlankCommand extends AbstractNotIngressFlowSegmentCommand {
     protected final Integer egressIslPort;
-    protected final FlowTransitEncapsulation encapsulation;
 
-    TransitFlowSegmentBlankCommand(
-            MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
-            Integer ingressIslPort, Integer egressIslPort, FlowTransitEncapsulation encapsulation) {
-        super(messageContext, switchId, commandId, flowId, cookie);
-        this.ingressIslPort = ingressIslPort;
+    public TransitFlowSegmentBlankCommand(MessageContext messageContext, SwitchId switchId, UUID commandId,
+                                          String flowId, Cookie cookie, Integer ingressIslPort,
+                                          FlowTransitEncapsulation encapsulation, Integer egressIslPort) {
+        super(messageContext, switchId, commandId, flowId, cookie, ingressIslPort, encapsulation);
         this.egressIslPort = egressIslPort;
-        this.encapsulation = encapsulation;
     }
 
     @Override
     protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
         try (Session session = getSessionService().open(messageContext, getSw())) {
-            return session.write(makeTransitRuleMessage())
+            return session.write(makeTransitModMessage())
                     .thenApply(ignore -> makeSuccessReport());
         }
     }
 
-    protected OFFlowMod makeTransitRuleMessage() {
+    private OFFlowMod makeTransitModMessage() {
         OFFactory of = getSw().getOFFactory();
         List<OFAction> applyActions = ImmutableList.of(
                 of.actions().buildOutput()
@@ -70,23 +61,6 @@ abstract class TransitFlowSegmentBlankCommand extends AbstractFlowSegmentCommand
         return makeFlowModBuilder(of)
                 .setInstructions(ImmutableList.of(of.instructions().applyActions(applyActions)))
                 .setMatch(makeTransitMatch(of))
-                .build();
-    }
-
-    private Match makeTransitMatch(OFFactory of) {
-        switch (encapsulation.getType()) {
-            case TRANSIT_VLAN:
-                return makeTransitVlanMatch(of);
-            default:
-                throw new UnsupportedOperationException(String.format(
-                        "%s do not support transit encapsulation type \"%s\" (dpId: %s, flowId: %s)",
-                        getClass().getName(), encapsulation.getType(), switchId, flowId));
-        }
-    }
-
-    private Match makeTransitVlanMatch(OFFactory of) {
-        return OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), encapsulation.getId())
-                .setExact(MatchField.IN_PORT, OFPort.of(ingressIslPort))
                 .build();
     }
 }

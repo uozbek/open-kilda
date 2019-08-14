@@ -20,6 +20,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
@@ -65,10 +66,9 @@ import java.util.concurrent.TimeUnit;
 
 public class InstallMeterBlankCommandTest extends AbstractSpeakerCommandTest {
     private MessageContext messageContext = new MessageContext();
-    private MeterId meterId = new MeterId(2);
-    private long bandwidth = 1000;
+    private final MeterConfig meterConfig = new MeterConfig(new MeterId(2), 1000);
     private MeterInstallCommand command = new MeterInstallCommand(
-            messageContext, new SwitchId(dpId.getLong()), meterId, bandwidth);
+            messageContext, new SwitchId(dpId.getLong()), meterConfig);
 
     private final SwitchDescription swDesc = SwitchDescription.builder()
             .setManufacturerDescription("manufacturer")
@@ -162,7 +162,7 @@ public class InstallMeterBlankCommandTest extends AbstractSpeakerCommandTest {
         SessionWriteRecord write0 = getWriteRecord(0);
         OFMeterMod requestRaw = (OFMeterMod) write0.getRequest();
         OFMeterConfig existingMeterConfig = sw.getOFFactory().buildMeterConfig()
-                .setMeterId(meterId.getValue())
+                .setMeterId(meterConfig.getId().getValue())
                 .setFlags(requestRaw.getFlags())
                 .setEntries(requestRaw.getMeters())
                 .build();

@@ -18,6 +18,7 @@ package org.openkilda.floodlight.kafka;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 
+// TODO(surabujin) - drop
 public class KafkaTopicFactory {
 
     private final ConsumerContext context;

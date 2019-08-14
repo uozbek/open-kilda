@@ -18,6 +18,7 @@ package org.openkilda.floodlight.command.flow.ingress;
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.error.NotImplementedEncapsulationException;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -53,7 +54,8 @@ abstract class IngressFlowSegmentBlankCommand extends AbstractIngressFlowSegment
         if (FlowEndpoint.isVlanIdSet(endpoint.getOuterVlanId())) {
             // restore outer vlan removed by 'pre-match' rule
             actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
-            actions.add(OfAdapter.INSTANCE.setVlanIdAction(of, endpoint.getOuterVlanId()));
+            // must be done only if transit encapsulation can preserve VLAN tag
+            // actions.add(OfAdapter.INSTANCE.setVlanIdAction(of, endpoint.getOuterVlanId()));
         }
 
         switch (encapsulation.getType()) {
@@ -61,9 +63,7 @@ abstract class IngressFlowSegmentBlankCommand extends AbstractIngressFlowSegment
                 actions.addAll(makeVlanEncapsulationTransformActions(of));
                 break;
             default:
-                throw new UnsupportedOperationException(String.format(
-                        "%s do not support transit encapsulation type \"%s\" (dpId: %s, flowId: %s)",
-                        getClass().getName(), encapsulation.getType(), switchId, flowId));
+                throw new NotImplementedEncapsulationException(getClass(), encapsulation.getType(), switchId, flowId);
         }
         return actions;
     }
