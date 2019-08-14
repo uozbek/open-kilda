@@ -64,7 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-public class InstallMeterBlankCommandTest extends AbstractSpeakerCommandTest {
+public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
     private MessageContext messageContext = new MessageContext();
     private final MeterConfig meterConfig = new MeterConfig(new MeterId(2), 1000);
     private MeterInstallCommand command = new MeterInstallCommand(

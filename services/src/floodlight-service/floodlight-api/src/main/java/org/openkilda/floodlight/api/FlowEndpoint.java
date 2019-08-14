@@ -72,6 +72,9 @@ public class FlowEndpoint implements Serializable {
         return makeVlanStack(innerVlanId, outerVlanId);
     }
 
+    /**
+     * Scan provided sequence for valid VLAN IDs and return them as a list.
+     */
     public static List<Integer> makeVlanStack(Integer... sequence) {
         return Stream.of(sequence)
                 .filter(FlowEndpoint::isVlanIdSet)

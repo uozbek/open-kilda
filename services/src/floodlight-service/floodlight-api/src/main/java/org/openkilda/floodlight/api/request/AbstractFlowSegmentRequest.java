@@ -33,13 +33,13 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 public abstract class AbstractFlowSegmentRequest extends AbstractSpeakerRequest {
     @JsonProperty("command_id")
-    private final UUID commandId;
+    protected final UUID commandId;
 
     @JsonProperty("flowid")
-    private final String flowId;
+    protected final String flowId;
 
     @JsonProperty("cookie")
-    private final Cookie cookie;
+    protected final Cookie cookie;
 
     public AbstractFlowSegmentRequest(
             MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie) {
