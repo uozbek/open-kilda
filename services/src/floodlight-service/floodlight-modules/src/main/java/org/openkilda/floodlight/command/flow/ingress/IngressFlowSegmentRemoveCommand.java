@@ -21,12 +21,16 @@ import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import org.projectfloodlight.openflow.types.U64;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -47,6 +51,19 @@ public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentBlankComm
     @Override
     protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
         return makeRemovePlan();
+    }
+
+    @Override
+    protected List<OFFlowMod> makeFlowModMessages(MeterId effectiveMeterId) {
+        List<OFFlowMod> ofMessages = new ArrayList<>(super.makeFlowModMessages(effectiveMeterId));
+        // remove old (pre qinq) rule by cookie to make smooth migration between different ingress rules format
+
+        OFFactory of = getSw().getOFFactory();
+        ofMessages.add(of.buildFlowDelete()
+                               .setTableId(getSwitchDescriptor().getTableDispatch())
+                               .setCookie(U64.of(cookie.getValue()))
+                               .build());
+        return ofMessages;
     }
 
     @Override
