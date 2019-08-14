@@ -76,7 +76,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
     @Override
     public CompletableFuture<Optional<OFMessage>> handleOfError(OFErrorMsg response) {
         CompletableFuture<Optional<OFMessage>> future = new CompletableFuture<>();
-        if (!isAddConflict(response)) {
+        if (!isInstallConflict(response)) {
             future.completeExceptionally(new SwitchErrorResponseException(getSw().getId(), String.format(
                     "Can't install meter %s - %s", meterConfig.getId(), response)));
             return future;
@@ -128,7 +128,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
                 .build();
     }
 
-    private boolean isAddConflict(OFErrorMsg response) {
+    private boolean isInstallConflict(OFErrorMsg response) {
         if (!(response instanceof OFMeterModFailedErrorMsg)) {
             return false;
         }

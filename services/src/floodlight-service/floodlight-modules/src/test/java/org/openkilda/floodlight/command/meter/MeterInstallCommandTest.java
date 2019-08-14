@@ -19,6 +19,7 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
+import static org.easymock.EasyMock.reset;
 
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
@@ -75,39 +76,12 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
             .setSoftwareDescription("software")
             .build();
 
-    private final List<SessionWriteRecord> writeHistory = new ArrayList<>();
-
-    @Mock
-    private FeatureDetectorService featureDetectorService;
-
-    @Mock
-    private Session session;
-
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
 
         expect(sw.getSwitchDescription()).andReturn(swDesc).anyTimes();
-
-        moduleContext.addService(FeatureDetectorService.class, featureDetectorService);
-
-        switchSessionProducePlan.put(dpId, ImmutableList.of(session).iterator());
-
-        expect(session.write(anyObject(OFMessage.class)))
-                .andAnswer(new IAnswer<CompletableFuture<Optional<OFMessage>>>() {
-                    @Override
-                    public CompletableFuture<Optional<OFMessage>> answer() throws Throwable {
-                        SessionWriteRecord historyEntry = new SessionWriteRecord(
-                                (OFMessage) (getCurrentArguments()[0]));
-                        writeHistory.add(historyEntry);
-                        return historyEntry.getFuture();
-                    }
-                })
-                .anyTimes();
-
-        session.close();
-        expectLastCall();
     }
 
     @Test
@@ -130,6 +104,9 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
     @Test
     public void switchDoNotSupportMeters() throws Throwable {
         switchFeaturesSetup(false);
+        // command fail before interaction with session/sessionService so we should cancel their expectations
+        reset(sessionService);
+        reset(session);
         replayAll();
 
         CompletableFuture<MeterReport> result = command.execute(moduleContext);
@@ -199,14 +176,12 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
         verifyErrorCompletion(result, SwitchDisconnectedException.class);
     }
 
-    private void verifyErrorCompletion(CompletableFuture<MeterReport> result, Class<? extends Throwable> errorType)
-            throws Throwable {
+    private void verifyErrorCompletion(CompletableFuture<MeterReport> result, Class<? extends Throwable> errorType) {
         try {
             result.get().raiseError();
             Assert.fail("must never reach this line");
-        } catch (ExecutionException e) {
-            Assert.assertNotNull(e.getCause());
-            Assert.assertTrue(errorType.isAssignableFrom(e.getCause().getClass()));
+        } catch (Exception e) {
+            Assert.assertTrue(errorType.isAssignableFrom(e.getClass()));
         }
     }
 
@@ -232,22 +207,5 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
                     }
                 });
         return meterStatsReply;
-    }
-
-    private void switchFeaturesSetup(boolean metersSupport) {
-        Set<Feature> features = new HashSet<>();
-
-        if (metersSupport) {
-            features.add(Feature.METERS);
-        }
-
-        expect(featureDetectorService.detectSwitch(sw))
-                .andReturn(ImmutableSet.copyOf(features))
-                .anyTimes();
-    }
-
-    private SessionWriteRecord getWriteRecord(int idx) {
-        Assert.assertTrue(idx < writeHistory.size());
-        return writeHistory.get(0);
     }
 }

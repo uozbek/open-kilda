@@ -100,11 +100,11 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
                         if (error == null) {
                             future.complete(result);
                         } else {
-                            handleError(future, error);
+                            handleError(future, unwrapError(error));
                         }
                     });
         } catch (Exception e) {
-            future.complete(makeReport(e));
+            handleError(future, e);
         }
         return future;
     }
