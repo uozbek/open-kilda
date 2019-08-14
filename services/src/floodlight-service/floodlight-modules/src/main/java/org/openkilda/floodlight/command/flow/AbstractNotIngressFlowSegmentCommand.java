@@ -49,9 +49,11 @@ public abstract class AbstractNotIngressFlowSegmentCommand extends AbstractFlowS
         switch (encapsulation.getType()) {
             case TRANSIT_VLAN:
                 makeTransitVlanMatch(of, match);
+                break;
             default:
                 throw new NotImplementedEncapsulationException(getClass(), encapsulation.getType(), switchId, flowId);
         }
+        return match.build();
     }
 
     private void makeTransitVlanMatch(OFFactory of, Match.Builder match) {

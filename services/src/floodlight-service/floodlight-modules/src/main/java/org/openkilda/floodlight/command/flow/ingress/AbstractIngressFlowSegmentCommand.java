@@ -242,9 +242,9 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         return builder.build();
     }
 
-    abstract protected List<OFAction> makeTransformActions(OFFactory of);
+    protected abstract List<OFAction> makeTransformActions(OFFactory of);
 
-    abstract protected OFAction makeOutputAction(OFFactory of);
+    protected abstract OFAction makeOutputAction(OFFactory of);
 
     protected final OFAction makeOutputAction(OFFactory of, OFPort port) {
         return of.actions().buildOutput()

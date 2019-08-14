@@ -32,6 +32,9 @@ public final class MetadataAdapter {
         return addressOuterVlan(MetadataMatch.ZERO, vlanMatch);
     }
 
+    /**
+     * Address outer VLAN ID bits inside metadata.
+     */
     public MetadataMatch addressOuterVlan(MetadataMatch base, OFVlanVidMatch vlanMatch) {
         U64 value = OUTER_VLAN_PRESENCE_FLAG.or(U64.of(vlanMatch.getVlan()));
         U64 mask = OUTER_VLAN_PRESENCE_FLAG.or(OUTER_VLAN_MASK);

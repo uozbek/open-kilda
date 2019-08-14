@@ -17,25 +17,38 @@ package org.openkilda.floodlight.command.flow;
 
 import static java.lang.String.format;
 
+import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.projectfloodlight.openflow.protocol.OFFlowStatsEntry;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsReply;
+import org.projectfloodlight.openflow.protocol.OFFlowStatsRequest;
+import org.projectfloodlight.openflow.types.OFGroup;
+import org.projectfloodlight.openflow.types.U64;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
-public class ReadRuleCommand extends AbstractFlowSegmentCommand<ReadRuleReport> {
+public class ReadRuleCommand extends SpeakerCommand<ReadRuleReport> {
+    protected final UUID commandId;
+    protected final String flowId;
+    protected final Cookie cookie;
 
     public ReadRuleCommand(@JsonProperty("command_id") UUID commandId,
                            @JsonProperty("flowid") String flowId,
                            @JsonProperty("message_context") MessageContext messageContext,
                            @JsonProperty("cookie") Cookie cookie,
                            @JsonProperty("switch_id") SwitchId switchId) {
-        super(commandId, flowId, messageContext, cookie, switchId);
+        super(messageContext, switchId);
+        this.commandId = commandId;
+        this.flowId = flowId;
+        this.cookie = cookie;
     }
 
     @Override
@@ -48,6 +61,27 @@ public class ReadRuleCommand extends AbstractFlowSegmentCommand<ReadRuleReport> 
     @Override
     protected ReadRuleReport makeReport(Exception error) {
         return new ReadRuleReport(this, error);
+    }
+
+    private final CompletableFuture<List<OFFlowStatsEntry>> planOfFlowTableDump(Cookie matchCookie) {
+        OFFlowStatsRequest dumpMessage = makeOfFlowTableDumpBuilder()
+                .setCookie(U64.of(matchCookie.getValue()))
+                .setCookieMask(U64.NO_MASK)
+                .build();
+        return planOfFlowTableDump(dumpMessage);
+    }
+
+    protected final CompletableFuture<List<OFFlowStatsEntry>> planOfFlowTableDump() {
+        return planOfFlowTableDump(makeOfFlowTableDumpBuilder().build());
+    }
+
+    private CompletableFuture<List<OFFlowStatsEntry>> planOfFlowTableDump(OFFlowStatsRequest dumpMessage) {
+        CompletableFuture<List<OFFlowStatsReply>> future =
+                new CompletableFutureAdapter<>(messageContext, getSw().writeStatsRequest(dumpMessage));
+        return future.thenApply(values -> values.stream()
+                .map(OFFlowStatsReply::getEntries)
+                .flatMap(List::stream)
+                .collect(Collectors.toList()));
     }
 
     private ReadRuleReport handleStatsResponse(List<OFFlowStatsEntry> statsReplies) {
@@ -76,5 +110,11 @@ public class ReadRuleCommand extends AbstractFlowSegmentCommand<ReadRuleReport> 
         }
 
         return result;
+    }
+
+    private OFFlowStatsRequest.Builder makeOfFlowTableDumpBuilder() {
+        return getSw().getOFFactory().buildFlowStatsRequest()
+                .setOutGroup(OFGroup.ANY)
+                .setCookieMask(U64.ZERO);
     }
 }

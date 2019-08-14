@@ -36,7 +36,7 @@ public class TransitFlowSegmentRemoveRequest extends TransitFlowSegmentBlankRequ
     @JsonCreator
     @Builder(toBuilder = true)
     public TransitFlowSegmentRemoveRequest(
-            @JsonProperty("message_context") MessageContext context,
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
@@ -44,6 +44,6 @@ public class TransitFlowSegmentRemoveRequest extends TransitFlowSegmentBlankRequ
             @JsonProperty("ingressIslPort") Integer ingressIslPort,
             @JsonProperty("egressIslPort") Integer egressIslPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, ingressIslPort, egressIslPort, encapsulation);
+        super(messageContext, switchId, commandId, flowId, cookie, ingressIslPort, egressIslPort, encapsulation);
     }
 }

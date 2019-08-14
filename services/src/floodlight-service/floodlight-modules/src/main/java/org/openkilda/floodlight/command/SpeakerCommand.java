@@ -87,6 +87,10 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
         this.switchId = switchId;
     }
 
+    /**
+     * Schedule command execution, produce future object capable to return command result and/or chain more execution
+     * of other commands.
+     */
     public CompletableFuture<T> execute(FloodlightModuleContext moduleContext) {
         CompletableFuture<T> future = new CompletableFuture<>();
         try {

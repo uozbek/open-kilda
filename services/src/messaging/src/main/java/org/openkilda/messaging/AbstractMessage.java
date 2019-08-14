@@ -33,7 +33,7 @@ public abstract class AbstractMessage implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @JsonProperty("message_context")
-    private MessageContext messageContext;
+    protected MessageContext messageContext;
 
     public AbstractMessage(MessageContext messageContext) {
         this.messageContext = messageContext;

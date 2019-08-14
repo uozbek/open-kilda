@@ -35,8 +35,11 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class OfAdapter {
-    public static OfAdapter INSTANCE = new OfAdapter();
+    public static final OfAdapter INSTANCE = new OfAdapter();
 
+    /**
+     * Create series of actions required to reTAG one set of vlan tags to another.
+     */
     public List<OFAction> makeVlanReplaceActions(
             OFFactory of, List<Integer> currentVlanStack, List<Integer> desiredVlanStack) {
         Iterator<Integer> currentIter = currentVlanStack.iterator();
@@ -71,6 +74,9 @@ public final class OfAdapter {
         return actions;
     }
 
+    /**
+     * Add vlanId match into match builder.
+     */
     public Match.Builder matchVlanId(OFFactory of, Match.Builder match, int vlanId) {
         if (OF_12.compareTo(of.getVersion()) >= 0) {
             // This is invalid VID mask - it cut of highest bit that indicate presence of VLAN tag on package. But valid
@@ -84,6 +90,9 @@ public final class OfAdapter {
         return match;
     }
 
+    /**
+     * Create set vlanId action.
+     */
     public OFAction setVlanIdAction(OFFactory of, int vlanId) {
         OFActions actions = of.actions();
         OFVlanVidMatch vlanMatch = of.getVersion() == OFVersion.OF_12
@@ -92,6 +101,9 @@ public final class OfAdapter {
         return actions.setField(of.oxms().vlanVid(vlanMatch));
     }
 
+    /**
+     * Add meter "call" instruction (or action).
+     */
     public void makeMeterCall(OFFactory of, MeterId effectiveMeterId,
                               List<OFAction> actionList, List<OFInstruction> instructions) {
         if (of.getVersion().compareTo(OF_15) == 0) {

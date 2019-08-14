@@ -37,7 +37,7 @@ public class SingleSwitchFlowRemoveRequest extends SingleSwitchFlowBlankRequest 
     @JsonCreator
     @Builder(toBuilder = true)
     public SingleSwitchFlowRemoveRequest(
-            @JsonProperty("message_context") MessageContext context,
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
@@ -45,6 +45,6 @@ public class SingleSwitchFlowRemoveRequest extends SingleSwitchFlowBlankRequest 
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+        super(messageContext, switchId, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
 }

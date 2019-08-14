@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
@@ -23,7 +24,6 @@ import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.FlowErrorResponseBuilder;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.messaging.AbstractMessage;
 

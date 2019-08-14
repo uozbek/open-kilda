@@ -38,7 +38,7 @@ public class IngressFlowSegmentRemoveRequest extends IngressFlowSegmentBlankRequ
     @JsonCreator
     @Builder(toBuilder = true)
     public IngressFlowSegmentRemoveRequest(
-            @JsonProperty("message_context") MessageContext context,
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
@@ -47,6 +47,6 @@ public class IngressFlowSegmentRemoveRequest extends IngressFlowSegmentBlankRequ
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
+        super(messageContext, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
 }

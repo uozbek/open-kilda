@@ -29,6 +29,9 @@ public abstract class SpeakerCommandReport {
         this.error = error;
     }
 
+    /**
+     * Throw error if command ends with error.
+     */
     public void raiseError() throws Exception {
         if (error != null) {
             throw error;

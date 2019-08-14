@@ -21,16 +21,12 @@ import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
-import org.projectfloodlight.openflow.types.U64;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 

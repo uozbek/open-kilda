@@ -35,7 +35,7 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 abstract class SingleSwitchFlowBlankRequest extends AbstractIngressFlowSegmentRequest {
     @JsonProperty("egress_endpoint")
-    private final FlowEndpoint egressEndpoint;
+    protected final FlowEndpoint egressEndpoint;
 
     SingleSwitchFlowBlankRequest(
             MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,

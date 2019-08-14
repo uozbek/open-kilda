@@ -38,6 +38,7 @@ import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 
 import java.util.List;
 
+// FIXME(surabujin) - drop it
 @Value
 public class ReadRuleReport extends FlowSegmentReport {
     private final OFFlowStatsEntry rule;
@@ -51,13 +52,13 @@ public class ReadRuleReport extends FlowSegmentReport {
     }
 
     private ReadRuleReport(ReadRuleCommand command, OFFlowStatsEntry rule, Exception error) {
-        super(command, error);
+        super(null, error);
         this.rule = rule;
     }
 
     @Override
     protected AbstractMessage assembleSuccessResponse() {
-        AbstractFlowSegmentCommand<?> command = getCommand();
+        AbstractFlowSegmentCommand command = getCommand();
         FlowRuleResponse.FlowRuleResponseBuilder builder = FlowRuleResponse.flowRuleResponseBuilder()
                 .commandId(command.getCommandId())
                 .messageContext(command.getMessageContext())

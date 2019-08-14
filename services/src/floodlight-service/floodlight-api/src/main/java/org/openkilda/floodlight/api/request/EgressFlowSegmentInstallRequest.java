@@ -38,7 +38,7 @@ public class EgressFlowSegmentInstallRequest extends EgressFlowSegmentBlankReque
     @JsonCreator
     @Builder(toBuilder = true)
     public EgressFlowSegmentInstallRequest(
-            @JsonProperty("message_context") MessageContext context,
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
@@ -47,6 +47,6 @@ public class EgressFlowSegmentInstallRequest extends EgressFlowSegmentBlankReque
             @JsonProperty("ingress_endpoint") FlowEndpoint ingressEndpoint,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
+        super(messageContext, switchId, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
     }
 }
