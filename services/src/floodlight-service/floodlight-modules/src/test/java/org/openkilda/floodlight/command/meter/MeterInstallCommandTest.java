@@ -17,8 +17,6 @@ package org.openkilda.floodlight.command.meter;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.reset;
 
 import org.openkilda.floodlight.api.MeterConfig;
@@ -27,27 +25,21 @@ import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchMeterConflictException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
-import org.openkilda.floodlight.service.FeatureDetectorService;
-import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import net.floodlightcontroller.core.SwitchDescription;
 import net.floodlightcontroller.core.SwitchDisconnectedException;
 import org.easymock.IAnswer;
-import org.easymock.Mock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;
 import org.projectfloodlight.openflow.protocol.OFErrorMsg;
-import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFMeterConfig;
 import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsReply;
 import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsRequest;
@@ -55,14 +47,10 @@ import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 import org.projectfloodlight.openflow.protocol.OFMeterModFailedCode;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
@@ -89,7 +77,7 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
         switchFeaturesSetup(true);
         replayAll();
 
-        CompletableFuture<MeterReport> result = command.execute(moduleContext);
+        CompletableFuture<MeterReport> result = command.execute(commandProcessor);
 
         SessionWriteRecord write0 = getWriteRecord(0);
         Assert.assertTrue(write0.getRequest() instanceof OFMeterMod);
@@ -109,7 +97,7 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
         reset(session);
         replayAll();
 
-        CompletableFuture<MeterReport> result = command.execute(moduleContext);
+        CompletableFuture<MeterReport> result = command.execute(commandProcessor);
         verifyErrorCompletion(result, UnsupportedSwitchOperationException.class);
     }
 
@@ -118,7 +106,7 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
         switchFeaturesSetup(true);
         replayAll();
 
-        CompletableFuture<MeterReport> result = command.execute(moduleContext);
+        CompletableFuture<MeterReport> result = command.execute(commandProcessor);
 
         SessionWriteRecord write0 = getWriteRecord(0);
         OFErrorMsg error = sw.getOFFactory().errorMsgs().buildBadRequestErrorMsg()
@@ -176,17 +164,8 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
         verifyErrorCompletion(result, SwitchDisconnectedException.class);
     }
 
-    private void verifyErrorCompletion(CompletableFuture<MeterReport> result, Class<? extends Throwable> errorType) {
-        try {
-            result.get().raiseError();
-            Assert.fail("must never reach this line");
-        } catch (Exception e) {
-            Assert.assertTrue(errorType.isAssignableFrom(e.getClass()));
-        }
-    }
-
     private CompletableFuture<MeterReport> processConflictError() throws Exception {
-        CompletableFuture<MeterReport> result = command.execute(moduleContext);
+        CompletableFuture<MeterReport> result = command.execute(commandProcessor);
 
         SessionWriteRecord write0 = getWriteRecord(0);
         OFErrorMsg error = sw.getOFFactory().errorMsgs().buildMeterModFailedErrorMsg()

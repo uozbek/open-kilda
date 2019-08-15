@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.flow.transit;
 
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.AbstractNotIngressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.service.session.Session;
@@ -44,7 +45,8 @@ abstract class TransitFlowSegmentBlankCommand extends AbstractNotIngressFlowSegm
     }
 
     @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(
+            SpeakerCommandProcessor commandProcessor) {
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return session.write(makeTransitModMessage())
                     .thenApply(ignore -> makeSuccessReport());

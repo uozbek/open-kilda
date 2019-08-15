@@ -18,6 +18,7 @@ package org.openkilda.floodlight.command.flow.ingress;
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -49,8 +50,8 @@ public class IngressFlowSegmentInstallCommand extends IngressFlowSegmentBlankCom
     }
 
     @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
-        return makeInstallPlan();
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
+        return makeInstallPlan(commandProcessor);
     }
 
     @Override

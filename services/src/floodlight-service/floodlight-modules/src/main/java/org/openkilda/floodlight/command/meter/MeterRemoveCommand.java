@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
@@ -34,7 +35,8 @@ public class MeterRemoveCommand extends MeterBlankCommand {
     }
 
     @Override
-    protected CompletableFuture<MeterReport> makeExecutePlan() throws Exception {
+    protected CompletableFuture<MeterReport> makeExecutePlan(
+            SpeakerCommandProcessor commandProcessor) throws Exception {
         ensureSwitchSupportMeters();
 
         IOFSwitch sw = getSw();

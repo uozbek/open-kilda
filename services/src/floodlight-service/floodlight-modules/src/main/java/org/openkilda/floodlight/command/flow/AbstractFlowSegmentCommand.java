@@ -40,7 +40,7 @@ import java.util.UUID;
 @Getter
 public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegmentReport> {
     protected static final long FLOW_COOKIE_MASK = 0x7FFFFFFFFFFFFFFFL;
-    protected static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
+    public static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
 
     // payload
     protected final UUID commandId;
@@ -48,9 +48,6 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
     protected final Cookie cookie;
 
     // operation data
-    @Getter(AccessLevel.PROTECTED)
-    private FloodlightModuleContext moduleContext;
-
     @Getter(AccessLevel.PROTECTED)
     private Set<SpeakerSwitchView.Feature> switchFeatures;
     @Getter(AccessLevel.PROTECTED)
@@ -77,8 +74,6 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
     @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         super.setup(moduleContext);
-
-        this.moduleContext = moduleContext;
 
         FeatureDetectorService featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
         switchFeatures = featureDetectorService.detectSwitch(getSw());

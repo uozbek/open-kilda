@@ -19,6 +19,7 @@ import static org.projectfloodlight.openflow.protocol.OFVersion.OF_13;
 
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.IOfErrorResponseHandler;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.config.provider.FloodlightModuleConfigurationProvider;
 import org.openkilda.floodlight.error.InvalidMeterIdException;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
@@ -64,7 +65,8 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
     }
 
     @Override
-    protected CompletableFuture<MeterReport> makeExecutePlan()
+    protected CompletableFuture<MeterReport> makeExecutePlan(
+            SpeakerCommandProcessor commandProcessor)
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         final OFMeterMod meterAddMessage = makeMeterAddMessage();
         try (Session session = getSessionService().open(messageContext, getSw())) {

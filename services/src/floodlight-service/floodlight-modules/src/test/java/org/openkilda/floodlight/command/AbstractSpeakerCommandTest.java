@@ -20,6 +20,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 
+import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.service.session.SessionService;
@@ -53,6 +54,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class AbstractSpeakerCommandTest extends EasyMockSupport {
     protected final FloodlightModuleContext moduleContext = new FloodlightModuleContext();
@@ -71,6 +73,9 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
     protected FeatureDetectorService featureDetectorService;
 
     @Mock
+    protected SpeakerCommandProcessor commandProcessor;
+
+    @Mock
     protected Session session;
 
     @Mock
@@ -84,6 +89,8 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
 
         moduleContext.addService(SessionService.class, sessionService);
         moduleContext.addService(OFSwitchManager.class, ofSwitchManager);
+
+        expect(commandProcessor.getModuleContext()).andReturn(moduleContext).anyTimes();
 
         expect(sw.getId()).andReturn(dpId).anyTimes();
         expect(sw.getOFFactory()).andReturn(of).anyTimes();
@@ -122,6 +129,32 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
         verifyAll();
     }
 
+    protected void verifyOfMessageEquals(OFMessage expect, OFMessage actual) {
+        if (! expect.equalsIgnoreXid(actual)) {
+            Assert.assertEquals(expect, actual);
+        }
+    }
+
+    protected void verifySuccessCompletion(CompletableFuture<? extends SpeakerCommandReport> future) throws Exception {
+        completeAllSessionWriteRequests();
+        Assert.assertTrue(future.isDone());
+        future.get(1, TimeUnit.SECONDS).raiseError();
+    }
+
+    protected void verifyErrorCompletion(CompletableFuture<? extends SpeakerCommandReport> result, Class<? extends Throwable> errorType) {
+        completeAllSessionWriteRequests();
+        try {
+            result.get().raiseError();
+            Assert.fail("must never reach this line");
+        } catch (Exception e) {
+            Assert.assertTrue(errorType.isAssignableFrom(e.getClass()));
+        }
+    }
+
+    protected void verifyWriteCount(int count) {
+        Assert.assertEquals(count, writeHistory.size());
+    }
+
     protected void switchFeaturesSetup(boolean metersSupport) {
         Set<Feature> features = new HashSet<>();
 
@@ -134,9 +167,19 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
                 .anyTimes();
     }
 
+    protected void completeAllSessionWriteRequests() {
+        for (SessionWriteRecord record : writeHistory) {
+            CompletableFuture<Optional<OFMessage>> future = record.getFuture();
+            if (future.isDone()) {
+                continue;
+            }
+            future.complete(Optional.empty());
+        }
+    }
+
     protected SessionWriteRecord getWriteRecord(int idx) {
         Assert.assertTrue(idx < writeHistory.size());
-        return writeHistory.get(0);
+        return writeHistory.get(idx);
     }
 
     @Value

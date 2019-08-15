@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -45,8 +46,8 @@ public class SingleSwitchFlowRemoveCommand extends SingleSwitchFlowBlankCommand 
     }
 
     @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
-        return makeRemovePlan();
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
+        return makeRemovePlan(commandProcessor);
     }
 
     @Override

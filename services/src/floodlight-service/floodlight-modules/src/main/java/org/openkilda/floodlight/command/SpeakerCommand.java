@@ -91,11 +91,11 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
      * Schedule command execution, produce future object capable to return command result and/or chain more execution
      * of other commands.
      */
-    public CompletableFuture<T> execute(FloodlightModuleContext moduleContext) {
+    public CompletableFuture<T> execute(SpeakerCommandProcessor commandProcessor) {
         CompletableFuture<T> future = new CompletableFuture<>();
         try {
-            setup(moduleContext);
-            makeExecutePlan()
+            setup(commandProcessor.getModuleContext());
+            makeExecutePlan(commandProcessor)
                     .whenComplete((result, error) -> {
                         if (error == null) {
                             future.complete(result);
@@ -109,7 +109,7 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
         return future;
     }
 
-    protected abstract CompletableFuture<T> makeExecutePlan() throws Exception;
+    protected abstract CompletableFuture<T> makeExecutePlan(SpeakerCommandProcessor commandProcessor) throws Exception;
 
     protected abstract T makeReport(Exception error);
 

@@ -18,6 +18,7 @@ package org.openkilda.floodlight.command.flow;
 import static java.lang.String.format;
 
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -52,7 +53,8 @@ public class ReadRuleCommand extends SpeakerCommand<ReadRuleReport> {
     }
 
     @Override
-    protected CompletableFuture<ReadRuleReport> makeExecutePlan() {
+    protected CompletableFuture<ReadRuleReport> makeExecutePlan(
+            SpeakerCommandProcessor commandProcessor) {
         log.debug("Getting rule with cookie {} from the switch {}", cookie, switchId);
         return planOfFlowTableDump(cookie)
                 .thenApply(this::handleStatsResponse);

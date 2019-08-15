@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.AbstractFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterInstallCommand;
@@ -69,10 +70,10 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         this.meterConfig = meterConfig;
     }
 
-    protected CompletableFuture<FlowSegmentReport> makeInstallPlan() {
+    protected CompletableFuture<FlowSegmentReport> makeInstallPlan(SpeakerCommandProcessor commandProcessor) {
         CompletableFuture<FlowSegmentReport> future;
         if (meterConfig != null) {
-            future = planMeterInstall()
+            future = planMeterInstall(commandProcessor)
                     .thenCompose(this::planToUseMeter);
         } else {
             future = planForwardingRulesInstall(null);
@@ -80,22 +81,22 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         return future;
     }
 
-    protected CompletableFuture<FlowSegmentReport> makeRemovePlan() {
+    protected CompletableFuture<FlowSegmentReport> makeRemovePlan(SpeakerCommandProcessor commandProcessor) {
         CompletableFuture<?> future = planForwardingRulesRemove();
         if (meterConfig != null) {
-            future = future.thenCompose(ignore -> planMeterRemove());
+            future = future.thenCompose(ignore -> planMeterRemove(commandProcessor));
         }
         return future.thenApply(ignore -> makeSuccessReport());
     }
 
-    private CompletableFuture<MeterReport> planMeterInstall() {
+    private CompletableFuture<MeterReport> planMeterInstall(SpeakerCommandProcessor commandProcessor) {
         MeterInstallCommand meterCommand = new MeterInstallCommand(messageContext, switchId, meterConfig);
-        return meterCommand.execute(getModuleContext());
+        return commandProcessor.chain(meterCommand);
     }
 
-    private CompletableFuture<MeterReport> planMeterRemove() {
+    private CompletableFuture<MeterReport> planMeterRemove(SpeakerCommandProcessor commandProcessor) {
         MeterRemoveCommand removeCommand = new MeterRemoveCommand(messageContext, switchId, meterConfig);
-        return removeCommand.execute(getModuleContext());
+        return commandProcessor.chain(removeCommand);
     }
 
     private CompletableFuture<FlowSegmentReport> planToUseMeter(MeterReport report) {
@@ -169,19 +170,23 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
 
     private OFFlowMod makeOuterVlanMatchMessage(OFFactory of) {
         SwitchDescriptor swDesc = getSwitchDescriptor();
-        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
-                OFVlanVidMatch.ofVlan(endpoint.getOuterVlanId()));
         return makeFlowModBuilder(of)
                 .setTableId(swDesc.getTableDispatch())
                 .setMatch(of.buildMatch()
                                   .setExact(MatchField.IN_PORT, OFPort.of(endpoint.getPortNumber()))
                                   .setExact(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(endpoint.getOuterVlanId()))
                                   .build())
-                .setInstructions(ImmutableList.of(
-                        of.instructions().applyActions(ImmutableList.of(of.actions().popVlan())),
-                        of.instructions().writeMetadata(metadata.getValue(), metadata.getMask()),
-                        of.instructions().gotoTable(swDesc.getTableIngress())))
+                .setInstructions(makeOuterVlanMatchMessageInstructions(of, swDesc))
                 .build();
+    }
+
+    protected List<OFInstruction> makeOuterVlanMatchMessageInstructions(OFFactory of, SwitchDescriptor swDesc) {
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(endpoint.getOuterVlanId()));
+        return ImmutableList.of(
+                                of.instructions().applyActions(ImmutableList.of(of.actions().popVlan())),
+                                of.instructions().writeMetadata(metadata.getValue(), metadata.getMask()),
+                                of.instructions().gotoTable(swDesc.getTableIngress()));
     }
 
     private OFFlowMod makeInnerVlanMatchAndForwardMessage(OFFactory of, MeterId effectiveMeterId) {
@@ -223,6 +228,14 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
     }
 
     private OFFlowMod makeForwardMessage(OFFactory of, OFFlowMod.Builder builder, MeterId effectiveMeterId) {
+        builder.setInstructions(makeForwardMessageInstructions(of, effectiveMeterId));
+        if (getSwitchFeatures().contains(Feature.RESET_COUNTS_FLAG)) {
+            builder.setFlags(ImmutableSet.of(OFFlowModFlags.RESET_COUNTS));
+        }
+        return builder.build();
+    }
+
+    protected List<OFInstruction> makeForwardMessageInstructions(OFFactory of, MeterId effectiveMeterId) {
         List<OFAction> applyActions = new ArrayList<>();
         List<OFInstruction> instructions = new ArrayList<>();
 
@@ -234,12 +247,7 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         applyActions.add(makeOutputAction(of));
 
         instructions.add(of.instructions().applyActions(applyActions));
-
-        builder.setInstructions(instructions);
-        if (getSwitchFeatures().contains(Feature.RESET_COUNTS_FLAG)) {
-            builder.setFlags(ImmutableSet.of(OFFlowModFlags.RESET_COUNTS));
-        }
-        return builder.build();
+        return instructions;
     }
 
     protected abstract List<OFAction> makeTransformActions(OFFactory of);

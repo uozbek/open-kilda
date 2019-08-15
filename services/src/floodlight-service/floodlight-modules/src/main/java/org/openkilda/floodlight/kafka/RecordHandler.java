@@ -54,6 +54,7 @@ import org.openkilda.floodlight.utils.CorrelationContext.CorrelationContextClosa
 import org.openkilda.messaging.AliveRequest;
 import org.openkilda.messaging.AliveResponse;
 import org.openkilda.messaging.Destination;
+import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.messaging.command.discovery.DiscoverIslCommandData;
@@ -1179,28 +1180,23 @@ class RecordHandler implements Runnable {
     }
 
     private boolean handleSpeakerCommand() {
+        SpeakerCommand<SpeakerCommandReport> speakerCommand = null;
         try {
             TypeReference<SpeakerCommandReport> commandType = new TypeReference<SpeakerCommandReport>() {};
-            SpeakerCommand<SpeakerCommandReport> speakerCommand = MAPPER.readValue(
+            speakerCommand = MAPPER.readValue(
                     record.value(), commandType);
-
-            try (CorrelationContextClosable closable =
-                         CorrelationContext.create(speakerCommand.getMessageContext().getCorrelationId())) {
-                KafkaUtilityService kafkaUtil = context.getModuleContext().getServiceImpl(KafkaUtilityService.class);
-                speakerCommand.execute(context.getModuleContext())
-                        .whenComplete((response, error) -> {
-                            if (error != null) {
-                                logger.error("Error occurred while processing speaker command", error);
-                            }
-                            response.reply(
-                                    kafkaUtil.getKafkaChannel(), getKafkaProducer(), record.key());
-                        });
-            }
         } catch (JsonMappingException e) {
             logger.trace("Received deprecated command message");
             return false;
         } catch (IOException e) {
             logger.error("Error while parsing record {}", record.value(), e);
+            return false;
+        }
+
+        final MessageContext messageContext = speakerCommand.getMessageContext();
+        try (CorrelationContextClosable closable =
+                     CorrelationContext.create(messageContext.getCorrelationId())) {
+            context.getCommandProcessor().process(speakerCommand, record.key());
         }
         return true;
     }

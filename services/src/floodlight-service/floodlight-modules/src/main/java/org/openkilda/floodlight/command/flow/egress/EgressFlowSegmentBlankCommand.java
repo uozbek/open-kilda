@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.flow.egress;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.AbstractNotIngressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.error.NotImplementedEncapsulationException;
@@ -53,7 +54,8 @@ abstract class EgressFlowSegmentBlankCommand extends AbstractNotIngressFlowSegme
     }
 
     @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan() {
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(
+            SpeakerCommandProcessor commandProcessor) {
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return session.write(makeEgressModMessage())
                     .thenApply(ignore -> makeSuccessReport());
