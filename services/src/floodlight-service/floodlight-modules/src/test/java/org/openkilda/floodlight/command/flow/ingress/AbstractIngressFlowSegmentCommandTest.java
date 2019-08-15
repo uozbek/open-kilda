@@ -18,14 +18,11 @@ package org.openkilda.floodlight.command.flow.ingress;
 import static org.easymock.EasyMock.expect;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
-import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
@@ -33,7 +30,6 @@ import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.projectfloodlight.openflow.types.TableId;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerCommandTest {
@@ -63,7 +59,7 @@ abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerComm
                 .anyTimes();
     }
 
-    protected void executeCommand(IngressFlowSegmentBlankCommand command, int writeCount) throws Exception {
+    protected void executeCommand(AbstractIngressFlowSegmentCommand command, int writeCount) throws Exception {
         switchFeaturesSetup(true);
         expectMeter();
         replayAll();
@@ -90,5 +86,5 @@ abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerComm
 
     protected abstract void expectMeter(MeterReport report);
 
-    protected abstract IngressFlowSegmentBlankCommand makeCommand(FlowEndpoint endpoint, MeterConfig meter);
+    protected abstract AbstractIngressFlowSegmentCommand makeCommand(FlowEndpoint endpoint, MeterConfig meter);
 }

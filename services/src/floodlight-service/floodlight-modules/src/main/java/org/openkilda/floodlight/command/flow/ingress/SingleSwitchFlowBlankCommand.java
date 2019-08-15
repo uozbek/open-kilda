@@ -22,6 +22,7 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
 abstract class SingleSwitchFlowBlankCommand extends AbstractIngressFlowSegmentCommand {
     protected final FlowEndpoint egressEndpoint;
 
@@ -43,10 +45,10 @@ abstract class SingleSwitchFlowBlankCommand extends AbstractIngressFlowSegmentCo
     @Override
     protected List<OFAction> makeTransformActions(OFFactory of) {
         List<Integer> currentVlanStack = new ArrayList<>(2);
-        if (FlowEndpoint.isVlanIdSet(endpoint.getOuterVlanId())) {
-            currentVlanStack.add(endpoint.getOuterVlanId());
+        // outer VLAN ID was removed by pre-match rule
+        if (FlowEndpoint.isVlanIdSet(endpoint.getInnerVlanId())) {
+            currentVlanStack.add(endpoint.getInnerVlanId());
         }
-        // `inputOuterVlanId` was removed by pre-match rule
 
         List<Integer> desiredVlanStack = egressEndpoint.getVlanStack();
         return OfAdapter.INSTANCE.makeVlanReplaceActions(of, currentVlanStack, desiredVlanStack);

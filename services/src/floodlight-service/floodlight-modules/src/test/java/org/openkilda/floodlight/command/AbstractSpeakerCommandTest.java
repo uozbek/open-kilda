@@ -59,8 +59,8 @@ import java.util.concurrent.TimeUnit;
 public class AbstractSpeakerCommandTest extends EasyMockSupport {
     protected final FloodlightModuleContext moduleContext = new FloodlightModuleContext();
 
-    protected final OFFactory of = new OFFactoryVer13();
-    protected final DatapathId dpId = DatapathId.of(1);
+    protected final static OFFactory of = new OFFactoryVer13();
+    protected final static DatapathId dpId = DatapathId.of(1);
     protected final Map<DatapathId, Iterator<Session>> switchSessionProducePlan = new HashMap<>();
 
     @Mock

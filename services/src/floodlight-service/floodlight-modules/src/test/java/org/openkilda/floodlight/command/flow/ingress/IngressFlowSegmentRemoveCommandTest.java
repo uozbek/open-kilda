@@ -15,14 +15,9 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.expect;
-
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
-import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
-import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.model.SwitchDescriptor;
 import org.openkilda.floodlight.utils.MetadataAdapter;
 import org.openkilda.floodlight.utils.OfAdapter;
@@ -30,7 +25,6 @@ import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.SwitchId;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFFlowDelete;
 import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
@@ -42,9 +36,8 @@ import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.U64;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
-public class IngressFlowSegmentRemoveCommandTest extends AbstractIngressFlowSegmentCommandTest {
+public class IngressFlowSegmentRemoveCommandTest extends AbstractIngressFlowSegmentRemoveCommandTest {
     @Test
     public void happyPathDefaultPort() throws Exception {
         IngressFlowSegmentRemoveCommand command = makeCommand(endpointDefaultPort, meterConfig);
@@ -115,21 +108,6 @@ public class IngressFlowSegmentRemoveCommandTest extends AbstractIngressFlowSegm
         verifyPreQinqRuleRemove(command, swDesc, (OFFlowDelete) getWriteRecord(2).getRequest());
     }
 
-    @Test
-    public void switchDoNotSupportMeters() throws Exception {
-        Assert.fail();
-    }
-
-    @Test
-    public void noMeterRequested() throws Exception {
-        Assert.fail();
-    }
-
-    @Test
-    public void errorResponseOnFlowAdd() {
-        Assert.fail();
-    }
-
     private void verifyOuterVlanMatchRemove(IngressFlowSegmentRemoveCommand command, OFFlowDeleteStrict actual) {
         OFFlowMod expect = of.buildFlowDeleteStrict()
                 .setCookie(U64.of(command.getCookie().getValue()))
@@ -148,12 +126,6 @@ public class IngressFlowSegmentRemoveCommandTest extends AbstractIngressFlowSegm
                 .setCookie(U64.of(command.getCookie().getValue()))
                 .build();
         verifyOfMessageEquals(expect, actual);
-    }
-
-    @Override
-    protected void expectMeter(MeterReport report) {
-        expect(commandProcessor.chain(anyObject(MeterRemoveCommand.class)))
-                        .andReturn(CompletableFuture.completedFuture(report));
     }
 
     @Override

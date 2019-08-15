@@ -96,7 +96,8 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
 
     private CompletableFuture<MeterReport> planMeterRemove(SpeakerCommandProcessor commandProcessor) {
         MeterRemoveCommand removeCommand = new MeterRemoveCommand(messageContext, switchId, meterConfig);
-        return commandProcessor.chain(removeCommand);
+        return commandProcessor.chain(removeCommand)
+                .thenApply(this::handleMeterRemoveReport);
     }
 
     private CompletableFuture<FlowSegmentReport> planToUseMeter(MeterReport report) {
@@ -105,6 +106,7 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
             report.raiseError();
             effectiveMeterId = report.getMeterId();
         } catch (UnsupportedSwitchOperationException e) {
+            log.info("Do not install meter id {} on {} - {}", meterConfig.getId(), switchId, e.getMessage());
             // switch do not support meters, setup rules without meter
             effectiveMeterId = null;
         } catch (Exception e) {
@@ -149,6 +151,17 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         }
 
         return CompletableFuture.allOf(requests.toArray(new CompletableFuture<?>[0]));
+    }
+
+    private MeterReport handleMeterRemoveReport(MeterReport report) {
+        try {
+            report.raiseError();
+        } catch (UnsupportedSwitchOperationException e) {
+            log.info("Do not remove meter id {} from {} - {}", meterConfig.getId(), switchId, e.getMessage());
+        } catch (Exception e) {
+            throw maskCallbackException(e);
+        }
+        return report;
     }
 
     private List<OFFlowMod> makeIngressModMessages(MeterId effectiveMeterId) {
