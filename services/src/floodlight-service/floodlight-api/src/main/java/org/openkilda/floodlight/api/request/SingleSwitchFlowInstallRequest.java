@@ -38,13 +38,12 @@ public class SingleSwitchFlowInstallRequest extends SingleSwitchFlowBlankRequest
     @Builder(toBuilder = true)
     public SingleSwitchFlowInstallRequest(
             @JsonProperty("message_context") MessageContext messageContext,
-            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(messageContext, switchId, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+        super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
 }

@@ -23,6 +23,7 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -30,6 +31,7 @@ import lombok.ToString;
 
 import java.util.UUID;
 
+@JsonIgnoreProperties({"switch_id"})
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -47,10 +49,10 @@ public abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentR
     protected final FlowTransitEncapsulation encapsulation;
 
     EgressFlowSegmentBlankRequest(
-            MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            MessageContext context, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, Integer islPort,
             FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie);
+        super(context, endpoint.getDatapath(), commandId, flowId, cookie);
 
         requireNonNull(endpoint, "Argument endpoint must no be null");
         requireNonNull(ingressEndpoint, "Argument ingressEndpoint must no be null");

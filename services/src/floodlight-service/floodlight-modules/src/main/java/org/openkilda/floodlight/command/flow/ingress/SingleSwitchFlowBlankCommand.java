@@ -20,7 +20,6 @@ import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -36,10 +35,21 @@ abstract class SingleSwitchFlowBlankCommand extends AbstractIngressFlowSegmentCo
     protected final FlowEndpoint egressEndpoint;
 
     SingleSwitchFlowBlankCommand(
-            MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
-        super(messageContext, switchId, commandId, flowId, cookie, endpoint, meterConfig);
+        super(messageContext, endpoint.getDatapath(), commandId, flowId, cookie, endpoint, meterConfig);
         this.egressEndpoint = egressEndpoint;
+    }
+
+    @Override
+    protected void validate() {
+        super.validate();
+
+        if (! getSwitchId().equals(egressEndpoint.getDatapath())) {
+            throw new IllegalArgumentException(String.format(
+                    "Ingress(%s) and egress(%s) switches must match in %s",
+                    getSwitchId(), egressEndpoint.getDatapath(), getClass().getName()));
+        }
     }
 
     @Override

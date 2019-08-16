@@ -42,16 +42,14 @@ public class IngressFlowSegmentRemoveCommandJsonTest extends IngressFlowSegmentB
 
     @Override
     protected IngressFlowSegmentRemoveRequest makeRequest() {
-        SwitchId swId = new SwitchId(1);
         return new IngressFlowSegmentRemoveRequest(
                 new MessageContext(),
-                swId,
                 UUID.randomUUID(),
                 "ingress-flow-segment-json-remove-request",
-                new Cookie(2),
-                new FlowEndpoint(swId, 1, 2, 3),
-                new MeterConfig(new MeterId(4), 5000),
-                6,
-                new FlowTransitEncapsulation(7, FlowEncapsulationType.TRANSIT_VLAN));
+                new Cookie(1),
+                new FlowEndpoint(new SwitchId(2), 3, 4, 5),
+                new MeterConfig(new MeterId(6), 7000),
+                8,
+                new FlowTransitEncapsulation(9, FlowEncapsulationType.TRANSIT_VLAN));
     }
 }

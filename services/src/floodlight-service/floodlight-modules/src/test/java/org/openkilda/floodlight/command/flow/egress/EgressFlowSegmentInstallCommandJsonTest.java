@@ -43,7 +43,6 @@ public class EgressFlowSegmentInstallCommandJsonTest extends EgressFlowSegmentBl
         SwitchId swId = new SwitchId(1);
         return new EgressFlowSegmentInstallRequest(
                 new MessageContext(),
-                swId,
                 UUID.randomUUID(),
                 "egress-flow-segment-install-request",
                 new Cookie(2),

@@ -20,22 +20,15 @@ import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.AbstractNotIngressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
-import org.openkilda.floodlight.error.NotImplementedEncapsulationException;
 import org.openkilda.floodlight.service.session.Session;
-import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
-import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
-import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
-import org.projectfloodlight.openflow.types.OFPort;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -46,10 +39,10 @@ abstract class EgressFlowSegmentBlankCommand extends AbstractNotIngressFlowSegme
     protected final FlowEndpoint ingressEndpoint;
 
     EgressFlowSegmentBlankCommand(
-            MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, Integer islPort,
             FlowTransitEncapsulation encapsulation) {
-        super(messageContext, switchId, commandId, flowId, cookie, islPort, encapsulation);
+        super(messageContext, endpoint.getDatapath(), commandId, flowId, cookie, islPort, encapsulation);
         this.endpoint = endpoint;
         this.ingressEndpoint = ingressEndpoint;
     }

@@ -22,7 +22,6 @@ import org.openkilda.floodlight.utils.MetadataAdapter;
 import org.openkilda.floodlight.utils.MetadataAdapter.MetadataMatch;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
@@ -119,7 +118,6 @@ public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmen
         Cookie cookie = new Cookie(1);
 
         return new SingleSwitchFlowRemoveCommand(
-                messageContext, mapSwitchId(dpId), commandId, flowId, cookie, endpoint, meter,
-                endpointEgress);
+                messageContext, commandId, flowId, cookie, endpoint, meter, endpointEgress);
     }
 }

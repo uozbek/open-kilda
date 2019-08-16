@@ -21,7 +21,6 @@ import org.openkilda.floodlight.error.NotImplementedEncapsulationException;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,7 +41,6 @@ public class EgressFlowSegmentInstallCommand extends EgressFlowSegmentBlankComma
     @JsonCreator
     public EgressFlowSegmentInstallCommand(
             @JsonProperty("message_context") MessageContext context,
-            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
@@ -50,7 +48,7 @@ public class EgressFlowSegmentInstallCommand extends EgressFlowSegmentBlankComma
             @JsonProperty("ingress_endpoint") FlowEndpoint ingressEndpoint,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
+        super(context, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
     }
 
     @Override

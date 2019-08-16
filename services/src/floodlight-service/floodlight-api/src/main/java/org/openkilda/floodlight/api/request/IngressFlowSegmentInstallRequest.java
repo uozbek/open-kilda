@@ -20,7 +20,6 @@ import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,7 +38,6 @@ public class IngressFlowSegmentInstallRequest extends IngressFlowSegmentBlankReq
     @Builder(toBuilder = true)
     public IngressFlowSegmentInstallRequest(
             @JsonProperty("message_context") MessageContext messageContext,
-            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
@@ -47,6 +45,6 @@ public class IngressFlowSegmentInstallRequest extends IngressFlowSegmentBlankReq
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(messageContext, switchId, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
+        super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
 }

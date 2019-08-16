@@ -21,7 +21,6 @@ import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,14 +34,13 @@ public class SingleSwitchFlowInstallCommand extends SingleSwitchFlowBlankCommand
     @JsonCreator
     public SingleSwitchFlowInstallCommand(
             @JsonProperty("message_context") MessageContext context,
-            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+        super(context, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
 
     @Override

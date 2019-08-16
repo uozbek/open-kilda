@@ -22,7 +22,6 @@ import org.openkilda.floodlight.error.NotImplementedEncapsulationException;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -41,9 +40,9 @@ abstract class IngressFlowSegmentBlankCommand extends AbstractIngressFlowSegment
     protected FlowTransitEncapsulation encapsulation;
 
     IngressFlowSegmentBlankCommand(
-            MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig, Integer islPort, FlowTransitEncapsulation encapsulation) {
-        super(messageContext, switchId, commandId, flowId, cookie, endpoint, meterConfig);
+        super(messageContext, endpoint.getDatapath(), commandId, flowId, cookie, endpoint, meterConfig);
         this.islPort = islPort;
         this.encapsulation = encapsulation;
     }

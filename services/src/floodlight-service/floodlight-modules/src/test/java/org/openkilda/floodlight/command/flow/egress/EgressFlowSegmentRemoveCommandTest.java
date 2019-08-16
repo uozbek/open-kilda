@@ -55,7 +55,6 @@ public class EgressFlowSegmentRemoveCommandTest extends EgressFlowSegmentBlankCo
         Cookie cookie = new Cookie(101);
         int islPort = 8;
         return new EgressFlowSegmentRemoveCommand(
-                messageContext, mapSwitchId(dpId), commandId, flowId, cookie,
-                endpoint, ingressEndpoint, islPort, encapsulation);
+                messageContext, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
     }
 }

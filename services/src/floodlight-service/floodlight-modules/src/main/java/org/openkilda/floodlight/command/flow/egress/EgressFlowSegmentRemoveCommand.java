@@ -19,7 +19,6 @@ import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -33,7 +32,6 @@ import java.util.UUID;
 public class EgressFlowSegmentRemoveCommand extends EgressFlowSegmentBlankCommand {
     public EgressFlowSegmentRemoveCommand(
             @JsonProperty("message_context") MessageContext context,
-            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
@@ -41,7 +39,7 @@ public class EgressFlowSegmentRemoveCommand extends EgressFlowSegmentBlankComman
             @JsonProperty("ingress_endpoint") FlowEndpoint ingressEndpoint,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
+        super(context, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
     }
 
     @Override

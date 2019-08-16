@@ -22,8 +22,8 @@ import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -31,6 +31,7 @@ import lombok.ToString;
 
 import java.util.UUID;
 
+@JsonIgnoreProperties({"switch_id"})
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -42,9 +43,9 @@ public abstract class IngressFlowSegmentBlankRequest extends AbstractIngressFlow
     protected final FlowTransitEncapsulation encapsulation;
 
     IngressFlowSegmentBlankRequest(
-            MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            MessageContext context, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig, Integer islPort, FlowTransitEncapsulation encapsulation) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig);
+        super(context, commandId, flowId, cookie, endpoint, meterConfig);
 
         requireNonNull(islPort, "Argument islPort must no be null");
         requireNonNull(encapsulation, "Argument encapsulation must no be null");

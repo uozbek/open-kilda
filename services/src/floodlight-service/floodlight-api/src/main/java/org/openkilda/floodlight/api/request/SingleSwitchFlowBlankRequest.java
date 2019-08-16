@@ -21,8 +21,8 @@ import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -30,6 +30,7 @@ import lombok.ToString;
 
 import java.util.UUID;
 
+@JsonIgnoreProperties({"switch_id"})
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -38,11 +39,16 @@ public abstract class SingleSwitchFlowBlankRequest extends AbstractIngressFlowSe
     protected final FlowEndpoint egressEndpoint;
 
     SingleSwitchFlowBlankRequest(
-            MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
-            FlowEndpoint endpoint, MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
-        super(context, switchId, commandId, flowId, cookie, endpoint, meterConfig);
+            MessageContext context, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
+            MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
+        super(context, commandId, flowId, cookie, endpoint, meterConfig);
 
         requireNonNull(egressEndpoint, "Argument egressEndpoint must no be null");
+        if (! getSwitchId().equals(egressEndpoint.getDatapath())) {
+            throw new IllegalArgumentException(String.format(
+                    "Ingress(%s) and egress(%s) switches must match in %s",
+                    getSwitchId(), egressEndpoint.getDatapath(), getClass().getName()));
+        }
 
         this.egressEndpoint = egressEndpoint;
     }

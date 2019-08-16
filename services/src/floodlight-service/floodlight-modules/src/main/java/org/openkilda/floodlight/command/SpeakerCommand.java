@@ -94,6 +94,7 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
     public CompletableFuture<T> execute(SpeakerCommandProcessor commandProcessor) {
         CompletableFuture<T> future = new CompletableFuture<>();
         try {
+            validate();
             setup(commandProcessor.getModuleContext());
             makeExecutePlan(commandProcessor)
                     .whenComplete((result, error) -> {
@@ -119,6 +120,10 @@ public abstract class SpeakerCommand<T extends SpeakerCommandReport> {
         } else {
             future.completeExceptionally(error);
         }
+    }
+
+    protected void validate() {
+        // do nothing by default, inheritors can perform command fields consistency check here
     }
 
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {

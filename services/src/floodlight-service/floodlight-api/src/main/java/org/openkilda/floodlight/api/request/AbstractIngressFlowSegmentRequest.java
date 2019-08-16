@@ -41,9 +41,9 @@ abstract class AbstractIngressFlowSegmentRequest extends AbstractFlowSegmentRequ
     protected final MeterConfig meterConfig;
 
     AbstractIngressFlowSegmentRequest(
-            MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
-            FlowEndpoint endpoint, MeterConfig meterConfig) {
-        super(context, switchId, commandId, flowId, cookie);
+            MessageContext context, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
+            MeterConfig meterConfig) {
+        super(context, endpoint.getDatapath(), commandId, flowId, cookie);
 
         requireNonNull(endpoint, "Argument endpoint must no be null");
 

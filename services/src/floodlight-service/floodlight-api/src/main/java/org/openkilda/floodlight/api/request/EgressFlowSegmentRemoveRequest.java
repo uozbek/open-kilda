@@ -38,7 +38,6 @@ public class EgressFlowSegmentRemoveRequest extends EgressFlowSegmentBlankReques
     @Builder(toBuilder = true)
     public EgressFlowSegmentRemoveRequest(
             @JsonProperty("message_context") MessageContext messageContext,
-            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
@@ -46,6 +45,6 @@ public class EgressFlowSegmentRemoveRequest extends EgressFlowSegmentBlankReques
             @JsonProperty("ingress_endpoint") FlowEndpoint ingressEndpoint,
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(messageContext, switchId, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
+        super(messageContext, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
     }
 }

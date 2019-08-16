@@ -20,7 +20,6 @@ import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
@@ -255,7 +254,6 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentBlankC
         Cookie cookie = new Cookie(3);
         int islPort = 6;
         return new EgressFlowSegmentInstallCommand(
-                messageContext, mapSwitchId(dpId), commandId, flowId, cookie,
-                endpoint, ingressEndpoint, islPort, encapsulation);
+                messageContext, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
     }
 }

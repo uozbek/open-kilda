@@ -115,7 +115,6 @@ public class IngressFlowSegmentRemoveCommandTest extends AbstractIngressFlowSegm
         FlowTransitEncapsulation encapsulation = new FlowTransitEncapsulation(97, FlowEncapsulationType.TRANSIT_VLAN);
         int islPort = 7;
         return new IngressFlowSegmentRemoveCommand(
-                messageContext, mapSwitchId(dpId), commandId, flowId, cookie, endpoint, meter, islPort,
-                encapsulation);
+                messageContext, commandId, flowId, cookie, endpoint, meter, islPort, encapsulation);
     }
 }

@@ -18,7 +18,6 @@ package org.openkilda.floodlight.command.flow.ingress;
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest;
 import org.openkilda.floodlight.api.request.SingleSwitchFlowRemoveRequest;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
@@ -45,7 +44,6 @@ public class SingleSwitchFlowRemoveCommandJsonTest extends SingleSwitchFlowBlank
         SwitchId swId = new SwitchId(1);
         return new SingleSwitchFlowRemoveRequest(
                 new MessageContext(),
-                swId,
                 UUID.randomUUID(),
                 "single-switch-flow-remove-request",
                 new Cookie(2),

@@ -22,7 +22,6 @@ import org.openkilda.floodlight.utils.MetadataAdapter;
 import org.openkilda.floodlight.utils.MetadataAdapter.MetadataMatch;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
@@ -165,7 +164,6 @@ public class SingleSwitchFlowInstallCommandTest extends AbstractIngressFlowSegme
         Cookie cookie = new Cookie(1);
 
         return new SingleSwitchFlowInstallCommand(
-                messageContext, mapSwitchId(dpId), commandId, flowId, cookie, endpoint, meter,
-                endpointEgress);
+                messageContext, commandId, flowId, cookie, endpoint, meter, endpointEgress);
     }
 }

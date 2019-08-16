@@ -145,7 +145,6 @@ public class IngressFlowSegmentInstallCommandTest extends AbstractIngressFlowSeg
         int islPort = 6;
 
         return new IngressFlowSegmentInstallCommand(
-                messageContext, mapSwitchId(dpId), commandId, flowId, cookie, endpoint, meter,
-                islPort, encapsulation);
+                messageContext, commandId, flowId, cookie, endpoint, meter, islPort, encapsulation);
     }
 }

@@ -43,7 +43,6 @@ public class SingleSwitchFlowInstallCommandJsonTest extends SingleSwitchFlowBlan
         SwitchId swId = new SwitchId(1);
         return new SingleSwitchFlowInstallRequest(
                 new MessageContext(),
-                swId,
                 UUID.randomUUID(),
                 "single-switch-flow-install-request",
                 new Cookie(2),
