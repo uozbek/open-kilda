@@ -53,7 +53,7 @@ import java.util.concurrent.CompletionException;
         @Type(value = IngressFlowSegmentInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest"),
         @Type(value = IngressFlowSegmentRemoveCommand.class,
-                name = "org.openkilda.floodlight.api.request.EgressFlowSegmentRemoveRequest"),
+                name = "org.openkilda.floodlight.api.request.IngressFlowSegmentRemoveRequest"),
         @Type(value = SingleSwitchFlowInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest"),
         @Type(value = SingleSwitchFlowRemoveCommand.class,

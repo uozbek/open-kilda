@@ -33,7 +33,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
+public abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
     @JsonProperty("endpoint")
     protected final FlowEndpoint endpoint;
 

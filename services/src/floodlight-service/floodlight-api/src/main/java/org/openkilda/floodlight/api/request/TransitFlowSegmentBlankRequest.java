@@ -32,7 +32,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-abstract class TransitFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
+public abstract class TransitFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
     @JsonProperty("ingressIslPort")
     protected final Integer ingressIslPort;
 

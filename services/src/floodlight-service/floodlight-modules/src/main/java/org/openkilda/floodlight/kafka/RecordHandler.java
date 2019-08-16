@@ -1182,7 +1182,8 @@ class RecordHandler implements Runnable {
     private boolean handleSpeakerCommand() {
         SpeakerCommand<SpeakerCommandReport> speakerCommand = null;
         try {
-            TypeReference<SpeakerCommandReport> commandType = new TypeReference<SpeakerCommandReport>() {};
+            TypeReference<SpeakerCommand<SpeakerCommandReport>> commandType
+                    = new TypeReference<SpeakerCommand<SpeakerCommandReport>>() {};
             speakerCommand = MAPPER.readValue(
                     record.value(), commandType);
         } catch (JsonMappingException e) {

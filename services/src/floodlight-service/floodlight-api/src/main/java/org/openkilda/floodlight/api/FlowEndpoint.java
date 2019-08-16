@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
@@ -68,6 +69,7 @@ public class FlowEndpoint implements Serializable {
         }
     }
 
+    @JsonIgnore
     public List<Integer> getVlanStack() {
         return makeVlanStack(innerVlanId, outerVlanId);
     }

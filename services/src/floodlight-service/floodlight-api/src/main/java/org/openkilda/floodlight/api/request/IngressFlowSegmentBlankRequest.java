@@ -34,7 +34,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-abstract class IngressFlowSegmentBlankRequest extends AbstractIngressFlowSegmentRequest {
+public abstract class IngressFlowSegmentBlankRequest extends AbstractIngressFlowSegmentRequest {
     @JsonProperty("islPort")
     protected final Integer islPort;
 
