@@ -57,7 +57,7 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
     private MessageContext messageContext = new MessageContext();
     private final MeterConfig meterConfig = new MeterConfig(new MeterId(2), 1000);
     private MeterInstallCommand command = new MeterInstallCommand(
-            messageContext, new SwitchId(dpId.getLong()), meterConfig);
+            messageContext, mapSwitchId(dpId), meterConfig);
 
     private final SwitchDescription swDesc = SwitchDescription.builder()
             .setManufacturerDescription("manufacturer")

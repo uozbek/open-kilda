@@ -23,13 +23,16 @@ import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterInstallCommand;
 import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
 import org.openkilda.floodlight.command.meter.MeterReport;
+import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.model.SwitchDescriptor;
+import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.utils.MetadataAdapter;
 import org.openkilda.floodlight.utils.MetadataAdapter.MetadataMatch;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
@@ -37,7 +40,9 @@ import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import lombok.AccessLevel;
 import lombok.Getter;
+import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.OFFlowModFlags;
@@ -53,6 +58,7 @@ import org.projectfloodlight.openflow.types.U64;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -62,12 +68,28 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
     protected final FlowEndpoint endpoint;
     protected final MeterConfig meterConfig;
 
+    // operation data
+    @Getter(AccessLevel.PROTECTED)
+    private SwitchDescriptor switchDescriptor;
+    @Getter(AccessLevel.PROTECTED)
+    private Set<SpeakerSwitchView.Feature> switchFeatures;
+
     AbstractIngressFlowSegmentCommand(
             MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig) {
         super(messageContext, switchId, commandId, flowId, cookie);
         this.endpoint = endpoint;
         this.meterConfig = meterConfig;
+    }
+
+    @Override
+    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
+        super.setup(moduleContext);
+
+        switchDescriptor = new SwitchDescriptor(getSw());
+
+        FeatureDetectorService featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
+        switchFeatures = featureDetectorService.detectSwitch(getSw());
     }
 
     protected CompletableFuture<FlowSegmentReport> makeInstallPlan(SpeakerCommandProcessor commandProcessor) {

@@ -24,9 +24,17 @@ import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
+import org.openkilda.floodlight.model.SwitchDescriptor;
+import org.openkilda.floodlight.utils.OfAdapter;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;
+import org.projectfloodlight.openflow.protocol.OFFlowDelete;
+import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.U64;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -36,7 +44,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         switchFeaturesSetup(false);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, null);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, null);
         verifySuccessCompletion(command.execute(commandProcessor));
     }
 
@@ -46,7 +54,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         expectMeter(new UnsupportedSwitchOperationException(dpId, "Switch doesn't support meters (unit-test)"));
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         verifySuccessCompletion(command.execute(commandProcessor));
     }
 
@@ -56,7 +64,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         expectMeter(new SwitchErrorResponseException(dpId, "fake fail to install meter error"));
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyErrorCompletion(result, SwitchErrorResponseException.class);
     }
@@ -66,13 +74,33 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         switchFeaturesSetup(true);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
 
         getWriteRecord(0).getFuture()
                 .completeExceptionally(new SwitchErrorResponseException(
                         dpId, of.errorMsgs().buildBadRequestErrorMsg().setCode(OFBadRequestCode.BAD_LEN).build()));
         verifyErrorCompletion(result, SwitchOperationException.class);
+    }
+
+    protected void verifyOuterVlanMatchRemove(AbstractIngressFlowSegmentCommand command, OFMessage actual) {
+        OFFlowMod expect = of.buildFlowDeleteStrict()
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setPriority(IngressFlowSegmentRemoveCommand.FLOW_PRIORITY)
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getOuterVlanId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                                  .build())
+                .build();
+        verifyOfMessageEquals(expect, actual);
+    }
+
+    protected void verifyPreQinqRuleRemove(
+            AbstractIngressFlowSegmentCommand command, SwitchDescriptor swDesc, OFMessage actual) {
+        OFFlowDelete expect = of.buildFlowDelete()
+                .setTableId(swDesc.getTableDispatch())
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .build();
+        verifyOfMessageEquals(expect, actual);
     }
 
     @Override

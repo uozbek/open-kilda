@@ -32,6 +32,7 @@ import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.ArrayList;
@@ -65,30 +66,11 @@ abstract class EgressFlowSegmentBlankCommand extends AbstractNotIngressFlowSegme
     private OFFlowMod makeEgressModMessage() {
         OFFactory of = getSw().getOFFactory();
 
-        List<OFAction> applyActions = new ArrayList<>(makeTransformActions(of));
-        applyActions.add(of.actions().buildOutput()
-                                 .setPort(OFPort.of(endpoint.getPortNumber()))
-                                 .build());
-
         return makeFlowModBuilder(of)
                 .setMatch(makeTransitMatch(of))
-                .setInstructions(ImmutableList.of(of.instructions().applyActions(applyActions)))
+                .setInstructions(makeEgressModMessageInstructions(of))
                 .build();
     }
 
-    private List<OFAction> makeTransformActions(OFFactory of) {
-        switch (encapsulation.getType()) {
-            case TRANSIT_VLAN:
-                return makeVlanTransformActions(of);
-            default:
-                throw new NotImplementedEncapsulationException(getClass(), encapsulation.getType(), switchId, flowId);
-        }
-    }
-
-    private List<OFAction> makeVlanTransformActions(OFFactory of) {
-        List<Integer> currentVlanStack = FlowEndpoint.makeVlanStack(
-                ingressEndpoint.getInnerVlanId(), encapsulation.getId());
-        List<Integer> desiredVlanStack = endpoint.getVlanStack();
-        return OfAdapter.INSTANCE.makeVlanReplaceActions(of, currentVlanStack, desiredVlanStack);
-    }
+    protected abstract List<OFInstruction> makeEgressModMessageInstructions(OFFactory of);
 }

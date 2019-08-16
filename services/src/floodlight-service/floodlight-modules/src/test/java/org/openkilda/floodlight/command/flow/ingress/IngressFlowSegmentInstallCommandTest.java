@@ -25,7 +25,6 @@ import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.SwitchId;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
@@ -44,7 +43,7 @@ import java.util.UUID;
 public class IngressFlowSegmentInstallCommandTest extends AbstractIngressFlowSegmentInstallCommandTest {
     @Test
     public void happyPathDefaultPort() throws Exception {
-        IngressFlowSegmentInstallCommand command = makeCommand(endpointDefaultPort, meterConfig);
+        IngressFlowSegmentInstallCommand command = makeCommand(endpointZeroVlan, meterConfig);
         executeCommand(command, 1);
 
         List<OFInstruction> instructions = new ArrayList<>();
@@ -67,7 +66,7 @@ public class IngressFlowSegmentInstallCommandTest extends AbstractIngressFlowSeg
 
     @Test
     public void happyPathOuterVlan() throws Exception {
-        IngressFlowSegmentInstallCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        IngressFlowSegmentInstallCommand command = makeCommand(endpointSingleVlan, meterConfig);
         executeCommand(command, 2);
         
         // table - dispatch
@@ -103,7 +102,7 @@ public class IngressFlowSegmentInstallCommandTest extends AbstractIngressFlowSeg
 
     @Test
     public void happyPathOuterAndInnerVlan() throws Exception {
-        IngressFlowSegmentInstallCommand command = makeCommand(endpointOuterAndInnerVlan, meterConfig);
+        IngressFlowSegmentInstallCommand command = makeCommand(endpointDoubleVlan, meterConfig);
         executeCommand(command, 2);
         
         // table - dispatch
@@ -146,7 +145,7 @@ public class IngressFlowSegmentInstallCommandTest extends AbstractIngressFlowSeg
         int islPort = 6;
 
         return new IngressFlowSegmentInstallCommand(
-                messageContext, new SwitchId(dpId.getLong()), commandId, flowId, cookie, endpoint, meter,
+                messageContext, mapSwitchId(dpId), commandId, flowId, cookie, endpoint, meter,
                 islPort, encapsulation);
     }
 }

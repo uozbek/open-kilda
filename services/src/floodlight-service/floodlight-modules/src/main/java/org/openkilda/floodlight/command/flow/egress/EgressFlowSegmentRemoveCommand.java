@@ -22,9 +22,12 @@ import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 
+import java.util.List;
 import java.util.UUID;
 
 public class EgressFlowSegmentRemoveCommand extends EgressFlowSegmentBlankCommand {
@@ -39,6 +42,11 @@ public class EgressFlowSegmentRemoveCommand extends EgressFlowSegmentBlankComman
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
         super(context, switchId, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
+    }
+
+    @Override
+    protected List<OFInstruction> makeEgressModMessageInstructions(OFFactory of) {
+        return ImmutableList.of();  // do not add instructions into delete request
     }
 
     @Override

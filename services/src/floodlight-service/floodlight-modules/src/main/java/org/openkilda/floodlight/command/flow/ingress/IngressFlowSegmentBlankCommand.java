@@ -54,7 +54,7 @@ abstract class IngressFlowSegmentBlankCommand extends AbstractIngressFlowSegment
         if (FlowEndpoint.isVlanIdSet(endpoint.getOuterVlanId())) {
             // restore outer vlan removed by 'pre-match' rule
             actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
-            // must be done only if transit encapsulation can preserve VLAN tag
+            // TODO(surabujin) must be done only if transit encapsulation can preserve VLAN tag
             // actions.add(OfAdapter.INSTANCE.setVlanIdAction(of, endpoint.getOuterVlanId()));
         }
 

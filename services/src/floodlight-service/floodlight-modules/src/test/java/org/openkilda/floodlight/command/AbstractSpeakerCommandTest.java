@@ -26,6 +26,7 @@ import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.service.session.SessionService;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
+import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -129,9 +130,9 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
         verifyAll();
     }
 
-    protected void verifyOfMessageEquals(OFMessage expect, OFMessage actual) {
-        if (! expect.equalsIgnoreXid(actual)) {
-            Assert.assertEquals(expect, actual);
+    protected void verifyOfMessageEquals(OFMessage expected, OFMessage actual) {
+        if (! expected.equalsIgnoreXid(actual)) {
+            Assert.assertEquals(expected, actual);
         }
     }
 
@@ -180,6 +181,10 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
     protected SessionWriteRecord getWriteRecord(int idx) {
         Assert.assertTrue(idx < writeHistory.size());
         return writeHistory.get(idx);
+    }
+
+    protected static SwitchId mapSwitchId(DatapathId target) {
+        return new SwitchId(target.getLong());
     }
 
     @Value

@@ -54,7 +54,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         switchFeaturesSetup(true);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, null);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, null);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyWriteCount(2);
         verifySuccessCompletion(result);
@@ -67,7 +67,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         expectMeter(new UnsupportedSwitchOperationException(dpId, "Switch doesn't support meters (unit-test)"));
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyWriteCount(2);
         verifySuccessCompletion(result);
@@ -82,7 +82,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         reset(session);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyErrorCompletion(result, SwitchErrorResponseException.class);
     }
@@ -93,7 +93,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         expectMeter();
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
 
         getWriteRecord(0).getFuture()

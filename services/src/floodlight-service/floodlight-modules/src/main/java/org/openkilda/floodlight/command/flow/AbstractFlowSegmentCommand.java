@@ -47,12 +47,6 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
     protected final String flowId;
     protected final Cookie cookie;
 
-    // operation data
-    @Getter(AccessLevel.PROTECTED)
-    private Set<SpeakerSwitchView.Feature> switchFeatures;
-    @Getter(AccessLevel.PROTECTED)
-    private SwitchDescriptor switchDescriptor;
-
     public AbstractFlowSegmentCommand(
             MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie) {
         super(messageContext, switchId);
@@ -70,16 +64,6 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
     }
 
     protected abstract OFFlowMod.Builder makeFlowModBuilder(OFFactory of);
-
-    @Override
-    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
-        super.setup(moduleContext);
-
-        FeatureDetectorService featureDetectorService = moduleContext.getServiceImpl(FeatureDetectorService.class);
-        switchFeatures = featureDetectorService.detectSwitch(getSw());
-
-        switchDescriptor = new SwitchDescriptor(getSw());
-    }
 
     protected OFFlowAdd.Builder makeFlowAddBuilder(OFFactory of) {
         return of.buildFlowAdd()

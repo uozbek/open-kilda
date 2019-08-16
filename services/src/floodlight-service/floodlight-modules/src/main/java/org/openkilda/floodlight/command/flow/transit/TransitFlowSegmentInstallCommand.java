@@ -22,9 +22,14 @@ import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod.Builder;
+import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
+import org.projectfloodlight.openflow.types.OFPort;
 
+import java.util.List;
 import java.util.UUID;
 
 public class TransitFlowSegmentInstallCommand extends TransitFlowSegmentBlankCommand {
@@ -39,6 +44,15 @@ public class TransitFlowSegmentInstallCommand extends TransitFlowSegmentBlankCom
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation,
             @JsonProperty("egressIslPort") Integer egressIslPort) {
         super(context, switchId, commandId, flowId, cookie, ingressIslPort, encapsulation, egressIslPort);
+    }
+
+    @Override
+    protected List<OFInstruction> makeTransitModMessageInstructions(OFFactory of) {
+        List<OFAction> applyActions = ImmutableList.of(
+                of.actions().buildOutput()
+                        .setPort(OFPort.of(egressIslPort))
+                        .build());
+        return ImmutableList.of(of.instructions().applyActions(applyActions));
     }
 
     @Override

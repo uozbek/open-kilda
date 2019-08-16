@@ -25,15 +25,18 @@ import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
+import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+@Getter
 abstract class TransitFlowSegmentBlankCommand extends AbstractNotIngressFlowSegmentCommand {
     protected final Integer egressIslPort;
 
@@ -55,14 +58,11 @@ abstract class TransitFlowSegmentBlankCommand extends AbstractNotIngressFlowSegm
 
     private OFFlowMod makeTransitModMessage() {
         OFFactory of = getSw().getOFFactory();
-        List<OFAction> applyActions = ImmutableList.of(
-                of.actions().buildOutput()
-                        .setPort(OFPort.of(egressIslPort))
-                        .build());
-
         return makeFlowModBuilder(of)
-                .setInstructions(ImmutableList.of(of.instructions().applyActions(applyActions)))
+                .setInstructions(makeTransitModMessageInstructions(of))
                 .setMatch(makeTransitMatch(of))
                 .build();
     }
+
+    protected abstract List<OFInstruction> makeTransitModMessageInstructions(OFFactory of);
 }

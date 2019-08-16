@@ -39,11 +39,11 @@ import java.util.List;
 import java.util.UUID;
 
 public class SingleSwitchFlowInstallCommandTest extends AbstractIngressFlowSegmentInstallCommandTest {
-    private final static FlowEndpoint defaultEgressEndpoint = new FlowEndpoint(new SwitchId(dpId.getLong()), 3, 0, 0);
+    private final static FlowEndpoint defaultEgressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 3, 0, 0);
 
     @Test
     public void happyPathDefaultPort() throws Exception {
-        SingleSwitchFlowInstallCommand command = makeCommand(endpointDefaultPort, meterConfig);
+        SingleSwitchFlowInstallCommand command = makeCommand(endpointZeroVlan, meterConfig);
         executeCommand(command, 1);
 
         List<OFAction> applyActions = new ArrayList<>();
@@ -66,7 +66,7 @@ public class SingleSwitchFlowInstallCommandTest extends AbstractIngressFlowSegme
 
     @Test
     public void happyPathOuterVlan() throws Exception {
-        SingleSwitchFlowInstallCommand command = makeCommand(endpointOuterVlan, meterConfig);
+        SingleSwitchFlowInstallCommand command = makeCommand(endpointSingleVlan, meterConfig);
         executeCommand(command, 2);
 
         verifyOfMessageEquals(makeOuterVlanMatchAddReference(command), getWriteRecord(0).getRequest());
@@ -98,7 +98,7 @@ public class SingleSwitchFlowInstallCommandTest extends AbstractIngressFlowSegme
 
     @Test
     public void happyPathOuterAndInnerVlan() throws Exception {
-        SingleSwitchFlowInstallCommand command = makeCommand(endpointOuterAndInnerVlan, meterConfig);
+        SingleSwitchFlowInstallCommand command = makeCommand(endpointDoubleVlan, meterConfig);
         executeCommand(command, 2);
 
         verifyOfMessageEquals(makeOuterVlanMatchAddReference(command), getWriteRecord(0).getRequest());
@@ -132,8 +132,8 @@ public class SingleSwitchFlowInstallCommandTest extends AbstractIngressFlowSegme
     @Test
     public void happyPathDefaultPortSameOutput() throws Exception {
         FlowEndpoint egressEndpoint = new FlowEndpoint(
-                endpointDefaultPort.getDatapath(), endpointDefaultPort.getPortNumber(), 0, 0);
-        SingleSwitchFlowInstallCommand command = makeCommand(endpointDefaultPort, egressEndpoint, meterConfig);
+                endpointZeroVlan.getDatapath(), endpointZeroVlan.getPortNumber(), 0, 0);
+        SingleSwitchFlowInstallCommand command = makeCommand(endpointZeroVlan, egressEndpoint, meterConfig);
         executeCommand(command, 1);
 
         List<OFAction> applyActions = new ArrayList<>();
@@ -165,7 +165,7 @@ public class SingleSwitchFlowInstallCommandTest extends AbstractIngressFlowSegme
         Cookie cookie = new Cookie(1);
 
         return new SingleSwitchFlowInstallCommand(
-                messageContext, new SwitchId(dpId.getLong()), commandId, flowId, cookie, endpoint, meter,
+                messageContext, mapSwitchId(dpId), commandId, flowId, cookie, endpoint, meter,
                 endpointEgress);
     }
 }
