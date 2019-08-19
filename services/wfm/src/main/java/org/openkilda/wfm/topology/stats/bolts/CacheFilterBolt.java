@@ -22,7 +22,7 @@ import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.BaseMessage;
 import org.openkilda.messaging.command.CommandData;
@@ -198,7 +198,7 @@ public class CacheFilterBolt extends BaseRichBolt {
                 flowCommand.getCookie());
     }
 
-    private void logMatchedRecord(AbstractFlowSegmentRequest flowRule, Cookie cookie) {
+    private void logMatchedRecord(FlowSegmentRequest flowRule, Cookie cookie) {
         logFlowDetails(flowRule.getClass().getCanonicalName(), flowRule.getFlowId(), flowRule.getSwitchId(),
                 cookie.getValue());
     }

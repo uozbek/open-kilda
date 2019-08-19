@@ -51,21 +51,21 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
+public class SpeakerFlowSegmentRequestBuilderTest extends Neo4jBasedTest {
     private static final CommandContext COMMAND_CONTEXT = new CommandContext();
     private static final SwitchId SWITCH_1 = new SwitchId("00:00:00:00:00:00:00:01");
     private static final SwitchId SWITCH_2 = new SwitchId("00:00:00:00:00:00:00:02");
     private static final SwitchId SWITCH_3 = new SwitchId("00:00:00:00:00:00:00:03");
     private static final Random UNSEED_RANDOM = new Random();
 
-    private TransitBasedFlowCommandBuilder target;
+    private SpeakerFlowSegmentRequestBuilder target;
     private TransitVlanRepository vlanRepository;
 
     @Before
     public void setUp() {
         FlowResourcesManager resourcesManager = new FlowResourcesManager(persistenceManager,
                 configurationProvider.getConfiguration(FlowResourcesConfig.class));
-        target = new TransitBasedFlowCommandBuilder(resourcesManager, FlowEncapsulationType.TRANSIT_VLAN);
+        target = new SpeakerFlowSegmentRequestBuilder(resourcesManager, FlowEncapsulationType.TRANSIT_VLAN);
         vlanRepository = persistenceManager.getRepositoryFactory().createTransitVlanRepository();
     }
 
@@ -81,7 +81,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNotIngressRequests(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
         TransitFlowSegmentInstallRequest command = commands.get(0);
         assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
@@ -111,7 +111,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNotIngressRequests(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
         TransitFlowSegmentInstallRequest command = commands.get(0);
         assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
@@ -157,7 +157,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNotIngressRequests(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
         TransitFlowSegmentInstallRequest command = commands.get(0);
         assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
@@ -189,7 +189,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithTransitSwitches(forward, reverse);
 
-        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNonIngressRules(COMMAND_CONTEXT, flow);
+        List<TransitFlowSegmentInstallRequest> commands = target.createInstallNotIngressRequests(COMMAND_CONTEXT, flow);
         assertEquals(4, commands.size());
 
         TransitFlowSegmentInstallRequest commandForTransitSwitch = commands.get(0);
@@ -233,7 +233,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<SpeakerIngressActModRequest> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerIngressActModRequest> commands = target.createInstallIngressRequests(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
 
         IngressFlowSegmentInstallRequest sourceSwitchRule = (IngressFlowSegmentInstallRequest) commands.get(0);
@@ -273,7 +273,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<SpeakerIngressActModRequest> commands = target.createInstallIngressRules(COMMAND_CONTEXT, flow);
+        List<SpeakerIngressActModRequest> commands = target.createInstallIngressRequests(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
         IngressFlowSegmentInstallRequest sourceSwitchRule = (IngressFlowSegmentInstallRequest) commands.get(0);
         assertEquals(srcSwitch.getSwitchId(), sourceSwitchRule.getSwitchId());
@@ -392,7 +392,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithTransitSwitches(forward, reverse);
 
-        List<RemoveRule> commands = target.createRemoveNonIngressRules(COMMAND_CONTEXT, flow);
+        List<RemoveRule> commands = target.createRemoveNotIngressRules(COMMAND_CONTEXT, flow);
         assertEquals("4 commands for ingress rules should be created", 4, commands.size());
 
         RemoveRule forwardTransitRule = commands.get(0);
@@ -440,7 +440,7 @@ public class TransitBasedFlowCommandBuilderTest extends Neo4jBasedTest {
         FlowPath reverse = buildFlowPath(flow, flow.getDestSwitch(), flow.getSrcSwitch(), flow.getBandwidth());
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
-        List<RemoveRule> commands = target.createRemoveNonIngressRules(COMMAND_CONTEXT, flow);
+        List<RemoveRule> commands = target.createRemoveNotIngressRules(COMMAND_CONTEXT, flow);
         assertEquals("2 commands for ingress rules should be created", 2, commands.size());
 
         RemoveRule forwardEgressRule = commands.get(0);

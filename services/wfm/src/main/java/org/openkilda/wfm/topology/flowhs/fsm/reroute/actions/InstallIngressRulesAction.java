@@ -16,7 +16,7 @@
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
@@ -65,7 +65,7 @@ public class InstallIngressRulesAction extends
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewPrimaryReversePath());
-            commands.addAll(commandBuilder.createInstallIngressRules(
+            commands.addAll(commandBuilder.createInstallIngressRequests(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
         }
 
@@ -76,7 +76,7 @@ public class InstallIngressRulesAction extends
 
         Set<UUID> commandIds = commands.stream()
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
-                .map(AbstractFlowSegmentRequest::getCommandId)
+                .map(FlowSegmentRequest::getCommandId)
                 .collect(Collectors.toSet());
         stateMachine.setPendingCommands(commandIds);
 

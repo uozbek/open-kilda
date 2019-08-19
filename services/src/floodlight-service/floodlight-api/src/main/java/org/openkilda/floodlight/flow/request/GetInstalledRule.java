@@ -17,7 +17,7 @@ package org.openkilda.floodlight.flow.request;
 
 import static org.openkilda.messaging.Utils.FLOW_ID;
 
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -32,7 +32,7 @@ import java.util.UUID;
 
 @Getter
 @ToString(callSuper = true)
-public class GetInstalledRule extends AbstractFlowSegmentRequest {
+public class GetInstalledRule extends FlowSegmentRequest {
     @JsonCreator
     @Builder
     public GetInstalledRule(@JsonProperty("message_context") MessageContext messageContext,

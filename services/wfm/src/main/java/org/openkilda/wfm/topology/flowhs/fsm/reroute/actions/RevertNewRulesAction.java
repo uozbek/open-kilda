@@ -17,7 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
@@ -68,7 +68,7 @@ public class RevertNewRulesAction extends
         if (stateMachine.getOldPrimaryForwardPath() != null && stateMachine.getOldPrimaryReversePath() != null) {
             FlowPath oldForward = getFlowPath(flow, stateMachine.getOldPrimaryForwardPath());
             FlowPath oldReverse = getFlowPath(flow, stateMachine.getOldPrimaryReversePath());
-            installCommands.addAll(commandBuilder.createInstallIngressRules(
+            installCommands.addAll(commandBuilder.createInstallIngressRequests(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
         }
 
@@ -80,7 +80,7 @@ public class RevertNewRulesAction extends
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewPrimaryReversePath());
-            removeCommands.addAll(commandBuilder.createRemoveNonIngressRules(
+            removeCommands.addAll(commandBuilder.createRemoveNotIngressRules(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
             removeCommands.addAll(commandBuilder.createRemoveIngressRules(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
@@ -88,7 +88,7 @@ public class RevertNewRulesAction extends
         if (stateMachine.getNewProtectedForwardPath() != null && stateMachine.getNewProtectedReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewProtectedForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewProtectedReversePath());
-            removeCommands.addAll(commandBuilder.createRemoveNonIngressRules(
+            removeCommands.addAll(commandBuilder.createRemoveNotIngressRules(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
             removeCommands.addAll(commandBuilder.createRemoveIngressRules(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
@@ -99,7 +99,7 @@ public class RevertNewRulesAction extends
 
         Set<UUID> commandIds = Stream.concat(installCommands.stream(), removeCommands.stream())
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
-                .map(AbstractFlowSegmentRequest::getCommandId)
+                .map(FlowSegmentRequest::getCommandId)
                 .collect(Collectors.toSet());
         stateMachine.setPendingCommands(commandIds);
 

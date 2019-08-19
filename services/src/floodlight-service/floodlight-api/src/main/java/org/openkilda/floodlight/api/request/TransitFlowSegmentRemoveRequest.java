@@ -46,4 +46,8 @@ public class TransitFlowSegmentRemoveRequest extends TransitFlowSegmentBlankRequ
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
         super(messageContext, switchId, commandId, flowId, cookie, ingressIslPort, egressIslPort, encapsulation);
     }
+
+    public TransitFlowSegmentRemoveRequest(TransitFlowSegmentBlankRequest blank) {
+        super(blank);
+    }
 }

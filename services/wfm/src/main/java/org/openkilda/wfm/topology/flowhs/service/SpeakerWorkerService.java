@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.service;
 
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
@@ -30,7 +30,7 @@ import java.util.Map;
 public class SpeakerWorkerService {
     private final SpeakerCommandCarrier carrier;
 
-    private final Map<String, AbstractFlowSegmentRequest> keyToRequest = new HashMap<>();
+    private final Map<String, FlowSegmentRequest> keyToRequest = new HashMap<>();
 
     public SpeakerWorkerService(SpeakerCommandCarrier carrier) {
         this.carrier = carrier;
@@ -41,7 +41,7 @@ public class SpeakerWorkerService {
      * @param key unique operation's key.
      * @param command command to be executed.
      */
-    public void sendCommand(String key, AbstractFlowSegmentRequest command) throws PipelineException {
+    public void sendCommand(String key, FlowSegmentRequest command) throws PipelineException {
         log.debug("Got a request from hub bolt {}", command);
         keyToRequest.put(key, command);
         carrier.sendCommand(key, command);
@@ -55,7 +55,7 @@ public class SpeakerWorkerService {
     public void handleResponse(String key, SpeakerActModResponse response)
             throws PipelineException {
         log.debug("Got a response from speaker {}", response);
-        AbstractFlowSegmentRequest pendingRequest = keyToRequest.remove(key);
+        FlowSegmentRequest pendingRequest = keyToRequest.remove(key);
         if (pendingRequest != null) {
             if (pendingRequest.getCommandId().equals(response.getCommandId())) {
                 carrier.sendResponse(key, response);
@@ -70,7 +70,7 @@ public class SpeakerWorkerService {
      * @param key operation identifier.
      */
     public void handleTimeout(String key) throws PipelineException {
-        AbstractFlowSegmentRequest failedRequest = keyToRequest.remove(key);
+        FlowSegmentRequest failedRequest = keyToRequest.remove(key);
 
         SpeakerActModResponse response = FlowErrorResponse.errorBuilder()
                 .flowId(failedRequest.getFlowId())

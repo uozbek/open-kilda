@@ -17,7 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.common;
 
 import static org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode.SWITCH_UNAVAILABLE;
 
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.CommandContext;
@@ -34,11 +34,11 @@ import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
 @Getter
 public final class SpeakerCommandFsm extends WithContextStateMachine<SpeakerCommandFsm, State, Event, SpeakerActModResponse> {
 
-    private final AbstractFlowSegmentRequest request;
+    private final FlowSegmentRequest request;
     private final FlowCreateHubCarrier carrier;
     private int remainingRetries;
 
-    private SpeakerCommandFsm(AbstractFlowSegmentRequest request, FlowCreateHubCarrier carrier, Integer retriesLimit) {
+    private SpeakerCommandFsm(FlowSegmentRequest request, FlowCreateHubCarrier carrier, Integer retriesLimit) {
         super(new CommandContext(request.getMessageContext().getCorrelationId()));
         this.request = request;
         this.carrier = carrier;
@@ -109,7 +109,7 @@ public final class SpeakerCommandFsm extends WithContextStateMachine<SpeakerComm
             builder = StateMachineBuilderFactory.create(
                     SpeakerCommandFsm.class, State.class, Event.class, SpeakerActModResponse.class,
                     // extra params
-                    AbstractFlowSegmentRequest.class, FlowCreateHubCarrier.class, Integer.class
+                    FlowSegmentRequest.class, FlowCreateHubCarrier.class, Integer.class
             );
 
             builder.transition()
@@ -137,7 +137,7 @@ public final class SpeakerCommandFsm extends WithContextStateMachine<SpeakerComm
             builder.defineFinalState(State.FAILED);
         }
 
-        public SpeakerCommandFsm newInstance(AbstractFlowSegmentRequest request) {
+        public SpeakerCommandFsm newInstance(FlowSegmentRequest request) {
             return builder.newStateMachine(State.INIT, request, carrier, retriesLimit);
         }
     }

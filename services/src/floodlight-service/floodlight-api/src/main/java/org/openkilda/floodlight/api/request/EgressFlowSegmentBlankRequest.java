@@ -21,10 +21,10 @@ import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -35,7 +35,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
+public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest {
     @JsonProperty("endpoint")
     protected final FlowEndpoint endpoint;
 
@@ -48,20 +48,27 @@ public abstract class EgressFlowSegmentBlankRequest extends AbstractFlowSegmentR
     @JsonProperty("encapsulation")
     protected final FlowTransitEncapsulation encapsulation;
 
+    @Builder(toBuilder = true)
     EgressFlowSegmentBlankRequest(
-            MessageContext context, UUID commandId, String flowId, Cookie cookie,
+            MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, Integer islPort,
             FlowTransitEncapsulation encapsulation) {
-        super(context, endpoint.getDatapath(), commandId, flowId, cookie);
+        super(messageContext, endpoint.getDatapath(), commandId, flowId, cookie);
 
-        requireNonNull(endpoint, "Argument endpoint must no be null");
-        requireNonNull(ingressEndpoint, "Argument ingressEndpoint must no be null");
-        requireNonNull(islPort, "Argument islPort must no be null");
-        requireNonNull(encapsulation, "Argument encapsulation must no be null");
+        requireNonNull(endpoint, "Argument endpoint must not be null");
+        requireNonNull(ingressEndpoint, "Argument ingressEndpoint must not be null");
+        requireNonNull(islPort, "Argument islPort must not be null");
+        requireNonNull(encapsulation, "Argument encapsulation must not be null");
 
         this.endpoint = endpoint;
         this.ingressEndpoint = ingressEndpoint;
         this.islPort = islPort;
         this.encapsulation = encapsulation;
+    }
+
+    protected EgressFlowSegmentBlankRequest(EgressFlowSegmentBlankRequest other) {
+        this(
+                other.messageContext, other.commandId, other.flowId, other.cookie, other.endpoint,
+                other.ingressEndpoint, other.islPort, other.encapsulation);
     }
 }

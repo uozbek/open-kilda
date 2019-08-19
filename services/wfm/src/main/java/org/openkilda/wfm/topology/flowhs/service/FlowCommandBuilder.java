@@ -15,9 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.service;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
-import org.openkilda.floodlight.flow.request.RemoveRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
 import org.openkilda.wfm.CommandContext;
@@ -32,7 +30,7 @@ public interface FlowCommandBuilder {
      * @param flow    flow data which defines endpoints and path segments for rules to be created.
      * @return list of the install commands.
      */
-    List<TransitFlowSegmentInstallRequest> createInstallNonIngressRules(CommandContext context, Flow flow);
+    List<FlowSegmentRequest> createInstallNotIngressRequests(CommandContext context, Flow flow);
 
     /**
      * Build install commands for transit(if needed) and egress rules for provided paths.
@@ -43,8 +41,8 @@ public interface FlowCommandBuilder {
      * @param reversePath reverse path which defines path segments for rules to be created.
      * @return list of the install commands.
      */
-    public List<TransitFlowSegmentInstallRequest> createInstallNonIngressRules(CommandContext context, Flow flow,
-                                                                               FlowPath forwardPath, FlowPath reversePath);
+    List<FlowSegmentRequest> createInstallNotIngressRequests(
+            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath);
 
     /**
      * Build install commands for ingress rules for active forward and reverse paths.
@@ -53,7 +51,7 @@ public interface FlowCommandBuilder {
      * @param flow    flow data which defines endpoints and path segments for rules to be created.
      * @return list of the install commands.
      */
-    List<SpeakerIngressActModRequest> createInstallIngressRules(CommandContext context, Flow flow);
+    List<FlowSegmentRequest> createInstallIngressRequests(CommandContext context, Flow flow);
 
     /**
      * Build install commands for ingress rules for provided paths.
@@ -64,8 +62,8 @@ public interface FlowCommandBuilder {
      * @param reversePath reverse path which defines path segments for rules to be created.
      * @return list of the install commands.
      */
-    public List<SpeakerIngressActModRequest> createInstallIngressRules(CommandContext context, Flow flow,
-                                                                       FlowPath forwardPath, FlowPath reversePath);
+    public List<FlowSegmentRequest> createInstallIngressRequests(
+            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath);
 
     /**
      * Build remove commands for transit(if needed) and egress rules for active forward and reverse paths.
@@ -74,7 +72,7 @@ public interface FlowCommandBuilder {
      * @param flow    flow data which defines endpoints and path segments for rules to be removed.
      * @return list of the remove commands.
      */
-    List<RemoveRule> createRemoveNonIngressRules(CommandContext context, Flow flow);
+    List<FlowSegmentRequest> createRemoveNotIngressRules(CommandContext context, Flow flow);
 
     /**
      * Build remove commands for transit(if needed) and egress rules deletion for provided paths.
@@ -85,8 +83,8 @@ public interface FlowCommandBuilder {
      * @param reversePath reverse path which defines path segments for rules to be removed.
      * @return list of the remove commands.
      */
-    List<RemoveRule> createRemoveNonIngressRules(CommandContext context, Flow flow,
-                                                 FlowPath forwardPath, FlowPath reversePath);
+    List<FlowSegmentRequest> createRemoveNotIngressRules(
+            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath);
 
     /**
      * Build remove commands for ingress rules for active forward and reverse paths.
@@ -95,7 +93,7 @@ public interface FlowCommandBuilder {
      * @param flow    flow data which defines endpoints and path segments for rules to be removed.
      * @return list of the remove commands.
      */
-    List<RemoveRule> createRemoveIngressRules(CommandContext context, Flow flow);
+    List<FlowSegmentRequest> createRemoveIngressRules(CommandContext context, Flow flow);
 
     /**
      * Build remove commands for ingress rules for active forward and reverse paths.
@@ -106,6 +104,6 @@ public interface FlowCommandBuilder {
      * @param reversePath reverse path which defines path segments for rules to be removed.
      * @return list of the remove commands.
      */
-    List<RemoveRule> createRemoveIngressRules(CommandContext context, Flow flow,
-                                              FlowPath forwardPath, FlowPath reversePath);
+    List<FlowSegmentRequest> createRemoveIngressRules(
+            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath);
 }

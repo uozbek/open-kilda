@@ -54,10 +54,10 @@ public class InstallNonIngressRulesAction extends FlowProcessingAction<FlowCreat
         Flow flow = getFlow(stateMachine.getFlowId());
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
         List<TransitFlowSegmentInstallRequest> commands =
-                commandBuilder.createInstallNonIngressRules(commandContext, flow);
+                commandBuilder.createInstallNotIngressRequests(commandContext, flow);
         if (flow.isAllocateProtectedPath()) {
-            commands.addAll(commandBuilder.createInstallNonIngressRules(commandContext, flow,
-                    flow.getProtectedForwardPath(), flow.getProtectedReversePath()));
+            commands.addAll(commandBuilder.createInstallNotIngressRequests(commandContext, flow,
+                                                                           flow.getProtectedForwardPath(), flow.getProtectedReversePath()));
         }
 
         if (commands.isEmpty()) {
@@ -68,7 +68,6 @@ public class InstallNonIngressRulesAction extends FlowProcessingAction<FlowCreat
                 SpeakerCommandObserver commandObserver = new SpeakerCommandObserver(speakerCommandFsmBuilder, command);
                 commandObserver.start();
                 stateMachine.getPendingCommands().put(command.getCommandId(), commandObserver);
-
             });
 
             log.debug("Commands for installing non ingress rules have been sent");

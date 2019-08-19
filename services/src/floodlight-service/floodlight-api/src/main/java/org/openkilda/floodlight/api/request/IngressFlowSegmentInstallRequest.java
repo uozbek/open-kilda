@@ -47,4 +47,8 @@ public class IngressFlowSegmentInstallRequest extends IngressFlowSegmentBlankReq
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
         super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
+
+    public IngressFlowSegmentInstallRequest(IngressFlowSegmentBlankRequest blank) {
+        super(blank);
+    }
 }

@@ -46,4 +46,8 @@ public class SingleSwitchFlowInstallRequest extends SingleSwitchFlowBlankRequest
             @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
         super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
+
+    public SingleSwitchFlowInstallRequest(SingleSwitchFlowBlankRequest blank) {
+        super(blank);
+    }
 }

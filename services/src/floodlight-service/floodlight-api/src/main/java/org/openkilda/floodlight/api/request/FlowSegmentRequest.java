@@ -31,7 +31,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public abstract class AbstractFlowSegmentRequest extends AbstractSpeakerRequest {
+public abstract class FlowSegmentRequest extends SpeakerRequest {
     @JsonProperty("command_id")
     protected final UUID commandId;
 
@@ -41,7 +41,7 @@ public abstract class AbstractFlowSegmentRequest extends AbstractSpeakerRequest 
     @JsonProperty("cookie")
     protected final Cookie cookie;
 
-    public AbstractFlowSegmentRequest(
+    public FlowSegmentRequest(
             MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie) {
         super(context, switchId);
 

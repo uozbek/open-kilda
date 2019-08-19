@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.floodlightrouter.service;
 
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
@@ -135,8 +135,8 @@ public final class RouterUtils {
      * @return - SwitchId or null
      */
     public static SwitchId lookupSwitchId(AbstractMessage message) {
-        if (message instanceof AbstractFlowSegmentRequest) {
-            return ((AbstractFlowSegmentRequest) message).getSwitchId();
+        if (message instanceof FlowSegmentRequest) {
+            return ((FlowSegmentRequest) message).getSwitchId();
         }
         return null;
     }

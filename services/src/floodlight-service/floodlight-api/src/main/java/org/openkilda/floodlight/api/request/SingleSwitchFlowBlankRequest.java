@@ -34,7 +34,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public abstract class SingleSwitchFlowBlankRequest extends AbstractIngressFlowSegmentRequest {
+public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest {
     @JsonProperty("egress_endpoint")
     protected final FlowEndpoint egressEndpoint;
 
@@ -43,7 +43,7 @@ public abstract class SingleSwitchFlowBlankRequest extends AbstractIngressFlowSe
             MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
         super(context, commandId, flowId, cookie, endpoint, meterConfig);
 
-        requireNonNull(egressEndpoint, "Argument egressEndpoint must no be null");
+        requireNonNull(egressEndpoint, "Argument egressEndpoint must not be null");
         if (! getSwitchId().equals(egressEndpoint.getDatapath())) {
             throw new IllegalArgumentException(String.format(
                     "Ingress(%s) and egress(%s) switches must match in %s",
@@ -51,5 +51,11 @@ public abstract class SingleSwitchFlowBlankRequest extends AbstractIngressFlowSe
         }
 
         this.egressEndpoint = egressEndpoint;
+    }
+
+    protected SingleSwitchFlowBlankRequest(SingleSwitchFlowBlankRequest other) {
+        this(
+                other.messageContext, other.commandId, other.flowId, other.cookie, other.endpoint, other.meterConfig,
+                other.egressEndpoint);
     }
 }

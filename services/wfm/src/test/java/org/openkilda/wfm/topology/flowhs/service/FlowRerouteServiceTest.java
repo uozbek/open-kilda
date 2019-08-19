@@ -33,7 +33,7 @@ import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
@@ -201,7 +201,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
         assertEquals(FlowStatus.IN_PROGRESS, flow.getStatus());
         verify(carrier, times(1)).sendNorthboundResponse(any());
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof InstallFlowRule) {
                 rerouteService.handleAsyncResponse("test_key", FlowErrorResponse.errorBuilder()
@@ -243,7 +243,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
 
         rerouteService.handleTimeout("test_key");
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof RemoveRule) {
                 rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
@@ -275,7 +275,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
         assertEquals(FlowStatus.IN_PROGRESS, flow.getStatus());
         verify(carrier, times(1)).sendNorthboundResponse(any());
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleAsyncResponse("test_key", FlowErrorResponse.errorBuilder()
@@ -316,7 +316,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
         assertEquals(FlowStatus.IN_PROGRESS, flow.getStatus());
         verify(carrier, times(1)).sendNorthboundResponse(any());
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleTimeout("test_key");
@@ -366,7 +366,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
         }).when(flowRepository).createOrUpdate(argThat(
                 hasProperty("forwardPathId", equalTo(NEW_FORWARD_FLOW_PATH))));
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleAsyncResponse("test_key",
@@ -409,7 +409,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
             throw new RuntimeException("A persistence error");
         }).when(flowPathRepository).updateStatus(eq(NEW_FORWARD_FLOW_PATH), eq(FlowPathStatus.ACTIVE));
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleAsyncResponse("test_key",
@@ -448,7 +448,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                 .when(flowPathRepository).delete(argThat(
                 hasProperty("pathId", equalTo(OLD_FORWARD_FLOW_PATH))));
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleAsyncResponse("test_key",
@@ -488,7 +488,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                 hasProperty("forward",
                         hasProperty("pathId", equalTo(OLD_FORWARD_FLOW_PATH)))));
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleAsyncResponse("test_key",
@@ -525,7 +525,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
         assertEquals(FlowStatus.IN_PROGRESS, flow.getStatus());
         verify(carrier, times(1)).sendNorthboundResponse(any());
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleAsyncResponse("test_key",

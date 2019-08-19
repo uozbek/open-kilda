@@ -29,11 +29,11 @@ import lombok.ToString;
 @Getter
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public abstract class AbstractSpeakerRequest extends AbstractMessage {
+public abstract class SpeakerRequest extends AbstractMessage {
     @JsonProperty("switch_id")
     protected final SwitchId switchId;
 
-    public AbstractSpeakerRequest(MessageContext messageContext, SwitchId switchId) {
+    public SpeakerRequest(MessageContext messageContext, SwitchId switchId) {
         super(messageContext);
 
         requireNonNull(switchId, "Argument switchId must not be null");

@@ -43,14 +43,22 @@ public class FlowEndpoint implements Serializable {
     @JsonProperty("inner_vlan_id")
     private final int innerVlanId;
 
+    public FlowEndpoint(SwitchId datapath, Integer portNumber) {
+        this(datapath, portNumber, 0);
+    }
+
+    public FlowEndpoint(SwitchId datapath, Integer portNumber, int outerVlanId) {
+        this(datapath, portNumber, outerVlanId, 0);
+    }
+
     @JsonCreator
     public FlowEndpoint(
             @JsonProperty("datapath") SwitchId datapath,
             @JsonProperty("port_number") Integer portNumber,
             @JsonProperty("outer_vlan_id") int outerVlanId,
             @JsonProperty("inner_vlan_id") int innerVlanId) {
-        requireNonNull(datapath, "Argument datapath must no be null");
-        requireNonNull(portNumber, "Argument portNumber must no be null");
+        requireNonNull(datapath, "Argument datapath must not be null");
+        requireNonNull(portNumber, "Argument portNumber must not be null");
 
         this.datapath = datapath;
         this.portNumber = portNumber;

@@ -61,7 +61,7 @@ public class RollbackInstalledRulesAction extends FlowProcessingAction<FlowCreat
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
 
         if (!stateMachine.getNonIngressCommands().isEmpty()) {
-            List<RemoveRule> removeNonIngress = commandBuilder.createRemoveNonIngressRules(
+            List<RemoveRule> removeNonIngress = commandBuilder.createRemoveNotIngressRules(
                     stateMachine.getCommandContext(), flow);
             removeCommands.addAll(removeNonIngress);
         }

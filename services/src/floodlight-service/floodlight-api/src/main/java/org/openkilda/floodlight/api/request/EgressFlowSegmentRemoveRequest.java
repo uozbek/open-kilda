@@ -19,7 +19,6 @@ import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,5 +45,9 @@ public class EgressFlowSegmentRemoveRequest extends EgressFlowSegmentBlankReques
             @JsonProperty("islPort") Integer islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
         super(messageContext, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
+    }
+
+    public EgressFlowSegmentRemoveRequest(EgressFlowSegmentBlankRequest blank) {
+        super(blank);
     }
 }

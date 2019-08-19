@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.flow.request;
 
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -29,7 +29,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class InstallFlowRule extends AbstractFlowSegmentRequest {
+public class InstallFlowRule extends FlowSegmentRequest {
     public InstallFlowRule(MessageContext context, UUID commandId,
                            SwitchId switchId, String flowId, Cookie cookie) {
         super(context, switchId, commandId, flowId, cookie);

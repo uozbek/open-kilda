@@ -37,8 +37,8 @@ public class FlowTransitEncapsulation implements Serializable {
     public FlowTransitEncapsulation(
             @JsonProperty("id") Integer id,
             @JsonProperty("type") FlowEncapsulationType type) {
-        requireNonNull(id, "Argument id must no be null");
-        requireNonNull(type, "Argument type must no be null");
+        requireNonNull(id, "Argument id must not be null");
+        requireNonNull(type, "Argument type must not be null");
 
         this.id = id;
         this.type = type;

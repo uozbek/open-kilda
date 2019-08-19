@@ -22,7 +22,7 @@ import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.Cookie;
@@ -61,7 +61,7 @@ public abstract class AbstractFlowTest {
     @Mock
     FlowResourcesManager flowResourcesManager;
 
-    final Queue<AbstractFlowSegmentRequest> requests = new ArrayDeque<>();
+    final Queue<FlowSegmentRequest> requests = new ArrayDeque<>();
     final Map<SwitchId, Map<Cookie, InstallFlowRule>> installedRules = new HashMap<>();
 
     @Before
@@ -95,7 +95,7 @@ public abstract class AbstractFlowTest {
 
     Answer getSpeakerCommandsAnswer() {
         return invocation -> {
-            AbstractFlowSegmentRequest request = invocation.getArgument(0);
+            FlowSegmentRequest request = invocation.getArgument(0);
             requests.offer(request);
 
             if (request instanceof InstallFlowRule) {

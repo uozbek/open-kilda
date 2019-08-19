@@ -32,7 +32,7 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public abstract class TransitFlowSegmentBlankRequest extends AbstractFlowSegmentRequest {
+public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest {
     @JsonProperty("ingressIslPort")
     protected final Integer ingressIslPort;
 
@@ -47,12 +47,18 @@ public abstract class TransitFlowSegmentBlankRequest extends AbstractFlowSegment
             Integer ingressIslPort, Integer egressIslPort, FlowTransitEncapsulation encapsulation) {
         super(context, switchId, commandId, flowId, cookie);
 
-        requireNonNull(ingressIslPort, "Argument ingressIslPort must no be null");
-        requireNonNull(egressIslPort, "Argument egressIslPort must no be null");
-        requireNonNull(encapsulation, "Argument encapsulation must no be null");
+        requireNonNull(ingressIslPort, "Argument ingressIslPort must not be null");
+        requireNonNull(egressIslPort, "Argument egressIslPort must not be null");
+        requireNonNull(encapsulation, "Argument encapsulation must not be null");
 
         this.ingressIslPort = ingressIslPort;
         this.egressIslPort = egressIslPort;
         this.encapsulation = encapsulation;
+    }
+
+    protected TransitFlowSegmentBlankRequest(TransitFlowSegmentBlankRequest other) {
+        this(
+                other.messageContext, other.switchId, other.commandId, other.flowId, other.cookie,
+                other.ingressIslPort, other.egressIslPort, other.encapsulation);
     }
 }

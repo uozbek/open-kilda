@@ -51,7 +51,7 @@ public class InstallIngressRulesAction extends FlowProcessingAction<FlowCreateFs
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
         Flow flow = getFlow(stateMachine.getFlowId());
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
-        List<SpeakerIngressActModRequest> commands = commandBuilder.createInstallIngressRules(
+        List<SpeakerIngressActModRequest> commands = commandBuilder.createInstallIngressRequests(
                 stateMachine.getCommandContext(), flow);
 
         commands.forEach(command -> {

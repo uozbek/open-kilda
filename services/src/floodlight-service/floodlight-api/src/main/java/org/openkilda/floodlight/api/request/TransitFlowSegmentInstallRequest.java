@@ -46,4 +46,8 @@ public class TransitFlowSegmentInstallRequest extends TransitFlowSegmentBlankReq
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
         super(messageContext, switchId, commandId, flowId, cookie, ingressIslPort, egressIslPort, encapsulation);
     }
+
+    public TransitFlowSegmentInstallRequest(TransitFlowSegmentBlankRequest blank) {
+        super(blank);
+    }
 }

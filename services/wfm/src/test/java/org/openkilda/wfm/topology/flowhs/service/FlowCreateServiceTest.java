@@ -32,7 +32,7 @@ import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
 import org.openkilda.floodlight.api.response.SpeakerActModResponse;
@@ -138,7 +138,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
             return flowPath;
         }).when(flowPathRepository).createOrUpdate(any(FlowPath.class));
 
-        doAnswer(getSpeakerCommandsAnswer()).when(carrier).sendSpeakerRequest(any(AbstractFlowSegmentRequest.class));
+        doAnswer(getSpeakerCommandsAnswer()).when(carrier).sendSpeakerRequest(any(FlowSegmentRequest.class));
         when(repositoryFactory.createSwitchFeaturesRepository()).thenReturn(switchFeaturesRepository);
         target = new FlowCreateService(carrier, persistenceManager, pathComputer, flowResourcesManager, 0, 0);
     }
@@ -180,7 +180,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
@@ -226,7 +226,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        AbstractFlowSegmentRequest command;
+        FlowSegmentRequest command;
         while ((command = requests.poll()) != null) {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
@@ -271,7 +271,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        AbstractFlowSegmentRequest command;
+        FlowSegmentRequest command;
         int installCommands = 0;
         int deleteCommands = 0;
         while ((command = requests.poll()) != null) {
@@ -329,7 +329,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        AbstractFlowSegmentRequest command;
+        FlowSegmentRequest command;
         int installCommands = 0;
         int deleteCommands = 0;
         while ((command = requests.poll()) != null) {
@@ -390,7 +390,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
         int remainingRetries = retriesLimit;
-        AbstractFlowSegmentRequest command;
+        FlowSegmentRequest command;
         while ((command = requests.poll()) != null) {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
@@ -446,7 +446,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
         int remainingRetries = retriesLimit;
-        AbstractFlowSegmentRequest command;
+        FlowSegmentRequest command;
         while ((command = requests.poll()) != null) {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
@@ -500,7 +500,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
@@ -554,7 +554,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         // verify response to northbound is sent
         verify(carrier).sendNorthboundResponse(any(Message.class));
 
-        AbstractFlowSegmentRequest flowRequest;
+        FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
@@ -735,7 +735,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         return flowResources;
     }
 
-    private void handleResponse(String key, AbstractFlowSegmentRequest request) {
+    private void handleResponse(String key, FlowSegmentRequest request) {
         target.handleAsyncResponse(key, SpeakerActModResponse.builder()
                 .flowId(request.getFlowId())
                 .commandId(request.getCommandId())
@@ -744,7 +744,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                 .build());
     }
 
-    private void handleErrorResponse(String key, AbstractFlowSegmentRequest request) {
+    private void handleErrorResponse(String key, FlowSegmentRequest request) {
         target.handleAsyncResponse(key, FlowErrorResponse.errorBuilder()
                 .flowId(request.getFlowId())
                 .commandId(request.getCommandId())
@@ -752,7 +752,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                 .build());
     }
 
-    private void handleErrorResponse(String key, AbstractFlowSegmentRequest request, ErrorCode errorCode) {
+    private void handleErrorResponse(String key, FlowSegmentRequest request, ErrorCode errorCode) {
         target.handleAsyncResponse(key, FlowErrorResponse.errorBuilder()
                 .flowId(request.getFlowId())
                 .commandId(request.getCommandId())

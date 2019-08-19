@@ -16,7 +16,7 @@
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.api.request.AbstractFlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
@@ -64,7 +64,7 @@ public class RemoveOldRulesAction extends
             FlowPath oldReverse = getFlowPath(stateMachine.getOldPrimaryReversePath());
 
             Flow flow = oldForward.getFlow();
-            commands.addAll(commandBuilder.createRemoveNonIngressRules(
+            commands.addAll(commandBuilder.createRemoveNotIngressRules(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
             commands.addAll(commandBuilder.createRemoveIngressRules(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
@@ -75,7 +75,7 @@ public class RemoveOldRulesAction extends
             FlowPath oldReverse = getFlowPath(stateMachine.getOldProtectedReversePath());
 
             Flow flow = oldForward.getFlow();
-            commands.addAll(commandBuilder.createRemoveNonIngressRules(
+            commands.addAll(commandBuilder.createRemoveNotIngressRules(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
             commands.addAll(commandBuilder.createRemoveIngressRules(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
@@ -86,7 +86,7 @@ public class RemoveOldRulesAction extends
 
         Set<UUID> commandIds = commands.stream()
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
-                .map(AbstractFlowSegmentRequest::getCommandId)
+                .map(FlowSegmentRequest::getCommandId)
                 .collect(Collectors.toSet());
         stateMachine.setPendingCommands(commandIds);
 

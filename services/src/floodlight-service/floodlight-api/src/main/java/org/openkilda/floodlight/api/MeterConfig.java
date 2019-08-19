@@ -37,7 +37,7 @@ public class MeterConfig implements Serializable {
     public MeterConfig(
             @JsonProperty("meter_id") MeterId id,
             @JsonProperty("bandwidth") long bandwidth) {
-        requireNonNull(id, "Argument meterId must no be null");
+        requireNonNull(id, "Argument meterId must not be null");
 
         this.id = id;
         this.bandwidth = bandwidth;

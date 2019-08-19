@@ -47,4 +47,8 @@ public class IngressFlowSegmentRemoveRequest extends IngressFlowSegmentBlankRequ
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
         super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
+
+    public IngressFlowSegmentRemoveRequest(IngressFlowSegmentBlankRequest blank) {
+        super(blank);
+    }
 }

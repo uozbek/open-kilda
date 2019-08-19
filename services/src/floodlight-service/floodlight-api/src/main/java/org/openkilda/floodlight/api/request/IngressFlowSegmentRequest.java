@@ -21,7 +21,6 @@ import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
@@ -33,19 +32,19 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-abstract class AbstractIngressFlowSegmentRequest extends AbstractFlowSegmentRequest {
+abstract class IngressFlowSegmentRequest extends FlowSegmentRequest {
     @JsonProperty("endpoint")
     protected final FlowEndpoint endpoint;
 
     @JsonProperty("meter_config")
     protected final MeterConfig meterConfig;
 
-    AbstractIngressFlowSegmentRequest(
+    IngressFlowSegmentRequest(
             MessageContext context, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
             MeterConfig meterConfig) {
         super(context, endpoint.getDatapath(), commandId, flowId, cookie);
 
-        requireNonNull(endpoint, "Argument endpoint must no be null");
+        requireNonNull(endpoint, "Argument endpoint must not be null");
 
         this.endpoint = endpoint;
         this.meterConfig = meterConfig;

@@ -25,6 +25,7 @@ import org.openkilda.model.Cookie;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -35,22 +36,29 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public abstract class IngressFlowSegmentBlankRequest extends AbstractIngressFlowSegmentRequest {
+public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest {
     @JsonProperty("islPort")
     protected final Integer islPort;
 
     @JsonProperty("encapsulation")
     protected final FlowTransitEncapsulation encapsulation;
 
+    @Builder
     IngressFlowSegmentBlankRequest(
             MessageContext context, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig, Integer islPort, FlowTransitEncapsulation encapsulation) {
         super(context, commandId, flowId, cookie, endpoint, meterConfig);
 
-        requireNonNull(islPort, "Argument islPort must no be null");
-        requireNonNull(encapsulation, "Argument encapsulation must no be null");
+        requireNonNull(islPort, "Argument islPort must not be null");
+        requireNonNull(encapsulation, "Argument encapsulation must not be null");
 
         this.islPort = islPort;
         this.encapsulation = encapsulation;
+    }
+
+    protected IngressFlowSegmentBlankRequest(IngressFlowSegmentBlankRequest other) {
+        this(
+                other.messageContext, other.commandId, other.flowId, other.cookie, other.endpoint, other.meterConfig,
+                other.islPort, other.encapsulation);
     }
 }
