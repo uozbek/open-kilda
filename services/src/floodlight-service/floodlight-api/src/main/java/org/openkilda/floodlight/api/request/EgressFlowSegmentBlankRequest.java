@@ -35,7 +35,8 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest {
+public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest
+        implements IFlowSegmentBlank<EgressFlowSegmentInstallRequest, EgressFlowSegmentRemoveRequest> {
     @JsonProperty("endpoint")
     protected final FlowEndpoint endpoint;
 
@@ -48,7 +49,6 @@ public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest {
     @JsonProperty("encapsulation")
     protected final FlowTransitEncapsulation encapsulation;
 
-    @Builder(toBuilder = true)
     EgressFlowSegmentBlankRequest(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, Integer islPort,
@@ -66,9 +66,36 @@ public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest {
         this.encapsulation = encapsulation;
     }
 
-    protected EgressFlowSegmentBlankRequest(EgressFlowSegmentBlankRequest other) {
+    EgressFlowSegmentBlankRequest(EgressFlowSegmentBlankRequest other) {
         this(
                 other.messageContext, other.commandId, other.flowId, other.cookie, other.endpoint,
                 other.ingressEndpoint, other.islPort, other.encapsulation);
+    }
+
+    @Override
+    public EgressFlowSegmentInstallRequest makeInstallRequest() {
+        return new EgressFlowSegmentInstallRequest(this);
+    }
+
+    @Override
+    public EgressFlowSegmentRemoveRequest makeRemoveRequest() {
+        return new EgressFlowSegmentRemoveRequest(this);
+    }
+
+    @Builder(builderMethodName = "buildResolver")
+    private static BlankResolver makeResolver(
+            MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
+            FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, Integer islPort,
+            FlowTransitEncapsulation encapsulation) {
+        EgressFlowSegmentBlankRequest blank = new EgressFlowSegmentBlankRequest(
+                messageContext, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
+        return new BlankResolver(blank);
+    }
+
+    public static class BlankResolver
+            extends FlowSegmentBlankResolver<EgressFlowSegmentInstallRequest, EgressFlowSegmentRemoveRequest> {
+        BlankResolver(EgressFlowSegmentBlankRequest blank) {
+            super(blank);
+        }
     }
 }

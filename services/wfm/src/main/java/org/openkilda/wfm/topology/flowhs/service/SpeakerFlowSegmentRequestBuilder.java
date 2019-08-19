@@ -21,12 +21,14 @@ import static java.util.Objects.requireNonNull;
 import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
-import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.request.IFlowSegmentBlank;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
+import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
 import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.command.switches.DeleteRulesCriteria;
@@ -174,35 +176,6 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
                         getEncapsulation(reversePath.getPathId(), forwardPath.getPathId())));
     }
 
-    private SingleSwitchFlowInstallRequest buildInstallOneSwitchFlowRequest(
-            CommandContext context, FlowPath path, FlowEndpoint endpoint, FlowEndpoint egressEndpoint) {
-        UUID commandId = commandIdGenerator.generate();
-        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
-
-        MeterConfig meterConfig = getMeterConfig(path);
-
-        return new SingleSwitchFlowInstallRequest(
-                messageContext, commandId, path.getFlow().getFlowId(), path.getCookie(),
-                endpoint, meterConfig, egressEndpoint);
-    }
-
-    private IngressFlowSegmentInstallRequest buildInstallIngressRule(
-            CommandContext context, Flow flow, FlowPath path, FlowEndpoint endpoint,
-            FlowTransitEncapsulation encapsulation) {
-        ensureFlowPathValid(flow, path);
-
-        UUID commandId = commandIdGenerator.generate();
-        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
-        MeterConfig meterConfig = getMeterConfig(path);
-
-        PathSegment ingressSegment = path.getSegments().get(0);
-        int islPort = ingressSegment.getSrcPort();
-
-        return new IngressFlowSegmentInstallRequest(
-                messageContext, commandId, flow.getFlowId(), path.getCookie(), endpoint, meterConfig, islPort,
-                encapsulation);
-    }
-
     private List<FlowSegmentRequest> collectInstallNotIngressRequests(
             CommandContext context, Flow flow, FlowPath path,
             FlowEndpoint start, FlowEndpoint end, FlowTransitEncapsulation encapsulation) {
@@ -211,7 +184,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
 
         List<FlowSegmentRequest> requests = new ArrayList<>(path.getSegments().size() + 1);
         requests.addAll(collectInstallTransitRequests(context, path, encapsulation));
-        requests.add(buildInstallEgressRule(context, path, end, start, encapsulation));
+        requests.add(makeEgressSegmentRequest(path, context, end, start, encapsulation));
 
         return requests;
     }
@@ -225,38 +198,12 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
             PathSegment income = segments.get(i - 1);
             PathSegment outcome = segments.get(i);
 
-            requests.add(buildInstallTransitRequest(
-                    context, flowPath, income.getDestSwitch().getSwitchId(), income.getDestPort(),
+            requests.add(makeTransitSegmentRequest(
+                    flowPath, context, income.getDestSwitch().getSwitchId(), income.getDestPort(),
                     outcome.getSrcPort(), encapsulation));
         }
 
         return requests;
-    }
-
-    private TransitFlowSegmentInstallRequest buildInstallTransitRequest(
-            CommandContext context, FlowPath flowPath, SwitchId switchId, int ingressIslPort, int egressIslPort,
-            FlowTransitEncapsulation encapsulation) {
-        UUID commandId = commandIdGenerator.generate();
-        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
-        return new TransitFlowSegmentInstallRequest(
-                messageContext, switchId, commandId, flowPath.getFlow().getFlowId(), flowPath.getCookie(),
-                ingressIslPort, egressIslPort, encapsulation);
-    }
-
-    private EgressFlowSegmentInstallRequest buildInstallEgressRule(
-            CommandContext context, FlowPath flowPath,
-            FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, FlowTransitEncapsulation encapsulation) {
-
-        List<PathSegment> segments = flowPath.getSegments();
-        PathSegment egressSegment = segments.get(segments.size() - 1);
-        int islPort = egressSegment.getDestPort();
-
-        UUID commandId = commandIdGenerator.generate();
-        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
-
-        return new EgressFlowSegmentInstallRequest(
-                messageContext, commandId, flowPath.getFlow().getFlowId(), flowPath.getCookie(),
-                endpoint, ingressEndpoint, islPort, encapsulation);
     }
 
     private RemoveRule buildRemoveIngressRule(CommandContext context, FlowPath flowPath, int inputPort, int inputVlanId,
@@ -349,6 +296,96 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
                 .build();
     }
 
+    private List<IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest>> makeRequests(
+            Flow flow, FlowPath path, CommandContext commandContext, FlowTransitEncapsulation encapsulation,
+            boolean doEnter, boolean toTransit, boolean doExit) {
+        ensureFlowPathValid(flow, path);
+
+        List<IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest>> requests
+                = new ArrayList<>();
+
+        // TODO
+
+        return requests;
+    }
+
+    private List<IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest>> makeTransitRequests() {}
+
+    private IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest> makeOneSwitchFlowRequest(
+            FlowPath path, CommandContext context, FlowEndpoint ingressEndpoint, FlowEndpoint egressEndpoint) {
+        UUID commandId = commandIdGenerator.generate();
+        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
+        return SingleSwitchFlowBlankRequest.buildResolver()
+                .messageContext(messageContext)
+                .commandId(commandId)
+                .flowId(path.getFlow().getFlowId())
+                .cookie(path.getCookie())
+                .endpoint(ingressEndpoint)
+                .meterConfig(getMeterConfig(path))
+                .egressEndpoint(egressEndpoint)
+                .build();
+    }
+
+    private IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest> makeIngressSegmentRequest(
+            FlowPath path, CommandContext context, FlowEndpoint endpoint, FlowTransitEncapsulation encapsulation) {
+        UUID commandId = commandIdGenerator.generate();
+        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
+
+        PathSegment ingressSegment = path.getSegments().get(0);
+        int islPort = ingressSegment.getSrcPort();
+
+        return IngressFlowSegmentBlankRequest.buildResolver()
+                .messageContext(messageContext)
+                .commandId(commandId)
+                .flowId(path.getFlow().getFlowId())
+                .cookie(path.getCookie())
+                .meterConfig(getMeterConfig(path))
+                .endpoint(endpoint)
+                .islPort(islPort)
+                .encapsulation(encapsulation)
+                .build();
+    }
+
+    private IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest> makeTransitSegmentRequest(
+            FlowPath flowPath, CommandContext context, SwitchId switchId, int ingressIslPort, int egressIslPort,
+            FlowTransitEncapsulation encapsulation) {
+        UUID commandId = commandIdGenerator.generate();
+        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
+        return TransitFlowSegmentBlankRequest.buildResolver()
+                .messageContext(messageContext)
+                .commandId(commandId)
+                .switchId(switchId)
+                .flowId(flowPath.getFlow().getFlowId())
+                .cookie(flowPath.getCookie())
+                .ingressIslPort(ingressIslPort)
+                .egressIslPort(egressIslPort)
+                .encapsulation(encapsulation)
+                .build();
+    }
+
+    private IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest> makeEgressSegmentRequest(
+            FlowPath flowPath, CommandContext context,
+            FlowEndpoint egressEndpoint, FlowEndpoint ingressEndpoint, FlowTransitEncapsulation encapsulation) {
+
+        List<PathSegment> segments = flowPath.getSegments();
+        PathSegment egressSegment = segments.get(segments.size() - 1);
+        int islPort = egressSegment.getDestPort();
+
+        UUID commandId = commandIdGenerator.generate();
+        MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
+
+        return EgressFlowSegmentBlankRequest.buildResolver()
+                .messageContext(messageContext)
+                .commandId(commandId)
+                .flowId(flowPath.getFlow().getFlowId())
+                .cookie(flowPath.getCookie())
+                .endpoint(egressEndpoint)
+                .ingressEndpoint(ingressEndpoint)
+                .islPort(islPort)
+                .encapsulation(encapsulation)
+                .build();
+    }
+
     private void ensureValidArguments(Flow flow, FlowPath forwardPath, FlowPath reversePath) {
         requireNonNull(flow, "Argument \"flow\" must not be null");
         requireNonNull(forwardPath, "Argument \"forwardPath\" must not be null");
@@ -397,8 +434,16 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         return new FlowTransitEncapsulation(resources.getTransitEncapsulationId(), resources.getEncapsulationType());
     }
 
+    private FlowEndpoint getSourceEndpoint(Flow flow, FlowPath path) {
+        // TODO
+    }
+
     private FlowEndpoint getSourceEndpoint(Flow flow) {
         return new FlowEndpoint(flow.getSrcSwitch().getSwitchId(), flow.getSrcPort(), flow.getSrcVlan());
+    }
+
+    private FlowEndpoint getDestEndpoint(Flow flow, FlowPath path) {
+        // TODO
     }
 
     private FlowEndpoint getDestEndpoint(Flow flow) {

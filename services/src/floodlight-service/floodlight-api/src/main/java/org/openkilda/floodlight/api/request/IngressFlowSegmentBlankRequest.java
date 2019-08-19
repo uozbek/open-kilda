@@ -36,14 +36,14 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest {
+public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest
+        implements IFlowSegmentBlank<IngressFlowSegmentInstallRequest, IngressFlowSegmentRemoveRequest> {
     @JsonProperty("islPort")
     protected final Integer islPort;
 
     @JsonProperty("encapsulation")
     protected final FlowTransitEncapsulation encapsulation;
 
-    @Builder
     IngressFlowSegmentBlankRequest(
             MessageContext context, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig, Integer islPort, FlowTransitEncapsulation encapsulation) {
@@ -56,9 +56,35 @@ public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest {
         this.encapsulation = encapsulation;
     }
 
-    protected IngressFlowSegmentBlankRequest(IngressFlowSegmentBlankRequest other) {
+    IngressFlowSegmentBlankRequest(IngressFlowSegmentBlankRequest other) {
         this(
                 other.messageContext, other.commandId, other.flowId, other.cookie, other.endpoint, other.meterConfig,
                 other.islPort, other.encapsulation);
+    }
+
+    @Override
+    public IngressFlowSegmentInstallRequest makeInstallRequest() {
+        return new IngressFlowSegmentInstallRequest(this);
+    }
+
+    @Override
+    public IngressFlowSegmentRemoveRequest makeRemoveRequest() {
+        return new IngressFlowSegmentRemoveRequest(this);
+    }
+
+    @Builder(builderMethodName = "buildResolver")
+    private static BlankResolver makeResolver(
+            MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
+            FlowEndpoint endpoint, MeterConfig meterConfig, Integer islPort, FlowTransitEncapsulation encapsulation) {
+        IngressFlowSegmentBlankRequest blank = new IngressFlowSegmentBlankRequest(
+                messageContext, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
+        return new BlankResolver(blank);
+    }
+
+    public static class BlankResolver
+            extends FlowSegmentBlankResolver<IngressFlowSegmentInstallRequest, IngressFlowSegmentRemoveRequest> {
+        BlankResolver(IFlowSegmentBlank<IngressFlowSegmentInstallRequest, IngressFlowSegmentRemoveRequest> blank) {
+            super(blank);
+        }
     }
 }

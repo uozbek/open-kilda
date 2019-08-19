@@ -24,6 +24,7 @@ import org.openkilda.model.Cookie;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -34,7 +35,8 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest {
+public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
+        implements IFlowSegmentBlank<SingleSwitchFlowInstallRequest, SingleSwitchFlowRemoveRequest> {
     @JsonProperty("egress_endpoint")
     protected final FlowEndpoint egressEndpoint;
 
@@ -53,9 +55,35 @@ public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest {
         this.egressEndpoint = egressEndpoint;
     }
 
-    protected SingleSwitchFlowBlankRequest(SingleSwitchFlowBlankRequest other) {
+    SingleSwitchFlowBlankRequest(SingleSwitchFlowBlankRequest other) {
         this(
                 other.messageContext, other.commandId, other.flowId, other.cookie, other.endpoint, other.meterConfig,
                 other.egressEndpoint);
+    }
+
+    @Override
+    public SingleSwitchFlowInstallRequest makeInstallRequest() {
+        return new SingleSwitchFlowInstallRequest(this);
+    }
+
+    @Override
+    public SingleSwitchFlowRemoveRequest makeRemoveRequest() {
+        return new SingleSwitchFlowRemoveRequest(this);
+    }
+
+    @Builder(builderMethodName = "buildResolver")
+    private static BlankResolver makeResolver(
+            MessageContext messageContext, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
+            MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
+        SingleSwitchFlowBlankRequest blank = new SingleSwitchFlowBlankRequest(
+                messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+        return new BlankResolver(blank);
+    }
+
+    public static class BlankResolver
+            extends FlowSegmentBlankResolver<SingleSwitchFlowInstallRequest, SingleSwitchFlowRemoveRequest> {
+        BlankResolver(IFlowSegmentBlank<SingleSwitchFlowInstallRequest, SingleSwitchFlowRemoveRequest> blank) {
+            super(blank);
+        }
     }
 }

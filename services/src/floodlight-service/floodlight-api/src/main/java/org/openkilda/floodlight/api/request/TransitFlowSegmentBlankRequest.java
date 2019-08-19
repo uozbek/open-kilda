@@ -23,6 +23,7 @@ import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -32,7 +33,8 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest {
+public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest
+        implements IFlowSegmentBlank<TransitFlowSegmentInstallRequest, TransitFlowSegmentRemoveRequest> {
     @JsonProperty("ingressIslPort")
     protected final Integer ingressIslPort;
 
@@ -56,9 +58,35 @@ public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest {
         this.encapsulation = encapsulation;
     }
 
-    protected TransitFlowSegmentBlankRequest(TransitFlowSegmentBlankRequest other) {
+    TransitFlowSegmentBlankRequest(TransitFlowSegmentBlankRequest other) {
         this(
                 other.messageContext, other.switchId, other.commandId, other.flowId, other.cookie,
                 other.ingressIslPort, other.egressIslPort, other.encapsulation);
+    }
+
+    @Override
+    public TransitFlowSegmentInstallRequest makeInstallRequest() {
+        return new TransitFlowSegmentInstallRequest(this);
+    }
+
+    @Override
+    public TransitFlowSegmentRemoveRequest makeRemoveRequest() {
+        return new TransitFlowSegmentRemoveRequest(this);
+    }
+
+    @Builder(builderMethodName = "buildResolver")
+    private static BlankResolver makeResolver(
+            MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
+            Integer ingressIslPort, Integer egressIslPort, FlowTransitEncapsulation encapsulation) {
+        TransitFlowSegmentBlankRequest blank = new TransitFlowSegmentBlankRequest(
+                messageContext, switchId, commandId, flowId, cookie, ingressIslPort, egressIslPort, encapsulation);
+        return new BlankResolver(blank);
+    }
+
+    public static class BlankResolver
+            extends FlowSegmentBlankResolver<TransitFlowSegmentInstallRequest, TransitFlowSegmentRemoveRequest> {
+        BlankResolver(IFlowSegmentBlank<TransitFlowSegmentInstallRequest, TransitFlowSegmentRemoveRequest> blank) {
+            super(blank);
+        }
     }
 }
