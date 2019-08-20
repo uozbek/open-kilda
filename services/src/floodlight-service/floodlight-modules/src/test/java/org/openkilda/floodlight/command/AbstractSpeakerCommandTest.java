@@ -20,7 +20,6 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 
-import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.service.session.SessionService;
@@ -60,8 +59,8 @@ import java.util.concurrent.TimeUnit;
 public class AbstractSpeakerCommandTest extends EasyMockSupport {
     protected final FloodlightModuleContext moduleContext = new FloodlightModuleContext();
 
-    protected final static OFFactory of = new OFFactoryVer13();
-    protected final static DatapathId dpId = DatapathId.of(1);
+    protected static final OFFactory of = new OFFactoryVer13();
+    protected static final DatapathId dpId = DatapathId.of(1);
     protected final Map<DatapathId, Iterator<Session>> switchSessionProducePlan = new HashMap<>();
 
     @Mock
@@ -142,7 +141,8 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
         future.get(1, TimeUnit.SECONDS).raiseError();
     }
 
-    protected void verifyErrorCompletion(CompletableFuture<? extends SpeakerCommandReport> result, Class<? extends Throwable> errorType) {
+    protected void verifyErrorCompletion(
+            CompletableFuture<? extends SpeakerCommandReport> result, Class<? extends Throwable> errorType) {
         completeAllSessionWriteRequests();
         try {
             result.get().raiseError();

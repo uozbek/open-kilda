@@ -17,9 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
-import org.openkilda.floodlight.flow.request.RemoveRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.wfm.share.history.model.FlowHistoryData;
 import org.openkilda.wfm.share.history.model.FlowHistoryHolder;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
@@ -52,15 +50,16 @@ public abstract class RuleProcessingAction
 
     protected long getCookieForCommand(FlowRerouteFsm stateMachine, UUID commandId) {
         long cookie;
+        FlowSegmentRequest request;
         if (stateMachine.getNonIngressCommands().containsKey(commandId)) {
-            TransitFlowSegmentInstallRequest installRule = stateMachine.getNonIngressCommands().get(commandId);
-            cookie = installRule.getCookie().getValue();
+            request = stateMachine.getNonIngressCommands().get(commandId);
+            cookie = request.getCookie().getValue();
         } else if (stateMachine.getIngressCommands().containsKey(commandId)) {
-            SpeakerIngressActModRequest installRule = stateMachine.getIngressCommands().get(commandId);
-            cookie = installRule.getCookie().getValue();
+            request = stateMachine.getIngressCommands().get(commandId);
+            cookie = request.getCookie().getValue();
         } else if (stateMachine.getRemoveCommands().containsKey(commandId)) {
-            RemoveRule removeRule = stateMachine.getRemoveCommands().get(commandId);
-            cookie = removeRule.getCookie().getValue();
+            request = stateMachine.getRemoveCommands().get(commandId);
+            cookie = request.getCookie().getValue();
         } else {
             throw new IllegalStateException(format("Failed to find install/remove rule command with id %s", commandId));
         }

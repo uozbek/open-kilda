@@ -34,7 +34,7 @@ import org.projectfloodlight.openflow.types.U64;
 import java.util.UUID;
 
 public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmentRemoveCommandTest {
-    private final static FlowEndpoint defaultEgressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 2, 0, 0);
+    private static final FlowEndpoint defaultEgressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 2, 0, 0);
 
     @Test
     public void happyPathDefaultPort() throws Exception {

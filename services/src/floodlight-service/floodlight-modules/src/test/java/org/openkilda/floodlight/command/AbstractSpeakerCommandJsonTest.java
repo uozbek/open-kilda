@@ -34,8 +34,7 @@ public abstract class AbstractSpeakerCommandJsonTest<T extends AbstractMessage> 
         log.info("JSON representation of {} => {}", request.getClass().getName(), json);
 
         TypeReference<SpeakerCommand<SpeakerCommandReport>> commandType
-                = new TypeReference<SpeakerCommand<SpeakerCommandReport>>() {
-        };
+                = new TypeReference<SpeakerCommand<SpeakerCommandReport>>() {};
         SpeakerCommand<SpeakerCommandReport> command = jsonMapper.readValue(json, commandType);
 
         verify(request, command);

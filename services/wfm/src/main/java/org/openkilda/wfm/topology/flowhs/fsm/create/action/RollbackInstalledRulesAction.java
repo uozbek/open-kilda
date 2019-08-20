@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
-import org.openkilda.floodlight.flow.request.RemoveRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
@@ -31,11 +31,10 @@ import org.openkilda.wfm.topology.flowhs.service.SpeakerCommandObserver;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -54,26 +53,26 @@ public class RollbackInstalledRulesAction extends FlowProcessingAction<FlowCreat
 
     @Override
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
-        Set<RemoveRule> removeCommands = new HashSet<>();
+        List<FlowSegmentRequest> removeCommands = new ArrayList<>();
         stateMachine.getPendingCommands().clear();
 
         Flow flow = getFlow(stateMachine.getFlowId());
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
 
         if (!stateMachine.getNonIngressCommands().isEmpty()) {
-            List<RemoveRule> removeNonIngress = commandBuilder.createRemoveNotIngressRules(
+            List<FlowSegmentRequest> removeNonIngress = commandBuilder.buildRemoveAllExceptIngress(
                     stateMachine.getCommandContext(), flow);
             removeCommands.addAll(removeNonIngress);
         }
 
         if (!stateMachine.getIngressCommands().isEmpty()) {
-            List<RemoveRule> removeIngress = commandBuilder.createRemoveIngressRules(
+            List<FlowSegmentRequest> removeIngress = commandBuilder.buildRemoveIngressOnly(
                     stateMachine.getCommandContext(), flow);
             removeCommands.addAll(removeIngress);
         }
 
-        Map<UUID, RemoveRule> commandPerId = new HashMap<>(removeCommands.size());
-        for (RemoveRule command : removeCommands) {
+        Map<UUID, FlowSegmentRequest> commandPerId = new HashMap<>(removeCommands.size());
+        for (FlowSegmentRequest command : removeCommands) {
             commandPerId.put(command.getCommandId(), command);
 
             SpeakerCommandObserver commandObserver = new SpeakerCommandObserver(speakerCommandFsmBuilder, command);

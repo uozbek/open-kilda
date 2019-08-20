@@ -17,7 +17,7 @@ package org.openkilda.floodlight.flow.response;
 
 import static org.openkilda.messaging.Utils.FLOW_ID;
 
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
@@ -33,7 +33,7 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class FlowErrorResponse extends SpeakerActModResponse {
+public class FlowErrorResponse extends SpeakerFlowSegmentResponse {
 
     @JsonProperty("error_code")
     private ErrorCode errorCode;

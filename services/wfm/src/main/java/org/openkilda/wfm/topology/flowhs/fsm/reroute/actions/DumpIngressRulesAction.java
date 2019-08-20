@@ -15,8 +15,8 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.flow.request.GetInstalledRule;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.flow.request.GetInstalledRule;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.Event;

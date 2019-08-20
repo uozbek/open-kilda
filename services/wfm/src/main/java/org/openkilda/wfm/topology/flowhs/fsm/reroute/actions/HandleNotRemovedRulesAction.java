@@ -15,8 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.flow.request.RemoveRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
@@ -34,21 +33,19 @@ public class HandleNotRemovedRulesAction
     @Override
     public void execute(FlowRerouteFsm.State from, FlowRerouteFsm.State to,
                         FlowRerouteFsm.Event event, FlowRerouteContext context, FlowRerouteFsm stateMachine) {
-        if (!stateMachine.getPendingCommands().isEmpty() || !stateMachine.getErrorResponses().isEmpty()) {
-            for (UUID commandId : stateMachine.getPendingCommands()) {
-                RemoveRule nonDeletedRule = stateMachine.getRemoveCommands().get(commandId);
-                if (nonDeletedRule != null) {
-                    log.warn("Failed to remove {} from the switch {}", nonDeletedRule, nonDeletedRule.getSwitchId());
-                } else {
-                    SpeakerIngressActModRequest ingressRule = stateMachine.getIngressCommands().get(commandId);
-                    log.warn("Failed to reinstall ingress {} on the switch {}", ingressRule, ingressRule.getSwitchId());
-                }
+        for (UUID commandId : stateMachine.getPendingCommands()) {
+            FlowSegmentRequest request = stateMachine.getRemoveCommands().get(commandId);
+            if (request != null) {
+                log.warn("Failed to remove {} from the switch {}", request, request.getSwitchId());
+            } else {
+                request = stateMachine.getIngressCommands().get(commandId);
+                log.warn("Failed to reinstall ingress {} on the switch {}", request, request.getSwitchId());
             }
+        }
 
-            for (UUID commandId : stateMachine.getErrorResponses().keySet()) {
-                FlowErrorResponse errorResponse = stateMachine.getErrorResponses().get(commandId);
-                log.warn("Failed to remove {} from the switch {}", errorResponse, errorResponse.getSwitchId());
-            }
+        for (UUID commandId : stateMachine.getErrorResponses().keySet()) {
+            FlowErrorResponse errorResponse = stateMachine.getErrorResponses().get(commandId);
+            log.warn("Failed to remove {} from the switch {}", errorResponse, errorResponse.getSwitchId());
         }
 
         log.info("Canceling all pending commands: {}", stateMachine.getPendingCommands());

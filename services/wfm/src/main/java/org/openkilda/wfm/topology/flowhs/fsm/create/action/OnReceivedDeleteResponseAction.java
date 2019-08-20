@@ -17,9 +17,9 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.flow.request.RemoveRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
@@ -37,17 +37,20 @@ public class OnReceivedDeleteResponseAction extends OnReceivedInstallResponseAct
 
     @Override
     void handleResponse(FlowCreateFsm stateMachine, FlowCreateContext context) {
-        SpeakerActModResponse response = context.getActModResponse();
+        SpeakerFlowSegmentResponse response = context.getSpeakerFlowResponse();
         UUID commandId = response.getCommandId();
         if (!stateMachine.getRemoveCommands().containsKey(commandId)) {
             log.info("Failed to find a delete rule command with id {}", commandId);
             return;
         }
 
-        RemoveRule rule = stateMachine.getRemoveCommands().get(commandId);
+        FlowSegmentRequest request = stateMachine.getRemoveCommands().get(commandId);
         if (response.isSuccess()) {
-            log.debug("Received response after deletion {} from the switch {}", rule.getCookie(), rule.getSwitchId());
-            String description = format("Rule %s was deleted from the switch %s", rule.getCookie(), rule.getSwitchId());
+            log.debug(
+                    "Received response after deletion {} from the switch {}",
+                    request.getCookie(), request.getSwitchId());
+            String description = format(
+                    "Rule %s was deleted from the switch %s", request.getCookie(), request.getSwitchId());
 
             saveHistory(stateMachine, stateMachine.getCarrier(), stateMachine.getFlowId(), "Rule deleted",
                     description);

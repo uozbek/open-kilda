@@ -30,13 +30,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
 import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.flow.request.RemoveRule;
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
@@ -212,7 +212,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                         .switchId(flowRequest.getSwitchId())
                         .build());
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -246,7 +246,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
         FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
             if (flowRequest instanceof RemoveRule) {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -287,7 +287,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                         .switchId(flowRequest.getSwitchId())
                         .build());
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -321,7 +321,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
             if (flowRequest instanceof GetInstalledRule) {
                 rerouteService.handleTimeout("test_key");
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -372,7 +372,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                 rerouteService.handleAsyncResponse("test_key",
                         buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -415,7 +415,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                 rerouteService.handleAsyncResponse("test_key",
                         buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -454,7 +454,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                 rerouteService.handleAsyncResponse("test_key",
                         buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -494,7 +494,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                 rerouteService.handleAsyncResponse("test_key",
                         buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())
@@ -531,7 +531,7 @@ public class FlowRerouteServiceTest extends AbstractFlowTest {
                 rerouteService.handleAsyncResponse("test_key",
                         buildResponseOnGetInstalled((GetInstalledRule) flowRequest));
             } else {
-                rerouteService.handleAsyncResponse("test_key", SpeakerActModResponse.builder()
+                rerouteService.handleAsyncResponse("test_key", SpeakerFlowSegmentResponse.builder()
                         .commandId(flowRequest.getCommandId())
                         .flowId(flowRequest.getFlowId())
                         .switchId(flowRequest.getSwitchId())

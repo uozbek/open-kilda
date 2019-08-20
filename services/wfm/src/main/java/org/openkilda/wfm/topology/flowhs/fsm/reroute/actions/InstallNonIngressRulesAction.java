@@ -15,7 +15,6 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
@@ -60,25 +59,25 @@ public class InstallNonIngressRulesAction extends
                 ? stateMachine.getNewEncapsulationType() : flow.getEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<TransitFlowSegmentInstallRequest> commands = new ArrayList<>();
+        Collection<FlowSegmentRequest> requests = new ArrayList<>();
 
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewPrimaryReversePath());
-            commands.addAll(commandBuilder.createInstallNotIngressRequests(
+            requests.addAll(commandBuilder.buildInstallAllExceptIngress(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
         }
         if (stateMachine.getNewProtectedForwardPath() != null && stateMachine.getNewProtectedReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewProtectedForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewProtectedReversePath());
-            commands.addAll(commandBuilder.createInstallNotIngressRequests(
+            requests.addAll(commandBuilder.buildInstallAllExceptIngress(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
         }
 
-        stateMachine.setNonIngressCommands(commands.stream()
-                .collect(Collectors.toMap(TransitFlowSegmentInstallRequest::getCommandId, Function.identity())));
+        stateMachine.setNonIngressCommands(requests.stream()
+                .collect(Collectors.toMap(FlowSegmentRequest::getCommandId, Function.identity())));
 
-        if (commands.isEmpty()) {
+        if (requests.isEmpty()) {
             log.debug("No need to install non ingress rules for one switch flow {}", stateMachine.getFlowId());
 
             saveHistory(stateMachine, stateMachine.getCarrier(), stateMachine.getFlowId(),
@@ -86,7 +85,7 @@ public class InstallNonIngressRulesAction extends
 
             stateMachine.fire(Event.RULES_INSTALLED);
         } else {
-            Set<UUID> commandIds = commands.stream()
+            Set<UUID> commandIds = requests.stream()
                     .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
                     .map(FlowSegmentRequest::getCommandId)
                     .collect(Collectors.toSet());

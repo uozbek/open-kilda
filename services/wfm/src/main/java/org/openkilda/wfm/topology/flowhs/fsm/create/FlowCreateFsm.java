@@ -15,9 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
-import org.openkilda.floodlight.flow.request.RemoveRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.error.ErrorData;
 import org.openkilda.messaging.error.ErrorMessage;
@@ -85,9 +83,9 @@ public final class FlowCreateFsm extends NbTrackableStateMachine<FlowCreateFsm, 
     private PathId protectedForwardPathId;
     private PathId protectedReversePathId;
 
-    private Map<UUID, SpeakerIngressActModRequest> ingressCommands = new HashMap<>();
-    private Map<UUID, TransitFlowSegmentInstallRequest> nonIngressCommands = new HashMap<>();
-    private Map<UUID, RemoveRule> removeCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentRequest> ingressCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentRequest> nonIngressCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentRequest> removeCommands = new HashMap<>();
 
     // The amount of flow create operation retries left: that means how many retries may be executed.
     // NB: it differs from command execution retries amount.

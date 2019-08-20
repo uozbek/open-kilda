@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.validation.rules;
 
-import org.openkilda.floodlight.flow.request.InstallFlowRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 
 import lombok.AllArgsConstructor;
@@ -27,7 +27,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class RulesValidator {
 
-    protected final InstallFlowRule expected;
+    protected final FlowSegmentRequest expected;
     protected final FlowRuleResponse actual;
 
     /**
@@ -42,6 +42,8 @@ public class RulesValidator {
             valid = false;
         }
 
+        // TODO(surabujin) - drop
+        /*
         if (!Objects.equals(expected.getInputPort(), actual.getInPort())) {
             log.warn("Input port mismatch for the flow {} on the switch {}. Expected {}, actual {}",
                     expected.getFlowId(), expected.getSwitchId(), expected.getInputPort(), actual.getInPort());
@@ -59,6 +61,7 @@ public class RulesValidator {
                     expected.getFlowId(), expected.getSwitchId(), expected.getOutputPort(), actual.getOutPort());
             valid = false;
         }
+        */
 
         return valid;
     }

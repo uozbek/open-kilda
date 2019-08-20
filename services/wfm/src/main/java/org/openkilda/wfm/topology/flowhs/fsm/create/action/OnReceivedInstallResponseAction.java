@@ -17,9 +17,9 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.flow.request.InstallFlowRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
@@ -53,33 +53,34 @@ public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
 
     @Override
     void handleResponse(FlowCreateFsm stateMachine, FlowCreateContext context) {
-        SpeakerActModResponse response = context.getActModResponse();
+        SpeakerFlowSegmentResponse response = context.getSpeakerFlowResponse();
         UUID commandId = response.getCommandId();
 
-        InstallFlowRule installRule;
+        FlowSegmentRequest request;
         if (stateMachine.getNonIngressCommands().containsKey(commandId)) {
-            installRule = stateMachine.getNonIngressCommands().get(commandId);
+            request = stateMachine.getNonIngressCommands().get(commandId);
         } else if (stateMachine.getIngressCommands().containsKey(commandId)) {
-            installRule = stateMachine.getIngressCommands().get(commandId);
+            request = stateMachine.getIngressCommands().get(commandId);
         } else {
             throw new IllegalStateException(format("Failed to find install rule command with id %s", commandId));
         }
 
         if (response.isSuccess()) {
-            log.debug("Rule {} was installed on switch {}", installRule.getCookie(), response.getSwitchId());
+            log.debug("Rule {} was installed on switch {}", request.getCookie(), response.getSwitchId());
             saveHistory(stateMachine, stateMachine.getCarrier(), stateMachine.getFlowId(), "Rule installed",
                     format("Rule was installed successfully: cookie %s, switch %s",
-                            installRule.getCookie(), response.getSwitchId()));
+                            request.getCookie(), response.getSwitchId()));
         } else {
-            handleError(stateMachine, response, installRule);
+            handleError(stateMachine, response, request);
         }
     }
 
-    private void handleError(FlowCreateFsm stateMachine, SpeakerActModResponse response, InstallFlowRule command) {
-        stateMachine.getFailedCommands().add(command.getCommandId());
+    private void handleError(
+            FlowCreateFsm stateMachine, SpeakerFlowSegmentResponse response, FlowSegmentRequest request) {
+        stateMachine.getFailedCommands().add(request.getCommandId());
         FlowErrorResponse errorResponse = (FlowErrorResponse) response;
         String message = format("Failed to install rule %s, on the switch %s: %s. Description: %s",
-                command.getCookie(), errorResponse.getSwitchId(), errorResponse.getErrorCode(),
+                request.getCookie(), errorResponse.getSwitchId(), errorResponse.getErrorCode(),
                 errorResponse.getDescription());
         log.error(message);
         saveHistory(stateMachine, stateMachine.getCarrier(), stateMachine.getFlowId(), "Rule not installed",

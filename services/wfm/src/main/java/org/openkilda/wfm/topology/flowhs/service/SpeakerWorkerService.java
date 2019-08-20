@@ -16,9 +16,9 @@
 package org.openkilda.wfm.topology.flowhs.service;
 
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.wfm.error.PipelineException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +52,7 @@ public class SpeakerWorkerService {
      * @param key operation's key.
      * @param response response payload.
      */
-    public void handleResponse(String key, SpeakerActModResponse response)
+    public void handleResponse(String key, SpeakerFlowSegmentResponse response)
             throws PipelineException {
         log.debug("Got a response from speaker {}", response);
         FlowSegmentRequest pendingRequest = keyToRequest.remove(key);
@@ -72,7 +72,7 @@ public class SpeakerWorkerService {
     public void handleTimeout(String key) throws PipelineException {
         FlowSegmentRequest failedRequest = keyToRequest.remove(key);
 
-        SpeakerActModResponse response = FlowErrorResponse.errorBuilder()
+        SpeakerFlowSegmentResponse response = FlowErrorResponse.errorBuilder()
                 .flowId(failedRequest.getFlowId())
                 .commandId(failedRequest.getCommandId())
                 .switchId(failedRequest.getSwitchId())

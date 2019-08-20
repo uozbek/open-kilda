@@ -17,7 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.SwitchFeatures;
 import org.openkilda.persistence.PersistenceManager;
@@ -47,14 +47,14 @@ public class ValidateIngressRuleAction extends FlowProcessingAction<FlowCreateFs
 
     @Override
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
-        UUID commandId = context.getActModResponse().getCommandId();
+        UUID commandId = context.getSpeakerFlowResponse().getCommandId();
 
-        SpeakerIngressActModRequest expected = stateMachine.getIngressCommands().get(commandId);
+        FlowSegmentRequest expected = stateMachine.getIngressCommands().get(commandId);
         SwitchFeatures switchFeatures =  switchFeaturesRepository.findBySwitchId(expected.getSwitchId())
                 .orElseThrow(() -> new IllegalStateException(format("Failed to find list of features for switch %s",
                         expected.getSwitchId())));
 
-        FlowRuleResponse response = (FlowRuleResponse) context.getActModResponse();
+        FlowRuleResponse response = (FlowRuleResponse) context.getSpeakerFlowResponse();
         RulesValidator validator = new IngressRulesValidator(expected, response, switchFeatures);
         if (!validator.validate()) {
             stateMachine.getFailedCommands().add(commandId);
@@ -68,7 +68,7 @@ public class ValidateIngressRuleAction extends FlowProcessingAction<FlowCreateFs
         }
     }
 
-    private void saveHistory(FlowCreateFsm stateMachine, SpeakerIngressActModRequest expected) {
+    private void saveHistory(FlowCreateFsm stateMachine, FlowSegmentRequest expected) {
         String action = format("Rule is valid: switch %s, cookie %s",
                 expected.getSwitchId().toString(), expected.getCookie());
         String description = format("Ingress rule has been validated successfully: switch %s, cookie %s",

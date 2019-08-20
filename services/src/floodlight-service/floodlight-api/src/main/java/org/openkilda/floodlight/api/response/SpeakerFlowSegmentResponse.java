@@ -30,7 +30,7 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class SpeakerActModResponse extends SpeakerResponse {
+public class SpeakerFlowSegmentResponse extends SpeakerResponse {
 
     @JsonProperty("command_id")
     private final UUID commandId;
@@ -46,11 +46,12 @@ public class SpeakerActModResponse extends SpeakerResponse {
 
     @JsonCreator
     @Builder
-    public SpeakerActModResponse(@JsonProperty("success") boolean success,
-                                 @JsonProperty("command_context") MessageContext messageContext,
-                                 @JsonProperty("command_id") UUID commandId,
-                                 @JsonProperty("flowid") String flowId,
-                                 @JsonProperty("switch_id") SwitchId switchId) {
+    public SpeakerFlowSegmentResponse(
+            @JsonProperty("success") boolean success,
+            @JsonProperty("command_context") MessageContext messageContext,
+            @JsonProperty("command_id") UUID commandId,
+            @JsonProperty("flowid") String flowId,
+            @JsonProperty("switch_id") SwitchId switchId) {
         super(messageContext);
 
         this.commandId = commandId;

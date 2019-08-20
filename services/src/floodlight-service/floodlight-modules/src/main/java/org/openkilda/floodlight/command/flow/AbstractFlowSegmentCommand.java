@@ -16,17 +16,11 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.command.SpeakerCommand;
-import org.openkilda.floodlight.error.SwitchNotFoundException;
-import org.openkilda.floodlight.model.SwitchDescriptor;
-import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import lombok.AccessLevel;
 import lombok.Getter;
-import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;
@@ -34,7 +28,6 @@ import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.types.U64;
 
-import java.util.Set;
 import java.util.UUID;
 
 @Getter

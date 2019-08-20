@@ -24,7 +24,6 @@ import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;

@@ -46,7 +46,6 @@ import org.openkilda.floodlight.kafka.dispatcher.SetupBfdSessionDispatcher;
 import org.openkilda.floodlight.kafka.dispatcher.StatsRequestDispatcher;
 import org.openkilda.floodlight.service.CommandProcessorService;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
-import org.openkilda.floodlight.service.kafka.KafkaUtilityService;
 import org.openkilda.floodlight.switchmanager.ISwitchManager;
 import org.openkilda.floodlight.switchmanager.SwitchTrackingService;
 import org.openkilda.floodlight.utils.CorrelationContext;

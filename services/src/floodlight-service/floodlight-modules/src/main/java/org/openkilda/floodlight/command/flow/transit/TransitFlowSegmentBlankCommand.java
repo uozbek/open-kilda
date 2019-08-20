@@ -24,13 +24,10 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
-import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
-import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
-import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.List;
 import java.util.UUID;

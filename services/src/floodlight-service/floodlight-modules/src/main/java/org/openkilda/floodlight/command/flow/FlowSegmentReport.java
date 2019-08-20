@@ -16,7 +16,7 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.KafkaChannel;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
@@ -74,7 +74,7 @@ public class FlowSegmentReport extends SpeakerCommandReport {
     }
 
     protected AbstractMessage assembleSuccessResponse() {
-        return SpeakerActModResponse.builder()
+        return SpeakerFlowSegmentResponse.builder()
                 .commandId(command.getCommandId())
                 .flowId(command.getFlowId())
                 .messageContext(command.getMessageContext())

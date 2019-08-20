@@ -16,12 +16,12 @@
 package org.openkilda.wfm.topology.flowhs.service;
 
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.wfm.error.PipelineException;
 
 public interface SpeakerCommandCarrier {
 
     void sendCommand(String key, FlowSegmentRequest command) throws PipelineException;
 
-    void sendResponse(String key, SpeakerActModResponse response) throws PipelineException;
+    void sendResponse(String key, SpeakerFlowSegmentResponse response) throws PipelineException;
 }

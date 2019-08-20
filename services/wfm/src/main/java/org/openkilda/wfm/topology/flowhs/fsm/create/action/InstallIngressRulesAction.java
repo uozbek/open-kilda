@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
@@ -51,7 +51,7 @@ public class InstallIngressRulesAction extends FlowProcessingAction<FlowCreateFs
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
         Flow flow = getFlow(stateMachine.getFlowId());
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
-        List<SpeakerIngressActModRequest> commands = commandBuilder.createInstallIngressRequests(
+        List<FlowSegmentRequest> commands = commandBuilder.buildInstallIngressOnly(
                 stateMachine.getCommandContext(), flow);
 
         commands.forEach(command -> {

@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.service;
 
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.model.PathId;
 import org.openkilda.pce.PathComputer;
 import org.openkilda.persistence.PersistenceManager;
@@ -87,7 +87,7 @@ public class FlowRerouteService {
      *
      * @param key command identifier.
      */
-    public void handleAsyncResponse(String key, SpeakerActModResponse response) {
+    public void handleAsyncResponse(String key, SpeakerFlowSegmentResponse response) {
         log.debug("Received command completion message {}", response);
         FlowRerouteFsm fsm = fsms.get(key);
         if (fsm == null) {

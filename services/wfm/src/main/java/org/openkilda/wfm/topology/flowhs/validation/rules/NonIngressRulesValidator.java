@@ -15,8 +15,9 @@
 
 package org.openkilda.wfm.topology.flowhs.validation.rules;
 
+import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ import java.util.Objects;
 @Slf4j
 public class NonIngressRulesValidator extends RulesValidator {
 
-    public NonIngressRulesValidator(TransitFlowSegmentInstallRequest expected, FlowRuleResponse actual) {
+    public NonIngressRulesValidator(FlowSegmentRequest expected, FlowRuleResponse actual) {
         super(expected, actual);
     }
 
@@ -43,10 +44,10 @@ public class NonIngressRulesValidator extends RulesValidator {
     private boolean validateEgressRule() {
         boolean valid = true;
         EgressFlowSegmentInstallRequest expectedEgressRule = (EgressFlowSegmentInstallRequest) expected;
-
-        if (!Objects.equals(expectedEgressRule.getOutputVlanId(), actual.getOutVlan())) {
+        FlowEndpoint endpoint = expectedEgressRule.getEndpoint();
+        if (!Objects.equals(endpoint.getOuterVlanId(), actual.getOutVlan())) {
             log.warn("Output vlan mismatch for the flow {} on the switch {}. Expected {}, actual {}",
-                    expected.getFlowId(), expected.getSwitchId(), expectedEgressRule.getOutputVlanId(),
+                    expected.getFlowId(), expected.getSwitchId(), endpoint.getOuterVlanId(),
                     actual.getOutVlan());
             valid = false;
         }

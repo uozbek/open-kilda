@@ -15,8 +15,6 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
@@ -62,42 +60,42 @@ public class RevertNewRulesAction extends
                 ? stateMachine.getNewEncapsulationType() : flow.getEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<SpeakerIngressActModRequest> installCommands = new ArrayList<>();
+        Collection<FlowSegmentRequest> installRequests = new ArrayList<>();
 
         // Reinstall old ingress rules that may be overridden by new ingress.
         if (stateMachine.getOldPrimaryForwardPath() != null && stateMachine.getOldPrimaryReversePath() != null) {
             FlowPath oldForward = getFlowPath(flow, stateMachine.getOldPrimaryForwardPath());
             FlowPath oldReverse = getFlowPath(flow, stateMachine.getOldPrimaryReversePath());
-            installCommands.addAll(commandBuilder.createInstallIngressRequests(
+            installRequests.addAll(commandBuilder.buildInstallIngressOnly(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
         }
 
-        stateMachine.setIngressCommands(installCommands.stream()
-                .collect(Collectors.toMap(SpeakerIngressActModRequest::getCommandId, Function.identity())));
+        stateMachine.setIngressCommands(installRequests.stream()
+                .collect(Collectors.toMap(FlowSegmentRequest::getCommandId, Function.identity())));
 
-        Collection<RemoveRule> removeCommands = new ArrayList<>();
+        Collection<FlowSegmentRequest> removeRequests = new ArrayList<>();
 
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewPrimaryReversePath());
-            removeCommands.addAll(commandBuilder.createRemoveNotIngressRules(
+            removeRequests.addAll(commandBuilder.buildRemoveAllExceptIngress(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
-            removeCommands.addAll(commandBuilder.createRemoveIngressRules(
+            removeRequests.addAll(commandBuilder.buildRemoveIngressOnly(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
         }
         if (stateMachine.getNewProtectedForwardPath() != null && stateMachine.getNewProtectedReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewProtectedForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewProtectedReversePath());
-            removeCommands.addAll(commandBuilder.createRemoveNotIngressRules(
+            removeRequests.addAll(commandBuilder.buildRemoveAllExceptIngress(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
-            removeCommands.addAll(commandBuilder.createRemoveIngressRules(
+            removeRequests.addAll(commandBuilder.buildRemoveIngressOnly(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
         }
 
-        stateMachine.setRemoveCommands(removeCommands.stream()
-                .collect(Collectors.toMap(RemoveRule::getCommandId, Function.identity())));
+        stateMachine.setRemoveCommands(removeRequests.stream()
+                .collect(Collectors.toMap(FlowSegmentRequest::getCommandId, Function.identity())));
 
-        Set<UUID> commandIds = Stream.concat(installCommands.stream(), removeCommands.stream())
+        Set<UUID> commandIds = Stream.concat(installRequests.stream(), removeRequests.stream())
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
                 .map(FlowSegmentRequest::getCommandId)
                 .collect(Collectors.toSet());

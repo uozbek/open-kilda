@@ -15,9 +15,8 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.flow.request.GetInstalledRule;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.Event;
@@ -42,14 +41,14 @@ public class DumpNonIngressRulesAction extends
         log.debug("Validating installed non ingress rules for the flow {}",
                 stateMachine.getFlowId());
 
-        Map<UUID, TransitFlowSegmentInstallRequest> nonIngressCommands = stateMachine.getNonIngressCommands();
+        Map<UUID, FlowSegmentRequest> nonIngressRequests = stateMachine.getNonIngressCommands();
 
-        if (nonIngressCommands.isEmpty()) {
+        if (nonIngressRequests.isEmpty()) {
             log.debug("No need to validate non ingress rules for one switch flow");
 
             stateMachine.fire(Event.RULES_VALIDATED);
         } else {
-            Collection<GetInstalledRule> dumpFlowRules = nonIngressCommands.values().stream()
+            Collection<GetInstalledRule> dumpFlowRules = nonIngressRequests.values().stream()
                     .map(command -> new GetInstalledRule(command.getMessageContext(), command.getCommandId(),
                             command.getFlowId(), command.getSwitchId(), command.getCookie()))
                     .collect(Collectors.toList());

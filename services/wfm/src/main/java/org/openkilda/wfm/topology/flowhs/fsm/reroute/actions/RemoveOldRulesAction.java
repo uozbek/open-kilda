@@ -15,7 +15,6 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
@@ -57,16 +56,16 @@ public class RemoveOldRulesAction extends
         FlowEncapsulationType encapsulationType = stateMachine.getOriginalEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<RemoveRule> commands = new ArrayList<>();
+        Collection<FlowSegmentRequest> requests = new ArrayList<>();
 
         if (stateMachine.getOldPrimaryForwardPath() != null && stateMachine.getOldPrimaryReversePath() != null) {
             FlowPath oldForward = getFlowPath(stateMachine.getOldPrimaryForwardPath());
             FlowPath oldReverse = getFlowPath(stateMachine.getOldPrimaryReversePath());
 
             Flow flow = oldForward.getFlow();
-            commands.addAll(commandBuilder.createRemoveNotIngressRules(
+            requests.addAll(commandBuilder.buildRemoveAllExceptIngress(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
-            commands.addAll(commandBuilder.createRemoveIngressRules(
+            requests.addAll(commandBuilder.buildRemoveIngressOnly(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
         }
 
@@ -75,16 +74,16 @@ public class RemoveOldRulesAction extends
             FlowPath oldReverse = getFlowPath(stateMachine.getOldProtectedReversePath());
 
             Flow flow = oldForward.getFlow();
-            commands.addAll(commandBuilder.createRemoveNotIngressRules(
+            requests.addAll(commandBuilder.buildRemoveAllExceptIngress(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
-            commands.addAll(commandBuilder.createRemoveIngressRules(
+            requests.addAll(commandBuilder.buildRemoveIngressOnly(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
         }
 
-        stateMachine.setRemoveCommands(commands.stream()
-                .collect(Collectors.toMap(RemoveRule::getCommandId, Function.identity())));
+        stateMachine.setRemoveCommands(requests.stream()
+                .collect(Collectors.toMap(FlowSegmentRequest::getCommandId, Function.identity())));
 
-        Set<UUID> commandIds = commands.stream()
+        Set<UUID> commandIds = requests.stream()
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
                 .map(FlowSegmentRequest::getCommandId)
                 .collect(Collectors.toSet());

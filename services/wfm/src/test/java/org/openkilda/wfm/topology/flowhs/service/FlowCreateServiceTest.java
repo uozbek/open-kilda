@@ -27,15 +27,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.openkilda.floodlight.flow.request.GetInstalledRule;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
-import org.openkilda.floodlight.flow.request.InstallFlowRule;
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
+import org.openkilda.floodlight.flow.request.GetInstalledRule;
+import org.openkilda.floodlight.flow.request.InstallFlowRule;
+import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.flow.FlowRequest;
 import org.openkilda.model.FeatureToggles;
@@ -451,7 +450,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
             if (command instanceof GetInstalledRule) {
                 target.handleAsyncResponse(key, buildResponseOnGetInstalled((GetInstalledRule) command));
             } else {
-                if (command instanceof SpeakerIngressActModRequest && remainingRetries > 0) {
+                if (command instanceof FlowSegmentRequest && remainingRetries > 0) {
                     handleErrorResponse(key, command, ErrorCode.SWITCH_UNAVAILABLE);
                     remainingRetries--;
                 } else {
@@ -736,7 +735,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
     }
 
     private void handleResponse(String key, FlowSegmentRequest request) {
-        target.handleAsyncResponse(key, SpeakerActModResponse.builder()
+        target.handleAsyncResponse(key, SpeakerFlowSegmentResponse.builder()
                 .flowId(request.getFlowId())
                 .commandId(request.getCommandId())
                 .switchId(request.getSwitchId())

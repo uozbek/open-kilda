@@ -15,7 +15,6 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
@@ -60,19 +59,19 @@ public class InstallIngressRulesAction extends
                 ? stateMachine.getNewEncapsulationType() : flow.getEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<SpeakerIngressActModRequest> commands = new ArrayList<>();
+        Collection<FlowSegmentRequest> commands = new ArrayList<>();
 
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewPrimaryReversePath());
-            commands.addAll(commandBuilder.createInstallIngressRequests(
+            commands.addAll(commandBuilder.buildInstallIngressOnly(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
         }
 
         // Installation of ingress rules for protected paths is skipped. These paths are activated on swap.
 
         stateMachine.setIngressCommands(commands.stream()
-                .collect(Collectors.toMap(SpeakerIngressActModRequest::getCommandId, Function.identity())));
+                .collect(Collectors.toMap(FlowSegmentRequest::getCommandId, Function.identity())));
 
         Set<UUID> commandIds = commands.stream()
                 .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))

@@ -17,13 +17,10 @@ package org.openkilda.wfm.topology.flowhs.service;
 
 import static org.mockito.Mockito.when;
 
-import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
-import org.openkilda.floodlight.flow.request.InstallFlowRule;
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
+import org.openkilda.floodlight.flow.request.GetInstalledRule;
+import org.openkilda.floodlight.flow.request.InstallFlowRule;
 import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -108,7 +105,7 @@ public abstract class AbstractFlowTest {
         };
     }
 
-    SpeakerActModResponse buildResponseOnGetInstalled(GetInstalledRule request) {
+    SpeakerFlowSegmentResponse buildResponseOnGetInstalled(GetInstalledRule request) {
         Cookie cookie = request.getCookie();
 
         InstallFlowRule rule = Optional.ofNullable(installedRules.get(request.getSwitchId()))
@@ -119,7 +116,9 @@ public abstract class AbstractFlowTest {
                 .commandId(request.getCommandId())
                 .flowId(request.getFlowId())
                 .switchId(request.getSwitchId())
-                .cookie(rule.getCookie())
+                .cookie(rule.getCookie());
+        // TODO(surabujin): - review - drop/fix
+        /*
                 .inPort(rule.getInputPort())
                 .outPort(rule.getOutputPort());
         if (rule instanceof EgressFlowSegmentInstallRequest) {
@@ -133,6 +132,7 @@ public abstract class AbstractFlowTest {
             builder.inVlan(ingressRule.getInputOuterVlanId())
                     .meterId(ingressRule.getMeterId());
         }
+        */
 
         return builder.build();
     }

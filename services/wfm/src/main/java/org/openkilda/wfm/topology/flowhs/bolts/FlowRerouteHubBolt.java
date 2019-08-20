@@ -21,7 +21,7 @@ import static org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream.HUB_TO_SPE
 import static org.openkilda.wfm.topology.utils.KafkaRecordTranslator.FIELD_ID_PAYLOAD;
 
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.flow.FlowRerouteRequest;
 import org.openkilda.pce.AvailableNetworkFactory;
@@ -89,7 +89,7 @@ public class FlowRerouteHubBolt extends HubBolt implements FlowRerouteHubCarrier
     protected void onWorkerResponse(Tuple input) {
         String operationKey = input.getStringByField(MessageTranslator.FIELD_ID_KEY);
         currentKey = KeyProvider.getParentKey(operationKey);
-        SpeakerActModResponse response = (SpeakerActModResponse) input.getValueByField(FIELD_ID_PAYLOAD);
+        SpeakerFlowSegmentResponse response = (SpeakerFlowSegmentResponse) input.getValueByField(FIELD_ID_PAYLOAD);
         service.handleAsyncResponse(currentKey, response);
     }
 

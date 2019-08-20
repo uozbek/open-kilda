@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.CommandContext;
@@ -53,11 +53,12 @@ public class InstallNonIngressRulesAction extends FlowProcessingAction<FlowCreat
         CommandContext commandContext = stateMachine.getCommandContext();
         Flow flow = getFlow(stateMachine.getFlowId());
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
-        List<TransitFlowSegmentInstallRequest> commands =
-                commandBuilder.createInstallNotIngressRequests(commandContext, flow);
+        List<FlowSegmentRequest> commands =
+                commandBuilder.buildInstallAllExceptIngress(commandContext, flow);
         if (flow.isAllocateProtectedPath()) {
-            commands.addAll(commandBuilder.createInstallNotIngressRequests(commandContext, flow,
-                                                                           flow.getProtectedForwardPath(), flow.getProtectedReversePath()));
+            commands.addAll(commandBuilder.buildInstallAllExceptIngress(
+                    commandContext, flow,
+                    flow.getProtectedForwardPath(), flow.getProtectedReversePath()));
         }
 
         if (commands.isEmpty()) {

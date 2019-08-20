@@ -15,11 +15,9 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute;
 
-import org.openkilda.floodlight.api.request.SpeakerIngressActModRequest;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
-import org.openkilda.floodlight.flow.request.RemoveRule;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.error.ErrorData;
 import org.openkilda.messaging.error.ErrorMessage;
@@ -118,11 +116,11 @@ public final class FlowRerouteFsm
 
     private Map<UUID, FlowErrorResponse> errorResponses = new HashMap<>();
 
-    private Map<UUID, SpeakerActModResponse> failedValidationResponses = new HashMap<>();
+    private Map<UUID, SpeakerFlowSegmentResponse> failedValidationResponses = new HashMap<>();
 
-    private Map<UUID, SpeakerIngressActModRequest> ingressCommands = new HashMap<>();
-    private Map<UUID, TransitFlowSegmentInstallRequest> nonIngressCommands = new HashMap<>();
-    private Map<UUID, RemoveRule> removeCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentRequest> ingressCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentRequest> nonIngressCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentRequest> removeCommands = new HashMap<>();
 
     public FlowRerouteFsm(CommandContext commandContext, FlowRerouteHubCarrier carrier) {
         super(commandContext);

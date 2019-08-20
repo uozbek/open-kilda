@@ -23,7 +23,6 @@ import org.openkilda.floodlight.utils.MetadataAdapter;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;

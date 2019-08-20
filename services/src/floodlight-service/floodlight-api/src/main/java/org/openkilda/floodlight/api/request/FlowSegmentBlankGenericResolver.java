@@ -13,22 +13,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.flowhs.fsm.reroute;
+package org.openkilda.floodlight.api.request;
 
-import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
-import org.openkilda.model.PathId;
+public class FlowSegmentBlankGenericResolver {
+    private final IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest> blank;
 
-import lombok.Builder;
-import lombok.Data;
+    public FlowSegmentBlankGenericResolver(
+            IFlowSegmentBlank<? extends FlowSegmentRequest, ? extends FlowSegmentRequest> blank) {
+        this.blank = blank;
+    }
 
-import java.util.Set;
+    public FlowSegmentRequest makeInstallRequest() {
+        return blank.makeInstallRequest();
+    }
 
-@Data
-@Builder
-public class FlowRerouteContext {
-    private String flowId;
-    private Set<PathId> pathsToReroute;
-    private boolean forceReroute;
-
-    private SpeakerFlowSegmentResponse response;
+    public FlowSegmentRequest makeRemoveRequest() {
+        return blank.makeRemoveRequest();
+    }
 }

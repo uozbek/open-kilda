@@ -17,7 +17,7 @@ package org.openkilda.floodlight.flow.response;
 
 import static org.openkilda.messaging.Utils.FLOW_ID;
 
-import org.openkilda.floodlight.api.response.SpeakerActModResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
@@ -35,7 +35,7 @@ import java.util.UUID;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class FlowRuleResponse extends SpeakerActModResponse {
+public class FlowRuleResponse extends SpeakerFlowSegmentResponse {
 
     @JsonProperty("cookie")
     private Cookie cookie;

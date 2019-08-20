@@ -32,4 +32,8 @@ public class FlowSegmentBlankResolver<I extends FlowSegmentRequest, R extends Fl
     public R makeRemoveRequest() {
         return blank.makeRemoveRequest();
     }
+
+    public FlowSegmentBlankGenericResolver makeGenericResolver() {
+        return new FlowSegmentBlankGenericResolver(blank);
+    }
 }

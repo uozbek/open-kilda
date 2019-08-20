@@ -22,7 +22,6 @@ import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.model.FlowEncapsulationType;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;
@@ -31,14 +30,14 @@ import org.projectfloodlight.openflow.types.DatapathId;
 import java.util.concurrent.CompletableFuture;
 
 abstract class EgressFlowSegmentBlankCommandTest extends AbstractSpeakerCommandTest {
-    protected final static DatapathId ingresDpId = DatapathId.of(dpId.getLong() + 1);
+    protected static final DatapathId ingresDpId = DatapathId.of(dpId.getLong() + 1);
 
     protected static final FlowTransitEncapsulation encapsulationVlan = new FlowTransitEncapsulation(
             51, FlowEncapsulationType.TRANSIT_VLAN);
 
-    protected final static FlowEndpoint endpointZeroPort = new FlowEndpoint(mapSwitchId(dpId), 11, 0, 0);
-    protected final static FlowEndpoint endpointSingleVlan = new FlowEndpoint(mapSwitchId(dpId), 12, 64, 0);
-    protected final static FlowEndpoint endpointDoubleVlan = new FlowEndpoint(mapSwitchId(dpId), 13, 64, 65);
+    protected static final FlowEndpoint endpointZeroPort = new FlowEndpoint(mapSwitchId(dpId), 11, 0, 0);
+    protected static final FlowEndpoint endpointSingleVlan = new FlowEndpoint(mapSwitchId(dpId), 12, 64, 0);
+    protected static final FlowEndpoint endpointDoubleVlan = new FlowEndpoint(mapSwitchId(dpId), 13, 64, 65);
 
     @Test
     public void errorOnFlowMod() {

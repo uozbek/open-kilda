@@ -27,7 +27,6 @@ import org.openkilda.floodlight.error.SwitchMeterConflictException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
