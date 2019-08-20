@@ -161,6 +161,7 @@ public class CacheFilterBolt extends BaseRichBolt {
             logMatchedRecord(command, command.getCookie());
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), null, MeasurePoint.EGRESS);
+        // TODO(surabujin): remove/fix
         } else if (message instanceof RemoveRule) {
             RemoveRule command = (RemoveRule) message;
             logMatchedRecord(command, command.getCookie());

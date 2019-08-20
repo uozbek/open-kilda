@@ -72,7 +72,7 @@ public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
     }
 
     @Builder(builderMethodName = "buildResolver")
-    private static BlankResolver makeResolver(
+    public static BlankResolver makeResolver(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
             MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
         SingleSwitchFlowBlankRequest blank = new SingleSwitchFlowBlankRequest(

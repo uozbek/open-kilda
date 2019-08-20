@@ -75,7 +75,7 @@ public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest
     }
 
     @Builder(builderMethodName = "buildResolver")
-    private static BlankResolver makeResolver(
+    public static BlankResolver makeResolver(
             MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
             Integer ingressIslPort, Integer egressIslPort, FlowTransitEncapsulation encapsulation) {
         TransitFlowSegmentBlankRequest blank = new TransitFlowSegmentBlankRequest(

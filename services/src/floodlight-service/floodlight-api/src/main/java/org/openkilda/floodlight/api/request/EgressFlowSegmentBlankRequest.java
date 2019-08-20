@@ -83,7 +83,7 @@ public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest
     }
 
     @Builder(builderMethodName = "buildResolver")
-    private static BlankResolver makeResolver(
+    public static BlankResolver makeResolver(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, FlowEndpoint ingressEndpoint, Integer islPort,
             FlowTransitEncapsulation encapsulation) {
