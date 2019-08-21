@@ -15,22 +15,26 @@
 
 package org.openkilda.floodlight.api.request;
 
-public class FlowSegmentBlankResolver<I extends FlowSegmentRequest, R extends FlowSegmentRequest>
-        implements IFlowSegmentBlank<I, R> {
-    private final IFlowSegmentBlank<I, R> blank;
+public class FlowSegmentBlankResolver<T extends FlowSegmentRequest> implements IFlowSegmentBlank<T> {
+    private final IFlowSegmentBlank<T> blank;
 
-    public FlowSegmentBlankResolver(IFlowSegmentBlank<I, R> blank) {
+    public FlowSegmentBlankResolver(IFlowSegmentBlank<T> blank) {
         this.blank = blank;
     }
 
     @Override
-    public I makeInstallRequest() {
+    public T makeInstallRequest() {
         return blank.makeInstallRequest();
     }
 
     @Override
-    public R makeRemoveRequest() {
+    public T makeRemoveRequest() {
         return blank.makeRemoveRequest();
+    }
+
+    @Override
+    public T makeVerifyRequest() {
+        return blank.makeVerifyRequest();
     }
 
     public FlowSegmentBlankGenericResolver makeGenericResolver() {

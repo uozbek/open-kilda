@@ -37,7 +37,7 @@ import java.util.UUID;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest
-        implements IFlowSegmentBlank<IngressFlowSegmentInstallRequest, IngressFlowSegmentRemoveRequest> {
+        implements IFlowSegmentBlank<IngressFlowSegmentBlankRequest> {
     @JsonProperty("islPort")
     protected final Integer islPort;
 
@@ -72,6 +72,14 @@ public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest
         return new IngressFlowSegmentRemoveRequest(this);
     }
 
+    @Override
+    public IngressFlowSegmentVerifyRequest makeVerifyRequest() {
+        return new IngressFlowSegmentVerifyRequest(this);
+    }
+
+    /**
+     * Create "blank" resolver - object capable to create any "real" request type.
+     */
     @Builder(builderMethodName = "buildResolver")
     public static BlankResolver makeResolver(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
@@ -82,8 +90,8 @@ public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest
     }
 
     public static class BlankResolver
-            extends FlowSegmentBlankResolver<IngressFlowSegmentInstallRequest, IngressFlowSegmentRemoveRequest> {
-        BlankResolver(IFlowSegmentBlank<IngressFlowSegmentInstallRequest, IngressFlowSegmentRemoveRequest> blank) {
+            extends FlowSegmentBlankResolver<IngressFlowSegmentBlankRequest> {
+        BlankResolver(IFlowSegmentBlank<IngressFlowSegmentBlankRequest> blank) {
             super(blank);
         }
     }

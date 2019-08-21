@@ -15,8 +15,10 @@
 
 package org.openkilda.floodlight.api.request;
 
-public interface IFlowSegmentBlank<I extends FlowSegmentRequest, R extends FlowSegmentRequest> {
-    I makeInstallRequest();
+public interface IFlowSegmentBlank<T extends FlowSegmentRequest> {
+    T makeInstallRequest();
 
-    R makeRemoveRequest();
+    T makeRemoveRequest();
+
+    T makeVerifyRequest();
 }

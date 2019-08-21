@@ -36,7 +36,7 @@ import java.util.UUID;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
-        implements IFlowSegmentBlank<SingleSwitchFlowInstallRequest, SingleSwitchFlowRemoveRequest> {
+        implements IFlowSegmentBlank<SingleSwitchFlowBlankRequest> {
     @JsonProperty("egress_endpoint")
     protected final FlowEndpoint egressEndpoint;
 
@@ -71,6 +71,14 @@ public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
         return new SingleSwitchFlowRemoveRequest(this);
     }
 
+    @Override
+    public SingleSwitchFlowVerifyRequest makeVerifyRequest() {
+        return new SingleSwitchFlowVerifyRequest(this);
+    }
+
+    /**
+     * Create "blank" resolver - object capable to create any "real" request type.
+     */
     @Builder(builderMethodName = "buildResolver")
     public static BlankResolver makeResolver(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
@@ -81,8 +89,8 @@ public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
     }
 
     public static class BlankResolver
-            extends FlowSegmentBlankResolver<SingleSwitchFlowInstallRequest, SingleSwitchFlowRemoveRequest> {
-        BlankResolver(IFlowSegmentBlank<SingleSwitchFlowInstallRequest, SingleSwitchFlowRemoveRequest> blank) {
+            extends FlowSegmentBlankResolver<SingleSwitchFlowBlankRequest> {
+        BlankResolver(IFlowSegmentBlank<SingleSwitchFlowBlankRequest> blank) {
             super(blank);
         }
     }

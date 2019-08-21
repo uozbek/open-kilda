@@ -35,8 +35,9 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest
-        implements IFlowSegmentBlank<EgressFlowSegmentInstallRequest, EgressFlowSegmentRemoveRequest> {
+public class EgressFlowSegmentBlankRequest
+        extends FlowSegmentRequest
+        implements IFlowSegmentBlank<EgressFlowSegmentBlankRequest> {
     @JsonProperty("endpoint")
     protected final FlowEndpoint endpoint;
 
@@ -82,6 +83,14 @@ public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest
         return new EgressFlowSegmentRemoveRequest(this);
     }
 
+    @Override
+    public EgressFlowSegmentVerifyRequest makeVerifyRequest() {
+        return new EgressFlowSegmentVerifyRequest(this);
+    }
+
+    /**
+     * Create "blank" resolver - object capable to create any "real" request type.
+     */
     @Builder(builderMethodName = "buildResolver")
     public static BlankResolver makeResolver(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
@@ -92,8 +101,7 @@ public class EgressFlowSegmentBlankRequest extends FlowSegmentRequest
         return new BlankResolver(blank);
     }
 
-    public static class BlankResolver
-            extends FlowSegmentBlankResolver<EgressFlowSegmentInstallRequest, EgressFlowSegmentRemoveRequest> {
+    public static class BlankResolver extends FlowSegmentBlankResolver<EgressFlowSegmentBlankRequest> {
         BlankResolver(EgressFlowSegmentBlankRequest blank) {
             super(blank);
         }

@@ -34,7 +34,7 @@ import java.util.UUID;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest
-        implements IFlowSegmentBlank<TransitFlowSegmentInstallRequest, TransitFlowSegmentRemoveRequest> {
+        implements IFlowSegmentBlank<TransitFlowSegmentBlankRequest> {
     @JsonProperty("ingressIslPort")
     protected final Integer ingressIslPort;
 
@@ -74,6 +74,14 @@ public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest
         return new TransitFlowSegmentRemoveRequest(this);
     }
 
+    @Override
+    public TransitFlowSegmentVerifyRequest makeVerifyRequest() {
+        return new TransitFlowSegmentVerifyRequest(this);
+    }
+
+    /**
+     * Create "blank" resolver - object capable to create any "real" request type.
+     */
     @Builder(builderMethodName = "buildResolver")
     public static BlankResolver makeResolver(
             MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
@@ -84,8 +92,8 @@ public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest
     }
 
     public static class BlankResolver
-            extends FlowSegmentBlankResolver<TransitFlowSegmentInstallRequest, TransitFlowSegmentRemoveRequest> {
-        BlankResolver(IFlowSegmentBlank<TransitFlowSegmentInstallRequest, TransitFlowSegmentRemoveRequest> blank) {
+            extends FlowSegmentBlankResolver<TransitFlowSegmentBlankRequest> {
+        BlankResolver(IFlowSegmentBlank<TransitFlowSegmentBlankRequest> blank) {
             super(blank);
         }
     }

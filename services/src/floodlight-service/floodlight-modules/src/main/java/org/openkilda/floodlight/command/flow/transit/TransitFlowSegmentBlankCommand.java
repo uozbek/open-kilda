@@ -53,7 +53,7 @@ abstract class TransitFlowSegmentBlankCommand extends AbstractNotIngressFlowSegm
         }
     }
 
-    private OFFlowMod makeTransitModMessage() {
+    protected OFFlowMod makeTransitModMessage() {
         OFFactory of = getSw().getOFFactory();
         return makeFlowModBuilder(of)
                 .setInstructions(makeTransitModMessageInstructions(of))

@@ -16,15 +16,11 @@
 package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
-import org.openkilda.floodlight.command.meter.MeterReport;
-import org.openkilda.floodlight.command.meter.MeterVerifyCommand;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,18 +28,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class IngressFlowSegmentVerifyCommand extends IngressFlowSegmentInstallCommand {
+public class SingleSwitchFlowVerifyCommand extends SingleSwitchFlowInstallCommand {
     @JsonCreator
-    public IngressFlowSegmentVerifyCommand(
+    public SingleSwitchFlowVerifyCommand(
             @JsonProperty("message_context") MessageContext context,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("islPort") Integer islPort,
-            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
+            @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
+        super(context, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
 
     @Override

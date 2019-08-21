@@ -23,6 +23,7 @@ import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterInstallCommand;
 import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
 import org.openkilda.floodlight.command.meter.MeterReport;
+import org.openkilda.floodlight.command.meter.MeterVerifyCommand;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.model.SwitchDescriptor;
@@ -93,22 +94,29 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
     }
 
     protected CompletableFuture<FlowSegmentReport> makeInstallPlan(SpeakerCommandProcessor commandProcessor) {
-        CompletableFuture<FlowSegmentReport> future;
+        CompletableFuture<MeterId> future = CompletableFuture.completedFuture(null);
         if (meterConfig != null) {
             future = planMeterInstall(commandProcessor)
-                    .thenCompose(this::planToUseMeter);
-        } else {
-            future = planForwardingRulesInstall(null);
+                    .thenApply(this::handleMeterReport);
         }
-        return future;
+        return future.thenCompose(this::planOfFlowsInstall);
     }
 
     protected CompletableFuture<FlowSegmentReport> makeRemovePlan(SpeakerCommandProcessor commandProcessor) {
-        CompletableFuture<?> future = planForwardingRulesRemove();
+        CompletableFuture<Void> future = planOfFlowsRemove();
         if (meterConfig != null) {
             future = future.thenCompose(ignore -> planMeterRemove(commandProcessor));
         }
         return future.thenApply(ignore -> makeSuccessReport());
+    }
+
+    protected CompletableFuture<FlowSegmentReport> makeVerifyPlan(SpeakerCommandProcessor commandProcessor) {
+        CompletableFuture<MeterId> future = CompletableFuture.completedFuture(null);
+        if (meterConfig != null) {
+            future = planMeterVerify(commandProcessor)
+                    .thenApply(this::handleMeterReport);
+        }
+        return future.thenCompose(this::planOfFlowsVerify);
     }
 
     private CompletableFuture<MeterReport> planMeterInstall(SpeakerCommandProcessor commandProcessor) {
@@ -116,13 +124,18 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         return commandProcessor.chain(meterCommand);
     }
 
-    private CompletableFuture<MeterReport> planMeterRemove(SpeakerCommandProcessor commandProcessor) {
+    private CompletableFuture<Void> planMeterRemove(SpeakerCommandProcessor commandProcessor) {
         MeterRemoveCommand removeCommand = new MeterRemoveCommand(messageContext, switchId, meterConfig);
         return commandProcessor.chain(removeCommand)
-                .thenApply(this::handleMeterRemoveReport);
+                .thenAccept(this::handleMeterRemoveReport);
     }
 
-    private CompletableFuture<FlowSegmentReport> planToUseMeter(MeterReport report) {
+    private CompletableFuture<MeterReport> planMeterVerify(SpeakerCommandProcessor commandProcessor) {
+        MeterVerifyCommand meterVerify = new MeterVerifyCommand(switchId, messageContext, meterConfig);
+        return commandProcessor.chain(meterVerify);
+    }
+
+    protected MeterId handleMeterReport(MeterReport report) {
         MeterId effectiveMeterId;
         try {
             report.raiseError();
@@ -135,10 +148,10 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
             throw maskCallbackException(e);
         }
 
-        return planForwardingRulesInstall(effectiveMeterId);
+        return effectiveMeterId;
     }
 
-    private CompletableFuture<FlowSegmentReport> planForwardingRulesInstall(MeterId effectiveMeterId) {
+    private CompletableFuture<FlowSegmentReport> planOfFlowsInstall(MeterId effectiveMeterId) {
         List<OFFlowMod> ofMessages = makeIngressModMessages(effectiveMeterId);
         List<CompletableFuture<Optional<OFMessage>>> writeResults = new ArrayList<>(ofMessages.size());
         try (Session session = getSessionService().open(messageContext, getSw())) {
@@ -150,7 +163,7 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
                 .thenApply(ignore -> makeSuccessReport());
     }
 
-    private CompletableFuture<Void> planForwardingRulesRemove() {
+    private CompletableFuture<Void> planOfFlowsRemove() {
         MeterId meterId = null;
         if (meterConfig != null) {
             meterId = meterConfig.getId();
@@ -175,7 +188,11 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         return CompletableFuture.allOf(requests.toArray(new CompletableFuture<?>[0]));
     }
 
-    private MeterReport handleMeterRemoveReport(MeterReport report) {
+    private CompletableFuture<FlowSegmentReport> planOfFlowsVerify(MeterId effectiveMeterId) {
+        return makeVerifyPlan(makeIngressModMessages(effectiveMeterId));
+    }
+
+    private void handleMeterRemoveReport(MeterReport report) {
         try {
             report.raiseError();
         } catch (UnsupportedSwitchOperationException e) {
@@ -183,10 +200,9 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         } catch (Exception e) {
             throw maskCallbackException(e);
         }
-        return report;
     }
 
-    private List<OFFlowMod> makeIngressModMessages(MeterId effectiveMeterId) {
+    protected List<OFFlowMod> makeIngressModMessages(MeterId effectiveMeterId) {
         List<OFFlowMod> ofMessages = new ArrayList<>(2);
         OFFactory of = getSw().getOFFactory();
         if (FlowEndpoint.isVlanIdSet(endpoint.getOuterVlanId())) {

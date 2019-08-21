@@ -13,41 +13,38 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command.flow.ingress;
+package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
 import org.openkilda.floodlight.api.FlowTransitEncapsulation;
-import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
-import org.openkilda.floodlight.command.meter.MeterReport;
-import org.openkilda.floodlight.command.meter.MeterVerifyCommand;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
+import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class IngressFlowSegmentVerifyCommand extends IngressFlowSegmentInstallCommand {
+public class TransitFlowSegmentVerifyCommand extends TransitFlowSegmentInstallCommand {
     @JsonCreator
-    public IngressFlowSegmentVerifyCommand(
+    public TransitFlowSegmentVerifyCommand(
             @JsonProperty("message_context") MessageContext context,
+            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("endpoint") FlowEndpoint endpoint,
-            @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("islPort") Integer islPort,
-            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
-        super(context, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
+            @JsonProperty("ingressIslPort") Integer ingressIslPort,
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation,
+            @JsonProperty("egressIslPort") Integer egressIslPort) {
+        super(context, switchId, commandId, flowId, cookie, ingressIslPort, encapsulation, egressIslPort);
     }
 
     @Override
     protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
-        return makeVerifyPlan(commandProcessor);
+        return makeVerifyPlan(ImmutableList.of(makeTransitModMessage()));
     }
 }
