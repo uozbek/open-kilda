@@ -20,45 +20,32 @@ import static org.projectfloodlight.openflow.protocol.OFVersion.OF_13;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.IOfErrorResponseHandler;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
-import org.openkilda.floodlight.config.provider.FloodlightModuleConfigurationProvider;
 import org.openkilda.floodlight.error.InvalidMeterIdException;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
+import org.openkilda.floodlight.error.SwitchIncorrectMeterException;
 import org.openkilda.floodlight.error.SwitchMeterConflictException;
-import org.openkilda.floodlight.error.SwitchNotFoundException;
+import org.openkilda.floodlight.error.SwitchMissingMeterException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.session.Session;
-import org.openkilda.floodlight.switchmanager.SwitchManager;
-import org.openkilda.floodlight.switchmanager.SwitchManagerConfig;
-import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Meter;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.projectfloodlight.openflow.protocol.OFErrorMsg;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFMessage;
-import org.projectfloodlight.openflow.protocol.OFMeterConfig;
-import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsReply;
-import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsRequest;
-import org.projectfloodlight.openflow.protocol.OFMeterFlags;
 import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 import org.projectfloodlight.openflow.protocol.OFMeterModFailedCode;
 import org.projectfloodlight.openflow.protocol.errormsg.OFMeterModFailedErrorMsg;
 import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
-import org.projectfloodlight.openflow.protocol.meterband.OFMeterBandDrop;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorResponseHandler {
-    private SwitchManagerConfig switchManagerConfig;
+    private SpeakerCommandProcessor commandProcessor;
 
     public MeterInstallCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
         super(switchId, messageContext, meterConfig);
@@ -68,6 +55,8 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
     protected CompletableFuture<MeterReport> makeExecutePlan(
             SpeakerCommandProcessor commandProcessor)
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
+        this.commandProcessor = commandProcessor;
+
         final OFMeterMod meterAddMessage = makeMeterAddMessage();
         try (Session session = getSessionService().open(messageContext, getSw())) {
             return setupErrorHandler(session.write(meterAddMessage), this)
@@ -84,27 +73,17 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
             return future;
         }
 
-        CompletableFuture<Optional<OFMessage>> lookupExistingBranch = new CompletableFutureAdapter<>(
-                 messageContext, getSw().writeStatsRequest(makeMeterReadCommand()))
-                .thenAccept(this::ensureSameMeterExists)
-                .thenApply(ignore -> Optional.empty());
-        propagateFutureResponse(future, lookupExistingBranch);
-
+        MeterVerifyCommand verifyCommand = new MeterVerifyCommand(switchId, messageContext, meterConfig);
+        propagateFutureResponse(
+                future, commandProcessor.chain(verifyCommand)
+                        .thenAccept(this::handleMeterVerify)
+                        .thenApply(ignore -> Optional.empty()));
         return future;
-    }
-
-    @Override
-    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
-        super.setup(moduleContext);
-
-        FloodlightModuleConfigurationProvider provider =
-                FloodlightModuleConfigurationProvider.of(moduleContext, SwitchManager.class);
-        switchManagerConfig = provider.getConfiguration(SwitchManagerConfig.class);
     }
 
     private OFMeterMod makeMeterAddMessage() throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         ensureSwitchSupportMeters();
-        ensureMeterIdIsValid();
+        ensureMeterIdValid();
 
         final OFFactory ofFactory = getSw().getOFFactory();
 
@@ -124,12 +103,6 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         return meterModBuilder.build();
     }
 
-    private OFMeterConfigStatsRequest makeMeterReadCommand() {
-        return getSw().getOFFactory().buildMeterConfigStatsRequest()
-                .setMeterId(meterConfig.getId().getValue())
-                .build();
-    }
-
     private boolean isInstallConflict(OFErrorMsg response) {
         if (!(response instanceof OFMeterModFailedErrorMsg)) {
             return false;
@@ -137,101 +110,21 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         return ((OFMeterModFailedErrorMsg) response).getCode() == OFMeterModFailedCode.METER_EXISTS;
     }
 
-    private void ensureMeterIdIsValid() throws InvalidMeterIdException {
+    private void handleMeterVerify(MeterReport report) {
+        try {
+            report.raiseError();
+        } catch (SwitchIncorrectMeterException | SwitchMissingMeterException e) {
+            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getId()));
+        } catch (Exception e) {
+            throw maskCallbackException(e);
+        }
+    }
+
+    private void ensureMeterIdValid() throws InvalidMeterIdException {
         MeterId meterId = meterConfig.getId();
         if (meterId == null || meterId.getValue() <= 0L) {
             throw new InvalidMeterIdException(getSw().getId(), String.format(
                     "Invalid meterId value - expect not negative integer, got - %s", meterId));
         }
-    }
-
-    private void ensureSameMeterExists(List<OFMeterConfigStatsReply> meterStatResponses) {
-        Optional<OFMeterConfig> target = Optional.empty();
-        for (OFMeterConfigStatsReply meterConfigReply : meterStatResponses) {
-            target = findMeter(meterConfigReply);
-            if (target.isPresent()) {
-                break;
-            }
-        }
-
-        if (target.isPresent()) {
-            validateMeterConfig(target.get());
-        } else {
-            throw maskCallbackException(new SwitchMeterConflictException(
-                    getSw().getId(), meterConfig.getId(),
-                    "switch report id conflict, but validation procedure can't locate it on switch (race condition?)"));
-        }
-    }
-
-    private Optional<OFMeterConfig> findMeter(OFMeterConfigStatsReply meterConfigReply) {
-        MeterId meterId = meterConfig.getId();
-        for (OFMeterConfig entry : meterConfigReply.getEntries()) {
-            if (meterId.getValue() == entry.getMeterId()) {
-                return Optional.of(entry);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private void validateMeterConfig(OFMeterConfig meterConfig) {
-        validateMeterConfigFlags(meterConfig);
-        validateMeterConfigBands(meterConfig);
-    }
-
-    private void validateMeterConfigFlags(OFMeterConfig config) {
-        if (! makeMeterFlags().equals(config.getFlags())) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getId()));
-        }
-    }
-
-    private void validateMeterConfigBands(OFMeterConfig config) {
-        List<OFMeterBand> expectBands = makeMeterBands(0);  // to ignore burst value comparison
-        List<OFMeterBand> actualBands = config.getEntries();
-
-        if (expectBands.size() != actualBands.size()) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getId()));
-        }
-
-        boolean mismatch = false;
-        for (int i = 0; i < expectBands.size(); i++) {
-            OFMeterBand expect = expectBands.get(i);
-            OFMeterBand actual = actualBands.get(i);
-
-            if (actual instanceof OFMeterBandDrop) {
-                actual = ((OFMeterBandDrop) actual).createBuilder()
-                        .setBurstSize(0)  // to ignore burst value comparison
-                        .build();
-            }
-
-            mismatch = !expect.equals(actual);
-            if (mismatch) {
-                break;
-            }
-        }
-
-        if (mismatch) {
-            throw maskCallbackException(new SwitchMeterConflictException(getSw().getId(), meterConfig.getId()));
-        }
-    }
-
-    private Set<OFMeterFlags> makeMeterFlags() {
-        return ImmutableSet.of(OFMeterFlags.KBPS, OFMeterFlags.BURST, OFMeterFlags.STATS);
-    }
-
-    private List<OFMeterBand> makeMeterBands() {
-        long burstSize = Meter.calculateBurstSize(
-                meterConfig.getBandwidth(), switchManagerConfig.getFlowMeterMinBurstSizeInKbits(),
-                switchManagerConfig.getFlowMeterBurstCoefficient(),
-                getSw().getSwitchDescription().getManufacturerDescription(),
-                getSw().getSwitchDescription().getSoftwareDescription());
-        return makeMeterBands(burstSize);
-    }
-
-    private List<OFMeterBand> makeMeterBands(long burstSize) {
-        return ImmutableList.of(getSw().getOFFactory().meterBands()
-                .buildDrop()
-                .setRate(meterConfig.getBandwidth())
-                .setBurstSize(burstSize)
-                .build());
     }
 }

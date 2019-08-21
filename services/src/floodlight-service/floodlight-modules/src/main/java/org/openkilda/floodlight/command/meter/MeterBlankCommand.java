@@ -17,18 +17,27 @@ package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.config.provider.FloodlightModuleConfigurationProvider;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.FeatureDetectorService;
+import org.openkilda.floodlight.switchmanager.SwitchManager;
+import org.openkilda.floodlight.switchmanager.SwitchManagerConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
+import org.openkilda.model.Meter;
 import org.openkilda.model.SwitchId;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import lombok.AccessLevel;
 import lombok.Getter;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
+import org.projectfloodlight.openflow.protocol.OFMeterFlags;
+import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
 
+import java.util.List;
 import java.util.Set;
 
 abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
@@ -36,6 +45,7 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
     protected MeterConfig meterConfig;
 
     // operation data
+    private SwitchManagerConfig switchManagerConfig;
     @Getter(AccessLevel.PROTECTED)
     private Set<SpeakerSwitchView.Feature> switchFeatures;
 
@@ -49,9 +59,39 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
         return new MeterReport(error);
     }
 
+    protected MeterReport makeSuccessReport() {
+        return new MeterReport(meterConfig.getId());
+    }
+
+    protected Set<OFMeterFlags> makeMeterFlags() {
+        return ImmutableSet.of(OFMeterFlags.KBPS, OFMeterFlags.BURST, OFMeterFlags.STATS);
+    }
+
+    protected List<OFMeterBand> makeMeterBands() {
+        long burstSize = Meter.calculateBurstSize(
+                meterConfig.getBandwidth(), switchManagerConfig.getFlowMeterMinBurstSizeInKbits(),
+                switchManagerConfig.getFlowMeterBurstCoefficient(),
+                getSw().getSwitchDescription().getManufacturerDescription(),
+                getSw().getSwitchDescription().getSoftwareDescription());
+        return makeMeterBands(burstSize);
+    }
+
+    protected List<OFMeterBand> makeMeterBands(long burstSize) {
+        return ImmutableList.of(getSw().getOFFactory().meterBands()
+                .buildDrop()
+                .setRate(meterConfig.getBandwidth())
+                .setBurstSize(burstSize)
+                .build());
+    }
+
     @Override
     protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
         super.setup(moduleContext);
+
+        FloodlightModuleConfigurationProvider provider =
+                FloodlightModuleConfigurationProvider.of(moduleContext, SwitchManager.class);
+        switchManagerConfig = provider.getConfiguration(SwitchManagerConfig.class);
+
         FeatureDetectorService featuresDetector = moduleContext.getServiceImpl(FeatureDetectorService.class);
         switchFeatures = featuresDetector.detectSwitch(getSw());
     }

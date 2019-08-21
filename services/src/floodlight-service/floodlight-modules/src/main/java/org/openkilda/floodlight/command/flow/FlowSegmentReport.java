@@ -19,6 +19,7 @@ import org.openkilda.floodlight.KafkaChannel;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
+import org.openkilda.floodlight.error.SwitchMissingFlowsException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
@@ -61,6 +62,9 @@ public class FlowSegmentReport extends SpeakerCommandReport {
             errorResponse.errorCode(ErrorCode.SWITCH_UNAVAILABLE);
         } catch (SessionErrorResponseException e) {
             decodeError(errorResponse, e.getErrorResponse());
+        } catch (SwitchMissingFlowsException e) {
+            errorResponse.errorCode(ErrorCode.MISSING_OF_FLOWS);
+            errorResponse.description(e.getMessage());
         } catch (SwitchOperationException e) {
             errorResponse.errorCode(ErrorCode.UNKNOWN);
             errorResponse.description(e.getMessage());

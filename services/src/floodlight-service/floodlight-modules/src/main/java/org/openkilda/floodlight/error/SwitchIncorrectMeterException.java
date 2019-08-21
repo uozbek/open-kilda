@@ -15,11 +15,20 @@
 
 package org.openkilda.floodlight.error;
 
+import org.openkilda.floodlight.api.MeterConfig;
+
+import lombok.Getter;
+import org.projectfloodlight.openflow.protocol.OFMeterConfig;
 import org.projectfloodlight.openflow.types.DatapathId;
 
-public class OfDeleteException extends SwitchOperationException {
+@Getter
+public class SwitchIncorrectMeterException extends SwitchOperationException {
+    private final MeterConfig expectedMeterConfig;
+    private final transient OFMeterConfig actualMeterConfig;
 
-    public OfDeleteException(DatapathId dpId, Long cookie) {
-        super(dpId, String.format("Failed to delete rule %s from the switch \"%s\"", cookie, dpId));
+    public SwitchIncorrectMeterException(DatapathId dpId, MeterConfig meterConfig, OFMeterConfig actualMeterConfig) {
+        super(dpId, String.format("Meter %d on %s have incorrect config", meterConfig.getId().getValue(), dpId));
+        this.expectedMeterConfig = meterConfig;
+        this.actualMeterConfig = actualMeterConfig;
     }
 }

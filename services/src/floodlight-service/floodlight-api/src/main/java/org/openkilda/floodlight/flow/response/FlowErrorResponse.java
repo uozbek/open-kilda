@@ -27,6 +27,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.omg.CORBA.UNKNOWN;
 
 import java.util.UUID;
 
@@ -61,6 +62,7 @@ public class FlowErrorResponse extends SpeakerFlowSegmentResponse {
         BAD_FLAGS,
         BAD_COMMAND,
         OPERATION_TIMED_OUT,
+        MISSING_OF_FLOWS,
         UNKNOWN
     }
 }

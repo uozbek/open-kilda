@@ -56,7 +56,7 @@ abstract class EgressFlowSegmentBlankCommand extends AbstractNotIngressFlowSegme
         }
     }
 
-    private OFFlowMod makeEgressModMessage() {
+    protected OFFlowMod makeEgressModMessage() {
         OFFactory of = getSw().getOFFactory();
 
         return makeFlowModBuilder(of)

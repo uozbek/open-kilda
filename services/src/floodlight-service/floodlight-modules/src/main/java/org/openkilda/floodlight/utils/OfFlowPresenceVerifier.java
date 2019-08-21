@@ -35,13 +35,13 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class OfFlowPresenceValidator {
+public class OfFlowPresenceVerifier {
     private final Map<FlowLookupKey, List<OFFlowMod>> expected = new HashMap<>();
 
     @Getter
-    private final CompletableFuture<OfFlowPresenceValidator> finish = new CompletableFuture<>();
+    private final CompletableFuture<OfFlowPresenceVerifier> finish = new CompletableFuture<>();
 
-    public OfFlowPresenceValidator(OfFlowDumpProducer dumpProducer, List<OFFlowMod> expectedFlows) {
+    public OfFlowPresenceVerifier(OfFlowDumpProducer dumpProducer, List<OFFlowMod> expectedFlows) {
         for (OFFlowMod entry : expectedFlows) {
             FlowLookupKey key = new FlowLookupKey(entry.getTableId(), entry.getCookie());
             expected.computeIfAbsent(key, ignore -> new ArrayList<>())
@@ -50,7 +50,7 @@ public class OfFlowPresenceValidator {
 
         List<CompletableFuture<Void>> pending = new ArrayList<>();
         for (CompletableFuture<List<OFFlowStatsEntry>> tableDump : dumpProducer.getTableRequests()) {
-            pending.add(tableDump.thenAccept(this::handleTableDump));
+            pending.add(tableDump.thenAccept(this::handleTableFlowStats));
         }
 
         CompletableFuture.allOf(pending.toArray(new CompletableFuture<?>[0]))
@@ -63,9 +63,9 @@ public class OfFlowPresenceValidator {
                 .collect(Collectors.toList());
     }
 
-    private void handleTableDump(List<OFFlowStatsEntry> tableEntries) {
+    private void handleTableFlowStats(List<OFFlowStatsEntry> tableEntries) {
         for (OFFlowStatsEntry entry : tableEntries) {
-            validateTableEntry(entry);
+            verifyTableEntry(entry);
         }
     }
 
@@ -76,7 +76,7 @@ public class OfFlowPresenceValidator {
         finish.complete(this);
     }
 
-    private void validateTableEntry(OFFlowStatsEntry tableEntry) {
+    private void verifyTableEntry(OFFlowStatsEntry tableEntry) {
         FlowLookupKey key = new FlowLookupKey(tableEntry.getTableId(), tableEntry.getCookie());
         List<OFFlowMod> expectedChunk = expected.get(key);
         if (expectedChunk != null) {

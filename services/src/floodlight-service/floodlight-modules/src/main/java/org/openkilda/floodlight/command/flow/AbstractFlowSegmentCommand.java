@@ -16,6 +16,9 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.error.SwitchMissingFlowsException;
+import org.openkilda.floodlight.utils.OfFlowDumpProducer;
+import org.openkilda.floodlight.utils.OfFlowPresenceVerifier;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
@@ -28,7 +31,9 @@ import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.types.U64;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Getter
 public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegmentReport> {
@@ -46,6 +51,13 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
         this.commandId = commandId;
         this.flowId = flowId;
         this.cookie = cookie;
+    }
+
+    protected CompletableFuture<FlowSegmentReport> makeVerifyPlan(List<OFFlowMod> expected) {
+        OfFlowDumpProducer dumper = new OfFlowDumpProducer(messageContext, getSw(), expected);
+        OfFlowPresenceVerifier verifier = new OfFlowPresenceVerifier(dumper, expected);
+        return verifier.getFinish()
+                .thenApply(verifyResults -> handleVerifyResponse(expected, verifyResults));
     }
 
     protected FlowSegmentReport makeReport(Exception error) {
@@ -68,5 +80,16 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
         return of.buildFlowDeleteStrict()
                 .setPriority(FLOW_PRIORITY)
                 .setCookie(U64.of(cookie.getValue()));
+    }
+
+    private FlowSegmentReport handleVerifyResponse(List<OFFlowMod> expected, OfFlowPresenceVerifier verifier) {
+        List<OFFlowMod> missing = verifier.getMissing();
+        if (missing.isEmpty()) {
+            return makeSuccessReport();
+        }
+
+        return new FlowSegmentReport(
+                this, new SwitchMissingFlowsException(
+                        getSw().getId(), getFlowId(), getCookie(), expected, missing));
     }
 }
