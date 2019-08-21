@@ -15,10 +15,14 @@
 
 package org.openkilda.floodlight.api.request;
 
+import java.util.UUID;
+
 public interface IFlowSegmentBlank<T extends FlowSegmentRequest> {
     T makeInstallRequest();
 
     T makeRemoveRequest();
 
     T makeVerifyRequest();
+
+    UUID getCommandId();
 }

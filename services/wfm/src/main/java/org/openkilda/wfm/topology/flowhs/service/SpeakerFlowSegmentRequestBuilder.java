@@ -56,6 +56,12 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     }
 
     @Override
+    public List<FlowSegmentBlankGenericResolver> buildAll(
+            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
+        return null;
+    }
+
+    @Override
     public List<FlowSegmentBlankGenericResolver> buildAllExceptIngress(CommandContext context, Flow flow) {
         return buildAllExceptIngress(context, flow, flow.getForwardPath(), flow.getReversePath());
     }
@@ -77,27 +83,39 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         return makeIngressOnly(context, flow, forwardPath, reversePath);
     }
 
-    private List<FlowSegmentBlankGenericResolver> makeAllExceptionIngress(
-            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        ensureValidArguments(flow, forwardPath, reversePath);
+    private List<FlowSegmentBlankGenericResolver> makeAll(
+            CommandContext context, Flow flow, FlowPath path, FlowPath oppositePath) {
+        ensureValidArguments(flow, path, oppositePath);
 
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, forwardPath, context, getEncapsulation(forwardPath, reversePath), false, true, true));
+                flow, path, context, getEncapsulation(path, oppositePath), true, true, true));
         requests.addAll(makeRequests(
-                flow, reversePath, context, getEncapsulation(reversePath, forwardPath), false, true, true));
+                flow, oppositePath, context, getEncapsulation(oppositePath, path), true, true, true));
+        return requests;
+    }
+
+    private List<FlowSegmentBlankGenericResolver> makeAllExceptionIngress(
+            CommandContext context, Flow flow, FlowPath path, FlowPath oppositePath) {
+        ensureValidArguments(flow, path, oppositePath);
+
+        List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
+        requests.addAll(makeRequests(
+                flow, path, context, getEncapsulation(path, oppositePath), false, true, true));
+        requests.addAll(makeRequests(
+                flow, oppositePath, context, getEncapsulation(oppositePath, path), false, true, true));
         return requests;
     }
 
     private List<FlowSegmentBlankGenericResolver> makeIngressOnly(
-            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        ensureValidArguments(flow, forwardPath, reversePath);
+            CommandContext context, Flow flow, FlowPath path, FlowPath oppositePath) {
+        ensureValidArguments(flow, path, oppositePath);
 
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, forwardPath, context, getEncapsulation(forwardPath, reversePath), true, false, false));
+                flow, path, context, getEncapsulation(path, oppositePath), true, false, false));
         requests.addAll(makeRequests(
-                flow, reversePath, context, getEncapsulation(reversePath, forwardPath), true, false, false));
+                flow, oppositePath, context, getEncapsulation(oppositePath, path), true, false, false));
         return requests;
     }
 

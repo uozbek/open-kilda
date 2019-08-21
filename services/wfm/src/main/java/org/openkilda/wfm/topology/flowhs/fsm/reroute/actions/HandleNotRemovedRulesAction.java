@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
@@ -34,11 +35,13 @@ public class HandleNotRemovedRulesAction
     public void execute(FlowRerouteFsm.State from, FlowRerouteFsm.State to,
                         FlowRerouteFsm.Event event, FlowRerouteContext context, FlowRerouteFsm stateMachine) {
         for (UUID commandId : stateMachine.getPendingCommands()) {
-            FlowSegmentRequest request = stateMachine.getRemoveCommands().get(commandId);
-            if (request != null) {
+            FlowSegmentBlankGenericResolver blank = stateMachine.getRemoveCommands().get(commandId);
+            if (blank != null) {
+                FlowSegmentRequest request = blank.makeRemoveRequest();
                 log.warn("Failed to remove {} from the switch {}", request, request.getSwitchId());
             } else {
-                request = stateMachine.getIngressCommands().get(commandId);
+                blank = stateMachine.getIngressCommands().get(commandId);
+                FlowSegmentRequest request = blank.makeInstallRequest();
                 log.warn("Failed to reinstall ingress {} on the switch {}", request, request.getSwitchId());
             }
         }

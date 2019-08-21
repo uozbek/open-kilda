@@ -15,6 +15,8 @@
 
 package org.openkilda.floodlight.api.request;
 
+import java.util.UUID;
+
 public class FlowSegmentBlankResolver<T extends FlowSegmentRequest> implements IFlowSegmentBlank<T> {
     private final IFlowSegmentBlank<T> blank;
 
@@ -35,6 +37,11 @@ public class FlowSegmentBlankResolver<T extends FlowSegmentRequest> implements I
     @Override
     public T makeVerifyRequest() {
         return blank.makeVerifyRequest();
+    }
+
+    @Override
+    public UUID getCommandId() {
+        return blank.getCommandId();
     }
 
     public FlowSegmentBlankGenericResolver makeGenericResolver() {

@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
@@ -59,7 +60,7 @@ public class InstallNonIngressRulesAction extends
                 ? stateMachine.getNewEncapsulationType() : flow.getEncapsulationType();
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(encapsulationType);
 
-        Collection<FlowSegmentRequest> requests = new ArrayList<>();
+        Collection<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
 
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
@@ -75,7 +76,7 @@ public class InstallNonIngressRulesAction extends
         }
 
         stateMachine.setNonIngressCommands(requests.stream()
-                .collect(Collectors.toMap(FlowSegmentRequest::getCommandId, Function.identity())));
+                .collect(Collectors.toMap(FlowSegmentBlankGenericResolver::getCommandId, Function.identity())));
 
         if (requests.isEmpty()) {
             log.debug("No need to install non ingress rules for one switch flow {}", stateMachine.getFlowId());
@@ -86,8 +87,8 @@ public class InstallNonIngressRulesAction extends
             stateMachine.fire(Event.RULES_INSTALLED);
         } else {
             Set<UUID> commandIds = requests.stream()
-                    .peek(command -> stateMachine.getCarrier().sendSpeakerRequest(command))
-                    .map(FlowSegmentRequest::getCommandId)
+                    .peek(blank -> stateMachine.getCarrier().sendSpeakerRequest(blank.makeInstallRequest()))
+                    .map(FlowSegmentBlankGenericResolver::getCommandId)
                     .collect(Collectors.toSet());
             stateMachine.setPendingCommands(commandIds);
 

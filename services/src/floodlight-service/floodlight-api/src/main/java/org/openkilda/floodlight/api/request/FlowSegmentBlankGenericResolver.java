@@ -15,17 +15,13 @@
 
 package org.openkilda.floodlight.api.request;
 
+import java.util.UUID;
+
 public class FlowSegmentBlankGenericResolver {
-    private final IFlowSegmentBlank<
-            ? extends FlowSegmentRequest,
-            ? extends FlowSegmentRequest,
-            ? extends FlowSegmentRequest> blank;
+    private final IFlowSegmentBlank<? extends FlowSegmentRequest> blank;
 
     public FlowSegmentBlankGenericResolver(
-            IFlowSegmentBlank<
-                    ? extends FlowSegmentRequest,
-                    ? extends FlowSegmentRequest,
-                    ? extends FlowSegmentRequest> blank) {
+            IFlowSegmentBlank<? extends FlowSegmentRequest> blank) {
         this.blank = blank;
     }
 
@@ -39,5 +35,9 @@ public class FlowSegmentBlankGenericResolver {
 
     public FlowSegmentRequest makeVerifyRequest() {
         return blank.makeVerifyRequest();
+    }
+
+    public UUID getCommandId() {
+        return blank.getCommandId();
     }
 }

@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute;
 
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.messaging.Message;
@@ -40,8 +40,8 @@ import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.CancelPendingComman
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.CompleteFlowPathInstallationAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.CompleteFlowPathRemovalAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.DeallocateResourcesAction;
-import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.DumpIngressRulesAction;
-import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.DumpNonIngressRulesAction;
+import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.EmitIngressRulesVerifyRequestsAction;
+import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.EmitNonIngressRulesVerifyRequestsAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.HandleNotDeallocatedResourcesAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.HandleNotRemovedPathsAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.HandleNotRemovedRulesAction;
@@ -60,8 +60,8 @@ import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.RevertResourceAlloc
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.SwapFlowPathsAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.UpdateFlowStatusAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ValidateFlowAction;
-import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ValidateIngressRulesAction;
-import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ValidateNonIngressRulesAction;
+import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ConsiderIngressRulesValidationResultAction;
+import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ConsiderNonIngressRulesValidationResultAction;
 import org.openkilda.wfm.topology.flowhs.service.FlowRerouteHubCarrier;
 
 import lombok.Getter;
@@ -118,9 +118,9 @@ public final class FlowRerouteFsm
 
     private Map<UUID, SpeakerFlowSegmentResponse> failedValidationResponses = new HashMap<>();
 
-    private Map<UUID, FlowSegmentRequest> ingressCommands = new HashMap<>();
-    private Map<UUID, FlowSegmentRequest> nonIngressCommands = new HashMap<>();
-    private Map<UUID, FlowSegmentRequest> removeCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentBlankGenericResolver> ingressCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentBlankGenericResolver> nonIngressCommands = new HashMap<>();
+    private Map<UUID, FlowSegmentBlankGenericResolver> removeCommands = new HashMap<>();
 
     public FlowRerouteFsm(CommandContext commandContext, FlowRerouteHubCarrier carrier) {
         super(commandContext);
@@ -181,13 +181,13 @@ public final class FlowRerouteFsm
 
         builder.transition().from(State.NON_INGRESS_RULES_INSTALLED).to(State.VALIDATING_NON_INGRESS_RULES)
                 .on(Event.NEXT)
-                .perform(new DumpNonIngressRulesAction());
+                .perform(new EmitNonIngressRulesVerifyRequestsAction());
         builder.transitions().from(State.NON_INGRESS_RULES_INSTALLED)
                 .toAmong(State.PATHS_SWAP_REVERTED, State.PATHS_SWAP_REVERTED)
                 .onEach(Event.TIMEOUT, Event.ERROR);
 
         builder.internalTransition().within(State.VALIDATING_NON_INGRESS_RULES).on(Event.COMMAND_EXECUTED)
-                .perform(new ValidateNonIngressRulesAction());
+                .perform(new ConsiderNonIngressRulesValidationResultAction());
         builder.transition().from(State.VALIDATING_NON_INGRESS_RULES).to(State.NON_INGRESS_RULES_VALIDATED)
                 .on(Event.RULES_VALIDATED);
         builder.transitions().from(State.VALIDATING_NON_INGRESS_RULES)
@@ -219,13 +219,13 @@ public final class FlowRerouteFsm
                 .perform(new CancelPendingCommandsAction());
 
         builder.transition().from(State.INGRESS_RULES_INSTALLED).to(State.VALIDATING_INGRESS_RULES).on(Event.NEXT)
-                .perform(new DumpIngressRulesAction());
+                .perform(new EmitIngressRulesVerifyRequestsAction());
         builder.transitions().from(State.INGRESS_RULES_INSTALLED)
                 .toAmong(State.REVERTING_PATHS_SWAP, State.REVERTING_PATHS_SWAP)
                 .onEach(Event.TIMEOUT, Event.ERROR);
 
         builder.internalTransition().within(State.VALIDATING_INGRESS_RULES).on(Event.COMMAND_EXECUTED)
-                .perform(new ValidateIngressRulesAction(persistenceManager));
+                .perform(new ConsiderIngressRulesValidationResultAction(persistenceManager));
         builder.transition().from(State.VALIDATING_INGRESS_RULES).to(State.INGRESS_RULES_VALIDATED)
                 .on(Event.RULES_VALIDATED);
         builder.transitions().from(State.VALIDATING_INGRESS_RULES)

@@ -17,22 +17,18 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
-import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.Event;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.State;
-import org.openkilda.wfm.topology.flowhs.validation.rules.NonIngressRulesValidator;
-import org.openkilda.wfm.topology.flowhs.validation.rules.RulesValidator;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
 
 @Slf4j
-public class ValidateNonIngressRulesAction extends RuleProcessingAction {
+public class ConsiderNonIngressRulesValidationResultAction extends RuleProcessingAction {
 
     @Override
     protected void perform(State from, State to,
@@ -41,30 +37,18 @@ public class ValidateNonIngressRulesAction extends RuleProcessingAction {
         UUID commandId = response.getCommandId();
         stateMachine.getPendingCommands().remove(commandId);
 
-        FlowSegmentRequest expected = stateMachine.getNonIngressCommands().get(commandId);
-        if (expected == null) {
+        if (! stateMachine.getNonIngressCommands().containsKey(commandId)) {
             throw new IllegalStateException(format("Failed to find non ingress command with id %s", commandId));
         }
 
         if (response.isSuccess()) {
-            RulesValidator validator =
-                    new NonIngressRulesValidator(expected, (FlowRuleResponse) context.getResponse());
-            if (validator.validate()) {
-                String message = format("Non ingress rule %s has been validated successfully on switch %s",
-                        expected.getCookie(), expected.getSwitchId());
-                log.debug(message);
-                sendHistoryUpdate(stateMachine, "Rule is validated", message);
-            } else {
-                String message = format("Non ingress rule %s is missing on switch %s",
-                        expected.getCookie(), expected.getSwitchId());
-                log.warn(message);
-                sendHistoryUpdate(stateMachine, "Rule is missing", message);
-
-                stateMachine.getFailedValidationResponses().put(commandId, response);
-            }
+            String message = format("Non ingress rule %s has been validated successfully on switch %s",
+                                    response.getCookie(), response.getSwitchId());
+            log.debug(message);
+            sendHistoryUpdate(stateMachine, "Rule is validated", message);
         } else {
             String message = format("Failed to validate non ingress rule %s on switch %s",
-                    expected.getCookie(), expected.getSwitchId());
+                    response.getCookie(), response.getSwitchId());
             log.warn(message);
             sendHistoryUpdate(stateMachine, "Rule validation failed", message);
 

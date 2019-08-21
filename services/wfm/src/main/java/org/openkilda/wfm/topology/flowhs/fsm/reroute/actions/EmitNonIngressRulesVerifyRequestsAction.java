@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.flow.request.GetInstalledRule;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
@@ -26,27 +27,36 @@ import lombok.extern.slf4j.Slf4j;
 import org.squirrelframework.foundation.fsm.AnonymousAction;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class DumpIngressRulesAction extends
+public class EmitNonIngressRulesVerifyRequestsAction extends
         AnonymousAction<FlowRerouteFsm, State, Event, FlowRerouteContext> {
 
     @Override
     public void execute(State from, State to,
                         Event event, FlowRerouteContext context, FlowRerouteFsm stateMachine) {
-        log.debug("Validating installed ingress rules for the flow {}",
+        log.debug("Validating installed non ingress rules for the flow {}",
                 stateMachine.getFlowId());
 
-        Collection<GetInstalledRule> dumpFlowRules = stateMachine.getIngressCommands().values().stream()
-                .map(command -> new GetInstalledRule(command.getMessageContext(), command.getCommandId(),
-                        command.getFlowId(), command.getSwitchId(), command.getCookie()))
-                .collect(Collectors.toList());
+        Map<UUID, FlowSegmentBlankGenericResolver> nonIngressRequests = stateMachine.getNonIngressCommands();
 
-        dumpFlowRules.forEach(command -> stateMachine.getCarrier().sendSpeakerRequest(command));
+        if (nonIngressRequests.isEmpty()) {
+            log.debug("No need to validate non ingress rules for one switch flow");
 
-        stateMachine.setPendingCommands(dumpFlowRules.stream()
-                .map(FlowSegmentRequest::getCommandId)
-                .collect(Collectors.toSet()));
+            stateMachine.fire(Event.RULES_VALIDATED);
+        } else {
+            Set<UUID> pendingRequests = new HashSet<>();
+            for (FlowSegmentBlankGenericResolver blank : nonIngressRequests.values()) {
+                FlowSegmentRequest request = blank.makeVerifyRequest();
+                stateMachine.getCarrier().sendSpeakerRequest(request);
+                pendingRequests.add(request.getCommandId());
+            }
+            stateMachine.setPendingCommands(pendingRequests);
+        }
     }
 }

@@ -17,9 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
-import org.openkilda.floodlight.flow.response.FlowRuleResponse;
 import org.openkilda.model.SwitchFeatures;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.SwitchFeaturesRepository;
@@ -27,19 +25,17 @@ import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.Event;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.State;
-import org.openkilda.wfm.topology.flowhs.validation.rules.IngressRulesValidator;
-import org.openkilda.wfm.topology.flowhs.validation.rules.RulesValidator;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
 
 @Slf4j
-public class ValidateIngressRulesAction extends RuleProcessingAction {
+public class ConsiderIngressRulesValidationResultAction extends RuleProcessingAction {
 
     private final SwitchFeaturesRepository switchFeaturesRepository;
 
-    public ValidateIngressRulesAction(PersistenceManager persistenceManager) {
+    public ConsiderIngressRulesValidationResultAction(PersistenceManager persistenceManager) {
         this.switchFeaturesRepository = persistenceManager.getRepositoryFactory().createSwitchFeaturesRepository();
     }
 
@@ -50,34 +46,22 @@ public class ValidateIngressRulesAction extends RuleProcessingAction {
         UUID commandId = response.getCommandId();
         stateMachine.getPendingCommands().remove(commandId);
 
-        FlowSegmentRequest expected = stateMachine.getIngressCommands().get(commandId);
-        if (expected == null) {
+        if (! stateMachine.getIngressCommands().containsKey(commandId)) {
             throw new IllegalStateException(format("Failed to find ingress command with id %s", commandId));
         }
 
         if (response.isSuccess()) {
-            SwitchFeatures switchFeatures = switchFeaturesRepository.findBySwitchId(expected.getSwitchId())
+            SwitchFeatures switchFeatures = switchFeaturesRepository.findBySwitchId(response.getSwitchId())
                     .orElseThrow(() -> new IllegalStateException(format("Failed to find list of features for switch %s",
-                            expected.getSwitchId())));
+                            response.getSwitchId())));
 
-            RulesValidator validator =
-                    new IngressRulesValidator(expected, (FlowRuleResponse) context.getResponse(), switchFeatures);
-            if (validator.validate()) {
-                String message = format("Ingress rule %s has been validated successfully on switch %s",
-                        expected.getCookie(), expected.getSwitchId());
-                log.debug(message);
-                sendHistoryUpdate(stateMachine, "Rule is validated", message);
-            } else {
-                String message = format("Ingress rule %s is missing on switch %s",
-                        expected.getCookie(), expected.getSwitchId());
-                log.warn(message);
-                sendHistoryUpdate(stateMachine, "Rule is missing", message);
-
-                stateMachine.getFailedValidationResponses().put(commandId, response);
-            }
+            String message = format("Ingress rule %s has been validated successfully on switch %s",
+                                    response.getCookie(), response.getSwitchId());
+            log.debug(message);
+            sendHistoryUpdate(stateMachine, "Rule is validated", message);
         } else {
             String message = format("Failed to validate ingress rule %s on switch %s",
-                    expected.getCookie(), expected.getSwitchId());
+                    response.getCookie(), response.getSwitchId());
             log.warn(message);
             sendHistoryUpdate(stateMachine, "Rule validation failed", message);
 

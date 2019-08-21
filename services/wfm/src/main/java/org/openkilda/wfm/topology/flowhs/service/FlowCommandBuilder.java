@@ -24,6 +24,9 @@ import org.openkilda.wfm.CommandContext;
 import java.util.List;
 
 public interface FlowCommandBuilder {
+    List<FlowSegmentBlankGenericResolver> buildAll(
+            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath);
+
     /**
      * Build install commands for transit(if needed) and egress rules for active forward and reverse paths.
      *
