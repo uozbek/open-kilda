@@ -64,7 +64,7 @@ public class InstallIngressRulesAction extends
         if (stateMachine.getNewPrimaryForwardPath() != null && stateMachine.getNewPrimaryReversePath() != null) {
             FlowPath newForward = getFlowPath(flow, stateMachine.getNewPrimaryForwardPath());
             FlowPath newReverse = getFlowPath(flow, stateMachine.getNewPrimaryReversePath());
-            commands.addAll(commandBuilder.buildInstallIngressOnly(
+            commands.addAll(commandBuilder.buildIngressOnly(
                     stateMachine.getCommandContext(), flow, newForward, newReverse));
         }
 

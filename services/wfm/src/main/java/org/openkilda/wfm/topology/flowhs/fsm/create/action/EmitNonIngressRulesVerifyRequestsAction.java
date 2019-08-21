@@ -15,8 +15,10 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
-import org.openkilda.floodlight.flow.request.GetInstalledRule;
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm;
+import org.openkilda.wfm.topology.flowhs.fsm.common.SpeakerCommandFsm.Builder;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm.Event;
@@ -26,31 +28,26 @@ import org.openkilda.wfm.topology.flowhs.service.SpeakerCommandObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.squirrelframework.foundation.fsm.AnonymousAction;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
-public class DumpIngressRulesAction extends AnonymousAction<FlowCreateFsm, State, Event, FlowCreateContext> {
+public class EmitNonIngressRulesVerifyRequestsAction
+        extends AnonymousAction<FlowCreateFsm, State, Event, FlowCreateContext> {
     private final SpeakerCommandFsm.Builder speakerCommandFsmBuilder;
 
-    public DumpIngressRulesAction(SpeakerCommandFsm.Builder speakerCommandFsmBuilder) {
+    public EmitNonIngressRulesVerifyRequestsAction(Builder speakerCommandFsmBuilder) {
         this.speakerCommandFsmBuilder = speakerCommandFsmBuilder;
     }
 
     @Override
     public void execute(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
-        log.debug("Started validation of installed ingress rules for the flow {}", stateMachine.getFlowId());
+        log.debug("Started validation of installed non ingress rules for the flow {}", stateMachine.getFlowId());
 
-        List<GetInstalledRule> dumpFlowRules = stateMachine.getIngressCommands().values()
-                .stream()
-                .map(command -> new GetInstalledRule(command.getMessageContext(), command.getCommandId(),
-                        command.getFlowId(), command.getSwitchId(), command.getCookie()))
-                .collect(Collectors.toList());
-
-        dumpFlowRules.forEach(command -> {
-            SpeakerCommandObserver commandObserver = new SpeakerCommandObserver(speakerCommandFsmBuilder, command);
-            commandObserver.start();
-            stateMachine.getPendingCommands().put(command.getCommandId(), commandObserver);
-        });
+        final Map<UUID, SpeakerCommandObserver> pendingCommands = stateMachine.getPendingRequests();
+        for (FlowSegmentBlankGenericResolver blank : stateMachine.getNonIngressCommands().values()) {
+            FlowSegmentRequest request = blank.makeVerifyRequest();
+            pendingCommands.put(request.getCommandId(), new SpeakerCommandObserver(speakerCommandFsmBuilder, request));
+        }
     }
 }

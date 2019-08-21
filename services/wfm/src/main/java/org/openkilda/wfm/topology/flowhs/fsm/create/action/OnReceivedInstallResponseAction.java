@@ -17,6 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
@@ -31,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.UUID;
 
 @Slf4j
-public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
+public class OnReceivedInstallResponseAction extends OnReceivedVerifyResponseAction {
 
     public OnReceivedInstallResponseAction(PersistenceManager persistenceManager) {
         super(persistenceManager);
@@ -41,7 +42,7 @@ public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
         super.perform(from, to, event, context, stateMachine);
 
-        if (stateMachine.getPendingCommands().isEmpty()) {
+        if (stateMachine.getPendingRequests().isEmpty()) {
             if (stateMachine.getFailedCommands().isEmpty()) {
                 log.debug("Received responses for all pending commands");
                 stateMachine.fire(Event.NEXT);
@@ -56,15 +57,16 @@ public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
         SpeakerFlowSegmentResponse response = context.getSpeakerFlowResponse();
         UUID commandId = response.getCommandId();
 
-        FlowSegmentRequest request;
-        if (stateMachine.getNonIngressCommands().containsKey(commandId)) {
-            request = stateMachine.getNonIngressCommands().get(commandId);
-        } else if (stateMachine.getIngressCommands().containsKey(commandId)) {
-            request = stateMachine.getIngressCommands().get(commandId);
-        } else {
+        FlowSegmentBlankGenericResolver blank;
+        blank = stateMachine.getNonIngressCommands().get(commandId);
+        if (blank == null) {
+            blank = stateMachine.getIngressCommands().get(commandId);
+        }
+        if (blank == null) {
             throw new IllegalStateException(format("Failed to find install rule command with id %s", commandId));
         }
 
+        FlowSegmentRequest request = blank.makeInstallRequest();
         if (response.isSuccess()) {
             log.debug("Rule {} was installed on switch {}", request.getCookie(), response.getSwitchId());
             saveHistory(stateMachine, stateMachine.getCarrier(), stateMachine.getFlowId(), "Rule installed",

@@ -81,6 +81,7 @@ public class FlowSegmentReport extends SpeakerCommandReport {
         return SpeakerFlowSegmentResponse.builder()
                 .commandId(command.getCommandId())
                 .flowId(command.getFlowId())
+                .cookie(command.getCookie())
                 .messageContext(command.getMessageContext())
                 .switchId(command.getSwitchId())
                 .success(true)

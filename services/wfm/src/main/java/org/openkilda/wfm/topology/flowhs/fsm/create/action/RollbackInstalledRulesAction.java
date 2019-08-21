@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.persistence.PersistenceManager;
@@ -53,35 +54,29 @@ public class RollbackInstalledRulesAction extends FlowProcessingAction<FlowCreat
 
     @Override
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
-        List<FlowSegmentRequest> removeCommands = new ArrayList<>();
-        stateMachine.getPendingCommands().clear();
+        stateMachine.getPendingRequests().clear();
 
         Flow flow = getFlow(stateMachine.getFlowId());
         FlowCommandBuilder commandBuilder = commandBuilderFactory.getBuilder(flow.getEncapsulationType());
 
+        final List<FlowSegmentBlankGenericResolver> removeRequests = new ArrayList<>();
         if (!stateMachine.getNonIngressCommands().isEmpty()) {
-            List<FlowSegmentRequest> removeNonIngress = commandBuilder.buildRemoveAllExceptIngress(
-                    stateMachine.getCommandContext(), flow);
-            removeCommands.addAll(removeNonIngress);
+            removeRequests.addAll(commandBuilder.buildAllExceptIngress(stateMachine.getCommandContext(), flow));
         }
-
         if (!stateMachine.getIngressCommands().isEmpty()) {
-            List<FlowSegmentRequest> removeIngress = commandBuilder.buildRemoveIngressOnly(
-                    stateMachine.getCommandContext(), flow);
-            removeCommands.addAll(removeIngress);
+            removeRequests.addAll(commandBuilder.buildIngressOnly(stateMachine.getCommandContext(), flow));
         }
 
-        Map<UUID, FlowSegmentRequest> commandPerId = new HashMap<>(removeCommands.size());
-        for (FlowSegmentRequest command : removeCommands) {
-            commandPerId.put(command.getCommandId(), command);
+        Map<UUID, FlowSegmentBlankGenericResolver> commandPerId = new HashMap<>(removeRequests.size());
+        final Map<UUID, SpeakerCommandObserver> pendingRequests = stateMachine.getPendingRequests();
+        for (FlowSegmentBlankGenericResolver blank : removeRequests) {
+            FlowSegmentRequest request = blank.makeRemoveRequest();
+            commandPerId.put(request.getCommandId(), blank);
 
-            SpeakerCommandObserver commandObserver = new SpeakerCommandObserver(speakerCommandFsmBuilder, command);
-            commandObserver.start();
-            stateMachine.getPendingCommands().put(command.getCommandId(), commandObserver);
+            pendingRequests.put(request.getCommandId(), new SpeakerCommandObserver(speakerCommandFsmBuilder, request));
         }
 
         stateMachine.setRemoveCommands(commandPerId);
-
-        log.debug("Commands to rollback installed rules have been sent. Total amount: {}", removeCommands.size());
+        log.debug("Commands to rollback installed rules have been sent. Total amount: {}", removeRequests.size());
     }
 }

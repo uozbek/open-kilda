@@ -17,7 +17,6 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.persistence.PersistenceManager;
@@ -44,13 +43,12 @@ public class OnReceivedDeleteResponseAction extends OnReceivedInstallResponseAct
             return;
         }
 
-        FlowSegmentRequest request = stateMachine.getRemoveCommands().get(commandId);
         if (response.isSuccess()) {
             log.debug(
                     "Received response after deletion {} from the switch {}",
-                    request.getCookie(), request.getSwitchId());
+                    response.getCookie(), response.getSwitchId());
             String description = format(
-                    "Rule %s was deleted from the switch %s", request.getCookie(), request.getSwitchId());
+                    "Rule %s was deleted from the switch %s", response.getCookie(), response.getSwitchId());
 
             saveHistory(stateMachine, stateMachine.getCarrier(), stateMachine.getFlowId(), "Rule deleted",
                     description);

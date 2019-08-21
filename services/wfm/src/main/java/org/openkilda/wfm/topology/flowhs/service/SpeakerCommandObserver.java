@@ -28,13 +28,8 @@ public class SpeakerCommandObserver {
     private final SpeakerCommandFsm commandExecutor;
 
     public SpeakerCommandObserver(SpeakerCommandFsm.Builder builder, FlowSegmentRequest request) {
-        this.commandExecutor = builder.newInstance(request);
-    }
+        commandExecutor = builder.newInstance(request);
 
-    /**
-     * Starts execution of speaker command: sends a command and waits for a response from a speaker.
-     */
-    public void start() {
         commandExecutor.start();
         commandExecutor.fire(Event.ACTIVATE);
     }
@@ -43,14 +38,8 @@ public class SpeakerCommandObserver {
      * Processes a response. If command wasn't executed successfully then it will be retried if limit is not exceeded.
      * @param response a response from a speaker.
      */
-    public void handleResponse(SpeakerFlowSegmentResponse response) {
+    public boolean handleResponse(SpeakerFlowSegmentResponse response) {
         commandExecutor.fire(Event.REPLY, response);
-    }
-
-    /**
-     * Tells whether command execution is completed.
-     */
-    public boolean isFinished() {
         return commandExecutor.isTerminated();
     }
 }

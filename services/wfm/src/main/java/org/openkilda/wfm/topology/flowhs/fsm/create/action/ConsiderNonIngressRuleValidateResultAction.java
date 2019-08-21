@@ -17,24 +17,23 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
-import org.openkilda.floodlight.flow.response.FlowRuleResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.common.action.FlowProcessingAction;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm.Event;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm.State;
-import org.openkilda.wfm.topology.flowhs.validation.rules.NonIngressRulesValidator;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
 
 @Slf4j
-public class ValidateNonIngressRuleAction extends FlowProcessingAction<FlowCreateFsm, State, Event, FlowCreateContext> {
+public class ConsiderNonIngressRuleValidateResultAction
+        extends FlowProcessingAction<FlowCreateFsm, State, Event, FlowCreateContext> {
 
-    public ValidateNonIngressRuleAction(PersistenceManager persistenceManager) {
+    public ConsiderNonIngressRuleValidateResultAction(PersistenceManager persistenceManager) {
         super(persistenceManager);
     }
 
@@ -42,25 +41,23 @@ public class ValidateNonIngressRuleAction extends FlowProcessingAction<FlowCreat
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
         UUID commandId = context.getSpeakerFlowResponse().getCommandId();
 
-        FlowSegmentRequest expected = stateMachine.getNonIngressCommands().get(commandId);
-        FlowRuleResponse actual = (FlowRuleResponse) context.getSpeakerFlowResponse();
-        if (!new NonIngressRulesValidator(expected, actual).validate()) {
+        SpeakerFlowSegmentResponse response = context.getSpeakerFlowResponse();
+        if (! response.isSuccess()) {
             stateMachine.getFailedCommands().add(commandId);
         } else {
-            saveHistory(stateMachine, expected);
-            stateMachine.getPendingCommands().remove(commandId);
-            if (stateMachine.getPendingCommands().isEmpty()) {
+            saveHistory(stateMachine, response);
+            stateMachine.getPendingRequests().remove(commandId);
+            if (stateMachine.getPendingRequests().isEmpty()) {
                 log.debug("Non ingress rules have been validated for flow {}", stateMachine.getFlowId());
                 stateMachine.fire(Event.NEXT);
             }
         }
     }
 
-    private void saveHistory(FlowCreateFsm stateMachine, FlowSegmentRequest expected) {
-        String action = format("Rule is valid: switch %s, cookie %s",
-                expected.getSwitchId().toString(), expected.getCookie());
+    private void saveHistory(FlowCreateFsm stateMachine, SpeakerFlowSegmentResponse response) {
+        String action = format("Rule is valid: switch %s, cookie %s", response.getSwitchId(), response.getCookie());
         String description = format("Non ingress rule has been validated successfully: switch %s, cookie %s",
-                expected.getSwitchId().toString(), expected.getCookie());
+                response.getSwitchId(), response.getCookie());
         saveHistory(stateMachine, stateMachine.getCarrier(), stateMachine.getFlowId(), action, description);
     }
 }

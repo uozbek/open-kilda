@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.api.response;
 
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -41,6 +42,9 @@ public class SpeakerFlowSegmentResponse extends SpeakerResponse {
     @JsonProperty("switch_id")
     private final SwitchId switchId;
 
+    @JsonProperty("cookie")
+    protected final Cookie cookie;
+
     @JsonProperty
     private final boolean success;
 
@@ -51,12 +55,14 @@ public class SpeakerFlowSegmentResponse extends SpeakerResponse {
             @JsonProperty("command_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
+            @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("switch_id") SwitchId switchId) {
         super(messageContext);
 
         this.commandId = commandId;
         this.flowId = flowId;
         this.switchId = switchId;
+        this.cookie = cookie;
         this.success = success;
     }
 }

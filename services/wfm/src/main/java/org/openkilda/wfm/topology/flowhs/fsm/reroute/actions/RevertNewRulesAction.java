@@ -66,7 +66,7 @@ public class RevertNewRulesAction extends
         if (stateMachine.getOldPrimaryForwardPath() != null && stateMachine.getOldPrimaryReversePath() != null) {
             FlowPath oldForward = getFlowPath(flow, stateMachine.getOldPrimaryForwardPath());
             FlowPath oldReverse = getFlowPath(flow, stateMachine.getOldPrimaryReversePath());
-            installRequests.addAll(commandBuilder.buildInstallIngressOnly(
+            installRequests.addAll(commandBuilder.buildIngressOnly(
                     stateMachine.getCommandContext(), flow, oldForward, oldReverse));
         }
 

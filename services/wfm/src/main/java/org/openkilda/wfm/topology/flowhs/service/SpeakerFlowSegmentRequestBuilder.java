@@ -23,7 +23,6 @@ import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest;
@@ -44,7 +43,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     private final NoArgGenerator commandIdGenerator = Generators.timeBasedGenerator();
@@ -58,47 +56,25 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     }
 
     @Override
-    public List<FlowSegmentRequest> buildInstallAllExceptIngress(CommandContext context, Flow flow) {
-        return buildInstallAllExceptIngress(context, flow, flow.getForwardPath(), flow.getReversePath());
+    public List<FlowSegmentBlankGenericResolver> buildAllExceptIngress(CommandContext context, Flow flow) {
+        return buildAllExceptIngress(context, flow, flow.getForwardPath(), flow.getReversePath());
     }
 
     @Override
-    public List<FlowSegmentRequest> buildInstallAllExceptIngress(
+    public List<FlowSegmentBlankGenericResolver> buildAllExceptIngress(
             CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        return makeInstallRequests(makeAllExceptionIngress(context, flow, forwardPath, reversePath));
+        return makeAllExceptionIngress(context, flow, forwardPath, reversePath);
     }
 
     @Override
-    public List<FlowSegmentRequest> buildInstallIngressOnly(CommandContext context, Flow flow) {
-        return buildInstallIngressOnly(context, flow, flow.getForwardPath(), flow.getReversePath());
+    public List<FlowSegmentBlankGenericResolver> buildIngressOnly(CommandContext context, Flow flow) {
+        return buildIngressOnly(context, flow, flow.getForwardPath(), flow.getReversePath());
     }
 
     @Override
-    public List<FlowSegmentRequest> buildInstallIngressOnly(
+    public List<FlowSegmentBlankGenericResolver> buildIngressOnly(
             CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        return makeInstallRequests(makeIngressOnly(context, flow, forwardPath, reversePath));
-    }
-
-    @Override
-    public List<FlowSegmentRequest> buildRemoveAllExceptIngress(CommandContext context, Flow flow) {
-        return buildRemoveAllExceptIngress(context, flow, flow.getForwardPath(), flow.getReversePath());
-    }
-
-    @Override
-    public List<FlowSegmentRequest> buildRemoveAllExceptIngress(
-            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        return makeRemoveRequests(makeAllExceptionIngress(context, flow, forwardPath, reversePath));
-    }
-
-    @Override
-    public List<FlowSegmentRequest> buildRemoveIngressOnly(CommandContext context, Flow flow) {
-        return buildRemoveIngressOnly(context, flow, flow.getForwardPath(), flow.getReversePath());
-    }
-
-    @Override
-    public List<FlowSegmentRequest> buildRemoveIngressOnly(
-            CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        return makeRemoveRequests(makeIngressOnly(context, flow, forwardPath, reversePath));
+        return makeIngressOnly(context, flow, forwardPath, reversePath);
     }
 
     private List<FlowSegmentBlankGenericResolver> makeAllExceptionIngress(
@@ -123,18 +99,6 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         requests.addAll(makeRequests(
                 flow, reversePath, context, getEncapsulation(reversePath, forwardPath), true, false, false));
         return requests;
-    }
-
-    private List<FlowSegmentRequest> makeInstallRequests(List<FlowSegmentBlankGenericResolver> blanks) {
-        return blanks.stream()
-                .map(FlowSegmentBlankGenericResolver::makeInstallRequest)
-                .collect(Collectors.toList());
-    }
-
-    private List<FlowSegmentRequest> makeRemoveRequests(List<FlowSegmentBlankGenericResolver> blanks) {
-        return blanks.stream()
-                .map(FlowSegmentBlankGenericResolver::makeRemoveRequest)
-                .collect(Collectors.toList());
     }
 
     private List<FlowSegmentBlankGenericResolver> makeRequests(

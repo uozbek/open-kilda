@@ -77,7 +77,7 @@ public class SpeakerFlowSegmentRequestBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<FlowSegmentRequest> commands = target.buildInstallAllExceptIngress(COMMAND_CONTEXT, flow);
+        List<FlowSegmentRequest> commands = target.buildAllExceptIngress(COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
         FlowSegmentRequest command = commands.get(0);
         assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));

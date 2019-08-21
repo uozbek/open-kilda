@@ -27,25 +27,22 @@ import org.openkilda.wfm.topology.flowhs.service.SpeakerCommandObserver;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class OnReceivedResponseAction extends FlowProcessingAction<FlowCreateFsm, State, Event, FlowCreateContext>  {
-
-    public OnReceivedResponseAction(PersistenceManager persistenceManager) {
+public class OnReceivedVerifyResponseAction extends FlowProcessingAction<FlowCreateFsm, State, Event, FlowCreateContext>  {
+    public OnReceivedVerifyResponseAction(PersistenceManager persistenceManager) {
         super(persistenceManager);
     }
 
     @Override
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
         SpeakerFlowSegmentResponse response = context.getSpeakerFlowResponse();
-        if (!stateMachine.isPendingCommand(response.getCommandId())) {
-            log.warn("Received response for non-pending command: ", response.getCommandId());
+        if (! stateMachine.isPendingRequest(response.getCommandId())) {
+            log.warn("Received response for non-pending request: {}", response.getCommandId());
             return;
         }
 
-        SpeakerCommandObserver commandObserver = stateMachine.getPendingCommands().get(response.getCommandId());
-        commandObserver.handleResponse(response);
-
-        if (commandObserver.isFinished()) {
-            stateMachine.getPendingCommands().remove(response.getCommandId());
+        SpeakerCommandObserver commandObserver = stateMachine.getPendingRequests().get(response.getCommandId());
+        if (commandObserver.handleResponse(response)) {
+            stateMachine.getPendingRequests().remove(response.getCommandId());
             handleResponse(stateMachine, context);
         }
     }
@@ -55,7 +52,7 @@ public class OnReceivedResponseAction extends FlowProcessingAction<FlowCreateFsm
         if (response.isSuccess()) {
             stateMachine.fire(Event.RULE_RECEIVED, context);
         } else {
-            log.info("Failed to load rule from the switch {}, command: id {}",
+            log.info("Failed to perform OF flows validation on switch {}, command: id {}",
                     response.getCommandId(), response.getSwitchId());
             stateMachine.getFailedCommands().add(response.getCommandId());
         }
