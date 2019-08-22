@@ -13,27 +13,26 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command.flow.ingress;
+package org.openkilda.floodlight.command.flow.egress;
 
-import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
-import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest.BlankResolver;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 
-@Slf4j
-public class IngressFlowSegmentInstallCommandJsonTest extends IngressFlowSegmentBlankCommandJsonTest {
+public class EgressFlowSegmentVerifyCommandJsonTest extends EgressFlowSegmentBlankCommandJsonTest {
     @Override
-    protected void verify(IngressFlowSegmentBlankRequest request,
-                          SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
-        Assert.assertTrue(rawCommand instanceof IngressFlowSegmentInstallCommand);
-        verifyPayload(request, (IngressFlowSegmentInstallCommand) rawCommand);
+    protected void verify(
+            EgressFlowSegmentBlankRequest request, SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
+
+        Assert.assertTrue(rawCommand instanceof EgressFlowSegmentVerifyCommand);
+        verifyPayload(request, (EgressFlowSegmentVerifyCommand) rawCommand);
     }
 
     @Override
-    protected IngressFlowSegmentBlankRequest makeRequest(BlankResolver blank) {
-        return blank.makeInstallRequest();
+    protected EgressFlowSegmentBlankRequest makeRequest(BlankResolver blank) {
+        return blank.makeVerifyRequest();
     }
 }

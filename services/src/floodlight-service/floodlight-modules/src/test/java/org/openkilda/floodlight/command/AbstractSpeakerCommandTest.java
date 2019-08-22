@@ -20,11 +20,15 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 
+import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
+import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.service.session.SessionService;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
+import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
@@ -32,6 +36,7 @@ import com.google.common.collect.ImmutableSet;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.SwitchDescription;
 import net.floodlightcontroller.core.internal.OFSwitchManager;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.easymock.EasyMockSupport;
@@ -56,12 +61,18 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class AbstractSpeakerCommandTest extends EasyMockSupport {
+public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
     protected final FloodlightModuleContext moduleContext = new FloodlightModuleContext();
 
     protected static final OFFactory of = new OFFactoryVer13();
     protected static final DatapathId dpId = DatapathId.of(1);
+    protected final MeterConfig meterConfig = new MeterConfig(new MeterId(32), 1000);
     protected final Map<DatapathId, Iterator<Session>> switchSessionProducePlan = new HashMap<>();
+
+    private final SwitchDescription swDesc = SwitchDescription.builder()
+            .setManufacturerDescription("manufacturer")
+            .setSoftwareDescription("software")
+            .build();
 
     @Mock
     protected SessionService sessionService;
@@ -96,6 +107,18 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
         expect(sw.getOFFactory()).andReturn(of).anyTimes();
 
         expect(ofSwitchManager.getActiveSwitch(dpId)).andReturn(sw).anyTimes();
+
+        moduleContext.addService(FeatureDetectorService.class, featureDetectorService);
+
+        prepareSessionService();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        verifyAll();
+    }
+
+    protected void prepareSessionService() {
         expect(sessionService.open(anyObject(MessageContext.class), anyObject(IOFSwitch.class)))
                 .andAnswer(new IAnswer<Session>() {
                     @Override
@@ -106,7 +129,6 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
                     }
                 });
 
-        moduleContext.addService(FeatureDetectorService.class, featureDetectorService);
         switchSessionProducePlan.put(dpId, ImmutableList.of(session).iterator());
         expect(session.write(anyObject(OFMessage.class)))
                 .andAnswer(new IAnswer<CompletableFuture<Optional<OFMessage>>>() {
@@ -124,9 +146,27 @@ public class AbstractSpeakerCommandTest extends EasyMockSupport {
         expectLastCall();
     }
 
-    @After
-    public void tearDown() throws Exception {
-        verifyAll();
+    protected void expectSwitchDescription() {
+        expect(sw.getSwitchDescription()).andReturn(swDesc).anyTimes();
+    }
+
+    protected void expectMeter() {
+        expectMeter((Exception) null);
+    }
+
+    protected void expectMeter(Exception error) {
+        MeterReport report;
+        if (error == null) {
+            report = new MeterReport(meterConfig.getId());
+        } else {
+            report = new MeterReport(error);
+        }
+        expectMeter(report);
+    }
+
+    protected void expectMeter(MeterReport report) {
+        throw new IllegalStateException(String.format(
+                "Implement correct meter command mocking to use method %s.expectMeter(...)", getClass().getName()));
     }
 
     protected void verifyOfMessageEquals(OFMessage expected, OFMessage actual) {

@@ -19,56 +19,40 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.reset;
 
-import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchMeterConflictException;
+import org.openkilda.floodlight.error.SwitchMissingMeterException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.MeterId;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import net.floodlightcontroller.core.SwitchDescription;
 import net.floodlightcontroller.core.SwitchDisconnectedException;
-import org.easymock.IAnswer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;
 import org.projectfloodlight.openflow.protocol.OFErrorMsg;
-import org.projectfloodlight.openflow.protocol.OFMeterConfig;
 import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsReply;
-import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsRequest;
 import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 import org.projectfloodlight.openflow.protocol.OFMeterModFailedCode;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
     private MessageContext messageContext = new MessageContext();
-    private final MeterConfig meterConfig = new MeterConfig(new MeterId(2), 1000);
     private MeterInstallCommand command = new MeterInstallCommand(
             messageContext, mapSwitchId(dpId), meterConfig);
-
-    private final SwitchDescription swDesc = SwitchDescription.builder()
-            .setManufacturerDescription("manufacturer")
-            .setSoftwareDescription("software")
-            .build();
 
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-
-        expect(sw.getSwitchDescription()).andReturn(swDesc).anyTimes();
+        expectSwitchDescription();
     }
 
     @Test
@@ -118,48 +102,30 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
     @Test
     public void conflictError() throws Throwable {
         switchFeaturesSetup(true);
-        SettableFuture<List<OFMeterConfigStatsReply>> metersConfigReplyFuture = setupMeterConfigStatsReply();
+        expectMeter();
         replayAll();
 
         CompletableFuture<MeterReport> result = processConflictError();
-
-        SessionWriteRecord write0 = getWriteRecord(0);
-        OFMeterMod requestRaw = (OFMeterMod) write0.getRequest();
-        OFMeterConfig existingMeterConfig = sw.getOFFactory().buildMeterConfig()
-                .setMeterId(meterConfig.getId().getValue())
-                .setFlags(requestRaw.getFlags())
-                .setEntries(requestRaw.getMeters())
-                .build();
-        OFMeterConfigStatsReply statsReplyEntry = sw.getOFFactory().buildMeterConfigStatsReply()
-                .setEntries(ImmutableList.of(existingMeterConfig))
-                .build();
-
-        metersConfigReplyFuture.set(ImmutableList.of(statsReplyEntry));
-
-        result.get(4, TimeUnit.SECONDS).raiseError();
+        verifySuccessCompletion(result);
     }
 
     @Test
     public void missingConflictError() throws Throwable {
         switchFeaturesSetup(true);
-        SettableFuture<List<OFMeterConfigStatsReply>> metersConfigReplyFuture = setupMeterConfigStatsReply();
+        expectMeter(new SwitchMissingMeterException(dpId, meterConfig.getId()));
         replayAll();
 
         CompletableFuture<MeterReport> result = processConflictError();
-
-        metersConfigReplyFuture.set(Collections.emptyList());
         verifyErrorCompletion(result, SwitchMeterConflictException.class);
     }
 
     @Test
     public void conflictAndDisconnectError() throws Throwable {
         switchFeaturesSetup(true);
-        SettableFuture<List<OFMeterConfigStatsReply>> metersConfigReplyFuture = setupMeterConfigStatsReply();
+        expectMeter(new SwitchDisconnectedException(dpId));
         replayAll();
 
         CompletableFuture<MeterReport> result = processConflictError();
-
-        metersConfigReplyFuture.setException(new SwitchDisconnectedException(dpId));
         verifyErrorCompletion(result, SwitchDisconnectedException.class);
     }
 
@@ -175,15 +141,9 @@ public class MeterInstallCommandTest extends AbstractSpeakerCommandTest {
         return result;
     }
 
-    private SettableFuture<List<OFMeterConfigStatsReply>> setupMeterConfigStatsReply() {
-        SettableFuture<List<OFMeterConfigStatsReply>> meterStatsReply = SettableFuture.create();
-        expect(sw.writeStatsRequest(anyObject(OFMeterConfigStatsRequest.class)))
-                .andAnswer(new IAnswer<ListenableFuture<List<OFMeterConfigStatsReply>>>() {
-                    @Override
-                    public ListenableFuture<List<OFMeterConfigStatsReply>> answer() throws Throwable {
-                        return meterStatsReply;
-                    }
-                });
-        return meterStatsReply;
+    @Override
+    protected void expectMeter(MeterReport report) {
+        expect(commandProcessor.chain(anyObject(MeterVerifyCommand.class)))
+                .andReturn(CompletableFuture.completedFuture(report));
     }
 }

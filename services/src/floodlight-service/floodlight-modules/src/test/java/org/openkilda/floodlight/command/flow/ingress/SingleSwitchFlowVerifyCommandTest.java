@@ -15,25 +15,24 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
-import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest.BlankResolver;
+import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
+import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 
-@Slf4j
-public class IngressFlowSegmentInstallCommandJsonTest extends IngressFlowSegmentBlankCommandJsonTest {
+public class SingleSwitchFlowVerifyCommandTest extends SingleSwitchFlowBlankCommandJsonTest {
+
     @Override
-    protected void verify(IngressFlowSegmentBlankRequest request,
-                          SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
-        Assert.assertTrue(rawCommand instanceof IngressFlowSegmentInstallCommand);
-        verifyPayload(request, (IngressFlowSegmentInstallCommand) rawCommand);
+    protected void verify(
+            SingleSwitchFlowBlankRequest request, SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
+        Assert.assertTrue(rawCommand instanceof SingleSwitchFlowVerifyCommand);
+        verifyPayload(request, (SingleSwitchFlowVerifyCommand) rawCommand);
     }
 
     @Override
-    protected IngressFlowSegmentBlankRequest makeRequest(BlankResolver blank) {
-        return blank.makeInstallRequest();
+    protected SingleSwitchFlowBlankRequest makeRequest(BlankResolver blank) {
+        return blank.makeVerifyRequest();
     }
 }

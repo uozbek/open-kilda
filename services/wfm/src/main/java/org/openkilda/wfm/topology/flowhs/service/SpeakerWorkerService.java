@@ -73,9 +73,10 @@ public class SpeakerWorkerService {
         FlowSegmentRequest failedRequest = keyToRequest.remove(key);
 
         SpeakerFlowSegmentResponse response = FlowErrorResponse.errorBuilder()
-                .flowId(failedRequest.getFlowId())
                 .commandId(failedRequest.getCommandId())
                 .switchId(failedRequest.getSwitchId())
+                .flowId(failedRequest.getFlowId())
+                .cookie(failedRequest.getCookie())
                 .errorCode(ErrorCode.OPERATION_TIMED_OUT)
                 .messageContext(failedRequest.getMessageContext())
                 .build();

@@ -15,22 +15,12 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
-import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
-import org.openkilda.floodlight.api.request.IngressFlowSegmentRemoveRequest;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
-import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
-import org.openkilda.model.FlowEncapsulationType;
-import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Assert;
-
-import java.util.UUID;
 
 public class IngressFlowSegmentRemoveCommandJsonTest extends IngressFlowSegmentBlankCommandJsonTest {
     @Override
@@ -41,15 +31,7 @@ public class IngressFlowSegmentRemoveCommandJsonTest extends IngressFlowSegmentB
     }
 
     @Override
-    protected IngressFlowSegmentRemoveRequest makeRequest() {
-        return new IngressFlowSegmentRemoveRequest(
-                new MessageContext(),
-                UUID.randomUUID(),
-                "ingress-flow-segment-json-remove-request",
-                new Cookie(1),
-                new FlowEndpoint(new SwitchId(2), 3, 4, 5),
-                new MeterConfig(new MeterId(6), 7000),
-                8,
-                new FlowTransitEncapsulation(9, FlowEncapsulationType.TRANSIT_VLAN));
+    protected IngressFlowSegmentBlankRequest makeRequest(BlankResolver blank) {
+        return blank.makeRemoveRequest();
     }
 }

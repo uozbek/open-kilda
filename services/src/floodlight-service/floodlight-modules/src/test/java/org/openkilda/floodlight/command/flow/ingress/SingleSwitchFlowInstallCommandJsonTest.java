@@ -15,20 +15,12 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest;
+import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
-import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Assert;
-
-import java.util.UUID;
 
 public class SingleSwitchFlowInstallCommandJsonTest extends SingleSwitchFlowBlankCommandJsonTest {
     @Override
@@ -39,15 +31,7 @@ public class SingleSwitchFlowInstallCommandJsonTest extends SingleSwitchFlowBlan
     }
 
     @Override
-    protected SingleSwitchFlowBlankRequest makeRequest() {
-        SwitchId swId = new SwitchId(1);
-        return new SingleSwitchFlowInstallRequest(
-                new MessageContext(),
-                UUID.randomUUID(),
-                "single-switch-flow-install-request",
-                new Cookie(2),
-                new FlowEndpoint(swId, 3, 4, 5),
-                new MeterConfig(new MeterId(6), 7000),
-                new FlowEndpoint(swId, 8, 9, 10));
+    protected SingleSwitchFlowBlankRequest makeRequest(BlankResolver blank) {
+        return blank.makeInstallRequest();
     }
 }

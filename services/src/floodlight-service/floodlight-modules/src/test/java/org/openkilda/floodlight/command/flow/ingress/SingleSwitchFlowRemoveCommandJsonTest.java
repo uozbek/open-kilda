@@ -15,20 +15,12 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowRemoveRequest;
+import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
-import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Assert;
-
-import java.util.UUID;
 
 public class SingleSwitchFlowRemoveCommandJsonTest extends SingleSwitchFlowBlankCommandJsonTest {
 
@@ -40,15 +32,7 @@ public class SingleSwitchFlowRemoveCommandJsonTest extends SingleSwitchFlowBlank
     }
 
     @Override
-    protected SingleSwitchFlowRemoveRequest makeRequest() {
-        SwitchId swId = new SwitchId(1);
-        return new SingleSwitchFlowRemoveRequest(
-                new MessageContext(),
-                UUID.randomUUID(),
-                "single-switch-flow-remove-request",
-                new Cookie(2),
-                new FlowEndpoint(swId, 3, 4, 5),
-                new MeterConfig(new MeterId(6), 7000),
-                new FlowEndpoint(swId, 8, 9, 10));
+    protected SingleSwitchFlowBlankRequest makeRequest(BlankResolver blank) {
+        return blank.makeRemoveRequest();
     }
 }

@@ -71,7 +71,7 @@ public class FlowRuleResponse extends SpeakerFlowSegmentResponse {
                             @JsonProperty("out_vlan") Integer outVlan,
                             @JsonProperty("meter_id") MeterId meterId,
                             @JsonProperty("OF_version") String ofVersion) {
-        super(true, messageContext, commandId, flowId, switchId);
+        super(messageContext, commandId, switchId, flowId, cookie, true);
 
         this.cookie = cookie;
         this.inPort = inPort;

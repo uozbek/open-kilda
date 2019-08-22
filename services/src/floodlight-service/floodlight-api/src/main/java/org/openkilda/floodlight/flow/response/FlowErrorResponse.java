@@ -19,6 +19,7 @@ import static org.openkilda.messaging.Utils.FLOW_ID;
 
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -27,7 +28,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.omg.CORBA.UNKNOWN;
 
 import java.util.UUID;
 
@@ -49,8 +49,9 @@ public class FlowErrorResponse extends SpeakerFlowSegmentResponse {
                              @JsonProperty("command_context") MessageContext messageContext,
                              @JsonProperty("command_id") UUID commandId,
                              @JsonProperty(FLOW_ID) String flowId,
-                             @JsonProperty("switch_id") SwitchId switchId) {
-        super(false, messageContext, commandId, flowId, switchId);
+                             @JsonProperty("switch_id") SwitchId switchId,
+                             @JsonProperty("cookie") Cookie cookie) {
+        super(messageContext, commandId, switchId, flowId, cookie, false);
 
         this.description = description;
         this.errorCode = errorCode;

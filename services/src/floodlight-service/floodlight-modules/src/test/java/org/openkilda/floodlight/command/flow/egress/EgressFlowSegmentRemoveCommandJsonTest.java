@@ -15,20 +15,12 @@
 
 package org.openkilda.floodlight.command.flow.egress;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
-import org.openkilda.floodlight.api.request.EgressFlowSegmentRemoveRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
-import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
-import org.openkilda.model.FlowEncapsulationType;
-import org.openkilda.model.SwitchId;
 
 import org.junit.Assert;
-
-import java.util.UUID;
 
 public class EgressFlowSegmentRemoveCommandJsonTest extends EgressFlowSegmentBlankCommandJsonTest {
 
@@ -40,16 +32,7 @@ public class EgressFlowSegmentRemoveCommandJsonTest extends EgressFlowSegmentBla
     }
 
     @Override
-    protected EgressFlowSegmentRemoveRequest makeRequest() {
-        SwitchId swId = new SwitchId(1);
-        return new EgressFlowSegmentRemoveRequest(
-                new MessageContext(),
-                UUID.randomUUID(),
-                "egress-flow-segment-install-request",
-                new Cookie(2),
-                new FlowEndpoint(swId, 3, 4, 5),
-                new FlowEndpoint(new SwitchId(swId.toLong() + 1), 6, 7, 8),
-                9,
-                new FlowTransitEncapsulation(10, FlowEncapsulationType.TRANSIT_VLAN));
+    protected EgressFlowSegmentBlankRequest makeRequest(BlankResolver blank) {
+        return blank.makeRemoveRequest();
     }
 }

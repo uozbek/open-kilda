@@ -15,10 +15,19 @@
 
 package org.openkilda.floodlight.command.flow.transit;
 
+import org.openkilda.floodlight.api.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest.BlankResolver;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandJsonTest;
+import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.SwitchId;
 
 import org.junit.Assert;
+
+import java.util.UUID;
 
 abstract class TransitFlowSegmentBlankCommandJsonTest
         extends AbstractSpeakerCommandJsonTest<TransitFlowSegmentBlankRequest> {
@@ -32,4 +41,19 @@ abstract class TransitFlowSegmentBlankCommandJsonTest
         Assert.assertEquals(request.getEgressIslPort(), command.getEgressIslPort());
         Assert.assertEquals(request.getEncapsulation(), command.getEncapsulation());
     }
+
+    @Override
+    protected TransitFlowSegmentBlankRequest makeRequest() {
+        BlankResolver blank = TransitFlowSegmentBlankRequest.makeResolver(
+                new MessageContext(),
+                new SwitchId(1),
+                UUID.randomUUID(),
+                "transit-flow-segment-install-request",
+                new Cookie(2),
+                3, 4,
+                new FlowTransitEncapsulation(5, FlowEncapsulationType.TRANSIT_VLAN));
+        return makeRequest(blank);
+    }
+
+    protected abstract TransitFlowSegmentBlankRequest makeRequest(BlankResolver blank);
 }

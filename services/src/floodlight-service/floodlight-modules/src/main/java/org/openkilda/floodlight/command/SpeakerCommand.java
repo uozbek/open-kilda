@@ -24,6 +24,7 @@ import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentRemoveCom
 import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentVerifyCommand;
 import org.openkilda.floodlight.command.flow.ingress.SingleSwitchFlowInstallCommand;
 import org.openkilda.floodlight.command.flow.ingress.SingleSwitchFlowRemoveCommand;
+import org.openkilda.floodlight.command.flow.ingress.SingleSwitchFlowVerifyCommand;
 import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentInstallCommand;
 import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentRemoveCommand;
 import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentVerifyCommand;
@@ -64,7 +65,7 @@ import java.util.concurrent.CompletionException;
                 name = "org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest"),
         @Type(value = SingleSwitchFlowRemoveCommand.class,
                 name = "org.openkilda.floodlight.api.request.SingleSwitchFlowRemoveRequest"),
-        @Type(value = SingleSwitchFlowVerifyRequest.class,
+        @Type(value = SingleSwitchFlowVerifyCommand.class,
                 name = "org.openkilda.floodlight.api.request.SingleSwitchFlowVerifyRequest"),
         @Type(value = TransitFlowSegmentInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest"),

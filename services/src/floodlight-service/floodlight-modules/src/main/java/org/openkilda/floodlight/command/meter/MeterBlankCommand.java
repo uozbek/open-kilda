@@ -42,7 +42,7 @@ import java.util.Set;
 
 abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
     // payload
-    protected MeterConfig meterConfig;
+    protected final MeterConfig meterConfig;
 
     // operation data
     private SwitchManagerConfig switchManagerConfig;
@@ -63,11 +63,11 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
         return new MeterReport(meterConfig.getId());
     }
 
-    protected Set<OFMeterFlags> makeMeterFlags() {
+    Set<OFMeterFlags> makeMeterFlags() {
         return ImmutableSet.of(OFMeterFlags.KBPS, OFMeterFlags.BURST, OFMeterFlags.STATS);
     }
 
-    protected List<OFMeterBand> makeMeterBands() {
+    List<OFMeterBand> makeMeterBands() {
         long burstSize = Meter.calculateBurstSize(
                 meterConfig.getBandwidth(), switchManagerConfig.getFlowMeterMinBurstSizeInKbits(),
                 switchManagerConfig.getFlowMeterBurstCoefficient(),
@@ -76,7 +76,7 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
         return makeMeterBands(burstSize);
     }
 
-    protected List<OFMeterBand> makeMeterBands(long burstSize) {
+    List<OFMeterBand> makeMeterBands(long burstSize) {
         return ImmutableList.of(getSw().getOFFactory().meterBands()
                 .buildDrop()
                 .setRate(meterConfig.getBandwidth())

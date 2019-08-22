@@ -33,7 +33,6 @@ import java.util.concurrent.CompletableFuture;
 
 abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerCommandTest {
     protected final MessageContext messageContext = new MessageContext();
-    protected final MeterConfig meterConfig = new MeterConfig(new MeterId(32), 1000);
     protected final FlowEndpoint endpointZeroVlan = new FlowEndpoint(mapSwitchId(dpId), 4, 0, 0);
     protected final FlowEndpoint endpointSingleVlan = new FlowEndpoint(mapSwitchId(dpId), 4, 64, 0);
     protected final FlowEndpoint endpointDoubleVlan = new FlowEndpoint(mapSwitchId(dpId), 4, 64, 65);
@@ -68,22 +67,6 @@ abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerComm
         verifyWriteCount(writeCount);
         verifySuccessCompletion(result);
     }
-
-    protected void expectMeter() {
-        expectMeter((Exception) null);
-    }
-
-    protected void expectMeter(Exception error) {
-        MeterReport report;
-        if (error == null) {
-            report = new MeterReport(meterConfig.getId());
-        } else {
-            report = new MeterReport(error);
-        }
-        expectMeter(report);
-    }
-
-    protected abstract void expectMeter(MeterReport report);
 
     protected abstract AbstractIngressFlowSegmentCommand makeCommand(FlowEndpoint endpoint, MeterConfig meter);
 }

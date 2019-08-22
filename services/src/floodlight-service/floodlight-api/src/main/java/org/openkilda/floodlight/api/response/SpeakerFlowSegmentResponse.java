@@ -36,11 +36,11 @@ public class SpeakerFlowSegmentResponse extends SpeakerResponse {
     @JsonProperty("command_id")
     private final UUID commandId;
 
-    @JsonProperty("flowid")
-    private final String flowId;
-
     @JsonProperty("switch_id")
     private final SwitchId switchId;
+
+    @JsonProperty("flowid")
+    private final String flowId;
 
     @JsonProperty("cookie")
     protected final Cookie cookie;
@@ -51,12 +51,12 @@ public class SpeakerFlowSegmentResponse extends SpeakerResponse {
     @JsonCreator
     @Builder
     public SpeakerFlowSegmentResponse(
-            @JsonProperty("success") boolean success,
             @JsonProperty("command_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
+            @JsonProperty("switch_id") SwitchId switchId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("switch_id") SwitchId switchId) {
+            @JsonProperty("success") boolean success) {
         super(messageContext);
 
         this.commandId = commandId;

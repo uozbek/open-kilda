@@ -15,10 +15,22 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
+import org.openkilda.floodlight.api.FlowEndpoint;
+import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest.BlankResolver;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandJsonTest;
+import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.MeterId;
+import org.openkilda.model.SwitchId;
 
 import org.junit.Assert;
+
+import java.util.UUID;
 
 abstract class IngressFlowSegmentBlankCommandJsonTest
         extends AbstractSpeakerCommandJsonTest<IngressFlowSegmentBlankRequest> {
@@ -33,4 +45,20 @@ abstract class IngressFlowSegmentBlankCommandJsonTest
         Assert.assertEquals(request.getIslPort(), command.getIslPort());
         Assert.assertEquals(request.getEncapsulation(), command.getEncapsulation());
     }
+
+    @Override
+    protected IngressFlowSegmentBlankRequest makeRequest() {
+        BlankResolver blank = IngressFlowSegmentBlankRequest.makeResolver(
+                new MessageContext(),
+                UUID.randomUUID(),
+                "ingress-flow-segment-json-remove-request",
+                new Cookie(1),
+                new FlowEndpoint(new SwitchId(2), 3, 4, 5),
+                new MeterConfig(new MeterId(6), 7000),
+                8,
+                new FlowTransitEncapsulation(9, FlowEncapsulationType.TRANSIT_VLAN));
+        return makeRequest(blank);
+    }
+
+    protected abstract IngressFlowSegmentBlankRequest makeRequest(BlankResolver blank);
 }

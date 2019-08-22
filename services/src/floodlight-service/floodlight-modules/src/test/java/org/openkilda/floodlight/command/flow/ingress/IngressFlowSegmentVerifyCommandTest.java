@@ -20,20 +20,19 @@ import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest.Blank
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 
-@Slf4j
-public class IngressFlowSegmentInstallCommandJsonTest extends IngressFlowSegmentBlankCommandJsonTest {
+public class IngressFlowSegmentVerifyCommandTest extends IngressFlowSegmentBlankCommandJsonTest {
+
     @Override
-    protected void verify(IngressFlowSegmentBlankRequest request,
-                          SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
-        Assert.assertTrue(rawCommand instanceof IngressFlowSegmentInstallCommand);
-        verifyPayload(request, (IngressFlowSegmentInstallCommand) rawCommand);
+    protected void verify(
+            IngressFlowSegmentBlankRequest request, SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
+        Assert.assertTrue(rawCommand instanceof IngressFlowSegmentVerifyCommand);
+        verifyPayload(request, (IngressFlowSegmentVerifyCommand) rawCommand);
     }
 
     @Override
     protected IngressFlowSegmentBlankRequest makeRequest(BlankResolver blank) {
-        return blank.makeInstallRequest();
+        return blank.makeVerifyRequest();
     }
 }

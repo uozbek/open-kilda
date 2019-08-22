@@ -19,6 +19,7 @@ import org.openkilda.floodlight.api.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.error.SwitchIncorrectMeterException;
 import org.openkilda.floodlight.error.SwitchMissingMeterException;
+import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterId;
@@ -41,7 +42,9 @@ public class MeterVerifyCommand extends MeterBlankCommand {
     }
 
     @Override
-    protected CompletableFuture<MeterReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
+    protected CompletableFuture<MeterReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor)
+            throws UnsupportedSwitchOperationException {
+        ensureSwitchSupportMeters();
         return new CompletableFutureAdapter<>(
                  messageContext, getSw().writeStatsRequest(makeMeterReadCommand()))
                 .thenAccept(this::handleMeterStats)

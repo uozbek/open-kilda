@@ -116,9 +116,10 @@ public class FlowSegmentReport extends SpeakerCommandReport {
     protected FlowErrorResponse.FlowErrorResponseBuilder makeErrorTemplate() {
         return FlowErrorResponse.errorBuilder()
                 .messageContext(command.getMessageContext())
-                .switchId(command.getSwitchId())
                 .commandId(command.getCommandId())
-                .flowId(command.getFlowId());
+                .switchId(command.getSwitchId())
+                .flowId(command.getFlowId())
+                .cookie(command.getCookie());
     }
 
     protected String getResponseTopic(KafkaChannel kafkaChannel) {
