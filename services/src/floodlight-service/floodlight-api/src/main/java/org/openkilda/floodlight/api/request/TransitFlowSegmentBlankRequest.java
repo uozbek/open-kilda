@@ -17,7 +17,7 @@ package org.openkilda.floodlight.api.request;
 
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;

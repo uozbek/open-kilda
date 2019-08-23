@@ -17,9 +17,8 @@ package org.openkilda.floodlight.command.meter;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
 
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.error.SwitchIncorrectMeterException;
 import org.openkilda.floodlight.error.SwitchMissingMeterException;
@@ -30,7 +29,6 @@ import org.openkilda.model.MeterId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import net.floodlightcontroller.core.SwitchDescription;
 import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;

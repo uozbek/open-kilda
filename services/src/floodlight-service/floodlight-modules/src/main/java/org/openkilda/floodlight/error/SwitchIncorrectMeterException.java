@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.error;
 
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.MeterConfig;
 
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFMeterConfig;

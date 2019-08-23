@@ -15,9 +15,9 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.model.SwitchDescriptor;

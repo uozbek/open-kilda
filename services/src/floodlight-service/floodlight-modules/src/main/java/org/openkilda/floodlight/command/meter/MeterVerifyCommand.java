@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.error.SwitchIncorrectMeterException;
 import org.openkilda.floodlight.error.SwitchMissingMeterException;

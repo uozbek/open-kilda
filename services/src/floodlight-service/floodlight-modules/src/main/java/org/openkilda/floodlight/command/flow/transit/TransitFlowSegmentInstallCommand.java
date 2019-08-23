@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;

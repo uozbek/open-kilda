@@ -15,10 +15,9 @@
 
 package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest.BlankResolver;
-import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandJsonTest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;

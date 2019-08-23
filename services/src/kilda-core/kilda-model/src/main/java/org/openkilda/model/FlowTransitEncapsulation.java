@@ -13,33 +13,28 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api;
-
-import static java.util.Objects.requireNonNull;
-
-import org.openkilda.model.MeterId;
+package org.openkilda.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.NonNull;
 import lombok.Value;
 
 import java.io.Serializable;
 
 @Value
-public class MeterConfig implements Serializable {
-    @JsonProperty("meter_id")
-    private final MeterId id;
+public class FlowTransitEncapsulation implements Serializable {
+    @JsonProperty("id")
+    private final Integer id;
 
-    @JsonProperty("bandwidth")
-    private final long bandwidth;
+    @JsonProperty("type")
+    private final FlowEncapsulationType type;
 
     @JsonCreator
-    public MeterConfig(
-            @JsonProperty("meter_id") MeterId id,
-            @JsonProperty("bandwidth") long bandwidth) {
-        requireNonNull(id, "Argument meterId must not be null");
-
+    public FlowTransitEncapsulation(
+            @NonNull @JsonProperty("id") Integer id,
+            @NonNull @JsonProperty("type") FlowEncapsulationType type) {
         this.id = id;
-        this.bandwidth = bandwidth;
+        this.type = type;
     }
 }

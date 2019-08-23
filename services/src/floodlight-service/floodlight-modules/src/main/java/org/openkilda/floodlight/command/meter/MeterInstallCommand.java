@@ -17,7 +17,7 @@ package org.openkilda.floodlight.command.meter;
 
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_13;
 
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.IOfErrorResponseHandler;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.error.InvalidMeterIdException;

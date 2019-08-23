@@ -13,15 +13,15 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api;
-
-import static java.util.Objects.requireNonNull;
-
-import org.openkilda.model.SwitchId;
+package org.openkilda.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.NonNull;
+import lombok.ToString;
 import lombok.Value;
 
 import java.io.Serializable;
@@ -30,13 +30,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Value
-public class FlowEndpoint implements Serializable {
-    @JsonProperty("datapath")
-    private final SwitchId datapath;
-
-    @JsonProperty("port_number")
-    private final Integer portNumber;
-
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class FlowEndpoint extends NetworkEndpoint {
     @JsonProperty("outer_vlan_id")
     private final int outerVlanId;
 
@@ -52,16 +48,13 @@ public class FlowEndpoint implements Serializable {
     }
 
     @JsonCreator
+    @Builder(toBuilder = true)
     public FlowEndpoint(
             @JsonProperty("datapath") SwitchId datapath,
             @JsonProperty("port_number") Integer portNumber,
             @JsonProperty("outer_vlan_id") int outerVlanId,
             @JsonProperty("inner_vlan_id") int innerVlanId) {
-        requireNonNull(datapath, "Argument datapath must not be null");
-        requireNonNull(portNumber, "Argument portNumber must not be null");
-
-        this.datapath = datapath;
-        this.portNumber = portNumber;
+        super(datapath, portNumber);
 
         // normalize VLANs representation
         List<Integer> vlanStack = makeVlanStack(innerVlanId, outerVlanId);

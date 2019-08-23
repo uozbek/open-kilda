@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;

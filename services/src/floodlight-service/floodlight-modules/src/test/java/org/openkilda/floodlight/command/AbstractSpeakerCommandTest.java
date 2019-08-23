@@ -20,8 +20,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 
-import org.openkilda.floodlight.api.MeterConfig;
-import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;

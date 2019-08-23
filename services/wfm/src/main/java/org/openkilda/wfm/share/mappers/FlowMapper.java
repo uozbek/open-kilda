@@ -24,6 +24,7 @@ import org.openkilda.model.Cookie;
 import org.openkilda.model.EncapsulationId;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.FlowPair;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.FlowStatus;
@@ -312,5 +313,17 @@ public abstract class FlowMapper {
                 .destPort(flow.getDestinationPort())
                 .destVlan(flow.getDestinationVlan())
                 .build();
+    }
+
+    public FlowEndpoint buildSourceEndpoint(Flow flow) {
+        return new FlowEndpoint(
+                flow.getSrcSwitch().getSwitchId(), flow.getSrcPort(),
+                flow.getSrcVlan(), flow.getSrcInnerVlan());
+    }
+
+    public FlowEndpoint buildDestinationEndpoint(Flow flow) {
+        return new FlowEndpoint(
+                flow.getDestSwitch().getSwitchId(), flow.getDestPort(),
+                flow.getDestVlan(), flow.getDestInnerVlan());
     }
 }

@@ -18,9 +18,9 @@ package org.openkilda.wfm.topology.flowhs.service;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;

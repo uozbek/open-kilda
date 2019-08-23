@@ -15,8 +15,8 @@
 
 package org.openkilda.floodlight.api.request;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.MeterConfig;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 

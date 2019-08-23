@@ -19,8 +19,8 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-import org.openkilda.floodlight.api.FlowEndpoint;
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Cookie;

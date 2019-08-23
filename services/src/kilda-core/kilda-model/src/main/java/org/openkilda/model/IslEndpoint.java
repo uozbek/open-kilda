@@ -13,34 +13,24 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api;
-
-import static java.util.Objects.requireNonNull;
-
-import org.openkilda.model.FlowEncapsulationType;
+package org.openkilda.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.Value;
 
-import java.io.Serializable;
-
 @Value
-public class FlowTransitEncapsulation implements Serializable {
-    @JsonProperty("id")
-    private final Integer id;
-
-    @JsonProperty("type")
-    private final FlowEncapsulationType type;
-
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class IslEndpoint extends NetworkEndpoint {
     @JsonCreator
-    public FlowTransitEncapsulation(
-            @JsonProperty("id") Integer id,
-            @JsonProperty("type") FlowEncapsulationType type) {
-        requireNonNull(id, "Argument id must not be null");
-        requireNonNull(type, "Argument type must not be null");
-
-        this.id = id;
-        this.type = type;
+    @Builder(toBuilder = true)
+    public IslEndpoint(
+            @JsonProperty("datapath") SwitchId datapath,
+            @JsonProperty("port_number") Integer portNumber) {
+        super(datapath, portNumber);
     }
 }

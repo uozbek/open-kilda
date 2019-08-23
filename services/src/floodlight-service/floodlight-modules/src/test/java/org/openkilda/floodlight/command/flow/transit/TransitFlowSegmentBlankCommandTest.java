@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.floodlight.api.FlowTransitEncapsulation;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;

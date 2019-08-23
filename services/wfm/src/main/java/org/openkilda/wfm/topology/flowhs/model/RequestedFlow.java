@@ -16,6 +16,7 @@
 package org.openkilda.wfm.topology.flowhs.model;
 
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.SwitchId;
 
 import lombok.Builder;
@@ -47,4 +48,12 @@ public class RequestedFlow {
     private boolean periodicPings;
     private Integer maxLatency;
     private FlowEncapsulationType flowEncapsulationType;
+
+    public FlowEndpoint getSourceEndpoint() {
+        return new FlowEndpoint(srcSwitch, srcPort, srcVlan, srcInnerVlan);
+    }
+
+    public FlowEndpoint getDestinationEndpoint() {
+        return new FlowEndpoint(destSwitch, destPort, destVlan, destInnerVlan);
+    }
 }
