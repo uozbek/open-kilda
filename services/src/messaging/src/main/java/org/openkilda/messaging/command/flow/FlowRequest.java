@@ -22,11 +22,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
 
-@Value
 @JsonNaming(value = SnakeCaseStrategy.class)
+@Value
+@EqualsAndHashCode(callSuper = true)
 @Builder(toBuilder = true)
 public class FlowRequest extends CommandData {
 
@@ -48,8 +50,14 @@ public class FlowRequest extends CommandData {
     @JsonProperty("src_vlan")
     int sourceVlan;
 
+    @JsonProperty("src_inner_vlan")
+    int sourceInnerVlan;
+
     @JsonProperty("dst_vlan")
     int destinationVlan;
+
+    @JsonProperty("dst_inner_vlan")
+    int destinationInnerVlan;
 
     long bandwidth;
     boolean ignoreBandwidth;

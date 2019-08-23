@@ -88,10 +88,17 @@ public interface FlowMapper {
     FlowResponsePayload toFlowResponseOutput(FlowDto f);
 
     @Mapping(target = "source",
-            expression = "java(new FlowEndpointV2(f.getSourceSwitch(), f.getSourcePort(), f.getSourceVlan()))")
+            expression = "java(new FlowEndpointV2("
+                    + "f.getSourceSwitch(), "
+                    + "f.getSourcePort(), "
+                    + "f.getSourceVlan(), "
+                    + "f.getSourceInnerVlan))")
     @Mapping(target = "destination",
-            expression = "java(new FlowEndpointV2(f.getDestinationSwitch(), f.getDestinationPort(), "
-                    + "f.getDestinationVlan()))")
+            expression = "java(new FlowEndpointV2("
+                    + "f.getDestinationSwitch(), "
+                    + "f.getDestinationPort(), "
+                    + "f.getDestinationVlan(), "
+                    + "f.getDestinationInnerVlan))")
     @Mapping(target = "maximumBandwidth", source = "bandwidth")
     @Mapping(target = "status", source = "state")
     @Mapping(target = "created", source = "createdTime")
@@ -105,6 +112,8 @@ public interface FlowMapper {
     @Mapping(target = "destinationPort", expression = "java(request.getDestination().getPortNumber())")
     @Mapping(target = "sourceVlan", expression = "java(request.getSource().getVlanId())")
     @Mapping(target = "destinationVlan", expression = "java(request.getDestination().getVlanId())")
+    @Mapping(target = "sourceInnerVlan", expression = "java(request.getSource().getInnerVlanId())")
+    @Mapping(target = "destinationInnerVlan", expression = "java(request.getDestination().getInnerVlanId())")
     @Mapping(target = "bandwidth", source = "maximumBandwidth")
     FlowRequest toFlowRequest(FlowRequestV2 request);
 

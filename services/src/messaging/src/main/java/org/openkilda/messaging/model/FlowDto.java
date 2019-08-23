@@ -121,6 +121,12 @@ public class FlowDto implements Serializable {
     @JsonProperty("dst_vlan")
     private int destinationVlan;
 
+    @JsonProperty("src_inner_vlan")
+    private int sourceInnerVlan;
+
+    @JsonProperty("dst_inner_vlan")
+    private int destinationInnerVlan;
+
     /**
      * Flow source meter id.
      */
