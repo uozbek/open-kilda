@@ -30,6 +30,7 @@ import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.Swi
 import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.VALIDATE_METERS;
 import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.VALIDATE_RULES;
 
+import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.messaging.command.switches.DumpMetersForSwitchManagerRequest;
 import org.openkilda.messaging.command.switches.DumpRulesForSwitchManagerRequest;
 import org.openkilda.messaging.command.switches.GetExpectedDefaultRulesRequest;
@@ -53,6 +54,8 @@ import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
 
+import lombok.Builder;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.squirrelframework.foundation.fsm.StateMachineBuilder;
 import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
@@ -269,6 +272,16 @@ public class SwitchValidateFsm
                 "Error in SwitchValidateFsm");
         ErrorMessage errorMessage = new ErrorMessage(errorData, System.currentTimeMillis(), key);
         fire(ERROR, errorMessage);
+    }
+
+    @Value
+    @Builder
+    public static class SwitchValidateContext {
+        private final String requestId;
+
+        private final short ofTableId;
+        private final List<FlowEntry> ofTableDump;
+        private final FlowSegmentSchema flowSegmentSchema;
     }
 
     public enum SwitchValidateState {

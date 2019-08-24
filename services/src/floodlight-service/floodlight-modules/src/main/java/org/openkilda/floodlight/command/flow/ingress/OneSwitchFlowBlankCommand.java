@@ -31,10 +31,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-abstract class SingleSwitchFlowBlankCommand extends AbstractIngressFlowSegmentCommand {
+abstract class OneSwitchFlowBlankCommand extends AbstractIngressFlowSegmentCommand {
     protected final FlowEndpoint egressEndpoint;
 
-    SingleSwitchFlowBlankCommand(
+    OneSwitchFlowBlankCommand(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
         super(messageContext, endpoint.getDatapath(), commandId, flowId, cookie, endpoint, meterConfig);

@@ -17,8 +17,8 @@ package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.MeterConfig;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest.BlankResolver;
+import org.openkilda.floodlight.api.request.OneSwitchFlowBlankRequest;
+import org.openkilda.floodlight.api.request.OneSwitchFlowBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandJsonTest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -29,9 +29,9 @@ import org.junit.Assert;
 
 import java.util.UUID;
 
-abstract class SingleSwitchFlowBlankCommandJsonTest
-        extends AbstractSpeakerCommandJsonTest<SingleSwitchFlowBlankRequest> {
-    protected void verifyPayload(SingleSwitchFlowBlankRequest request, SingleSwitchFlowBlankCommand command) {
+abstract class OneSwitchFlowBlankCommandJsonTest
+        extends AbstractSpeakerCommandJsonTest<OneSwitchFlowBlankRequest> {
+    protected void verifyPayload(OneSwitchFlowBlankRequest request, OneSwitchFlowBlankCommand command) {
         Assert.assertEquals(request.getMessageContext(), command.getMessageContext());
         Assert.assertEquals(request.getSwitchId(), command.getSwitchId());
         Assert.assertEquals(request.getCommandId(), command.getCommandId());
@@ -43,9 +43,9 @@ abstract class SingleSwitchFlowBlankCommandJsonTest
     }
 
     @Override
-    protected SingleSwitchFlowBlankRequest makeRequest() {
+    protected OneSwitchFlowBlankRequest makeRequest() {
         SwitchId swId = new SwitchId(1);
-        BlankResolver blank = SingleSwitchFlowBlankRequest.makeResolver(
+        BlankResolver blank = OneSwitchFlowBlankRequest.makeResolver(
                 new MessageContext(),
                 UUID.randomUUID(),
                 "single-switch-flow-install-request",
@@ -56,5 +56,5 @@ abstract class SingleSwitchFlowBlankCommandJsonTest
         return makeRequest(blank);
     }
 
-    protected abstract SingleSwitchFlowBlankRequest makeRequest(BlankResolver blank);
+    protected abstract OneSwitchFlowBlankRequest makeRequest(BlankResolver blank);
 }

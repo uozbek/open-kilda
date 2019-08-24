@@ -48,7 +48,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
     private SpeakerCommandProcessor commandProcessor;
 
     public MeterInstallCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
-        super(switchId, messageContext, meterConfig);
+        super(messageContext, switchId, meterConfig);
     }
 
     @Override
@@ -57,10 +57,13 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         this.commandProcessor = commandProcessor;
 
-        final OFMeterMod meterAddMessage = makeMeterAddMessage();
+        return writeSwitchRequest(makeMeterAddMessage())
+                .thenApply(ignore -> new MeterReport(meterConfig.getId()));
+    }
+
+    protected CompletableFuture<Optional<OFMessage>> writeSwitchRequest(OFMeterMod request) {
         try (Session session = getSessionService().open(messageContext, getSw())) {
-            return setupErrorHandler(session.write(meterAddMessage), this)
-                    .thenApply(ignore -> new MeterReport(meterConfig.getId()));
+            return setupErrorHandler(session.write(request), this);
         }
     }
 
@@ -73,7 +76,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
             return future;
         }
 
-        MeterVerifyCommand verifyCommand = new MeterVerifyCommand(switchId, messageContext, meterConfig);
+        MeterVerifyCommand verifyCommand = new MeterVerifyCommand(messageContext, switchId, meterConfig);
         propagateFutureResponse(
                 future, commandProcessor.chain(verifyCommand)
                         .thenAccept(this::handleMeterVerify)

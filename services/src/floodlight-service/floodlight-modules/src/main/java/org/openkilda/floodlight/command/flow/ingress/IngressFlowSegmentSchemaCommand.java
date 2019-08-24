@@ -13,40 +13,40 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.request;
+package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
+import org.openkilda.floodlight.command.SpeakerCommandProcessor;
+import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
+import org.openkilda.model.MeterConfig;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Getter
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-public class SingleSwitchFlowVerifyRequest extends  SingleSwitchFlowBlankRequest {
+public class IngressFlowSegmentSchemaCommand extends IngressFlowSegmentInstallCommand {
     @JsonCreator
-    @Builder(toBuilder = true)
-    public SingleSwitchFlowVerifyRequest(
-            @JsonProperty("message_context") MessageContext messageContext,
+    public IngressFlowSegmentSchemaCommand(
+            @JsonProperty("message_context") MessageContext context,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+            @JsonProperty("islPort") Integer islPort,
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
+        super(context, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
 
-    public SingleSwitchFlowVerifyRequest(SingleSwitchFlowBlankRequest other) {
-        super(other);
+    @Override
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
+        return makeSchemaPlan(commandProcessor);
     }
 }

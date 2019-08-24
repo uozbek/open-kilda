@@ -21,7 +21,7 @@ import static org.openkilda.wfm.topology.stats.StatsStreamType.CACHE_UPDATE;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest;
+import org.openkilda.floodlight.api.request.OneSwitchFlowInstallRequest;
 import org.openkilda.floodlight.flow.request.RemoveRule;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.BaseMessage;
@@ -147,8 +147,8 @@ public class CacheFilterBolt extends BaseRichBolt {
             MeterId meterId = command.getMeterConfig().getId();
             emit(tuple, Commands.UPDATE, command.getFlowId(), command.getSwitchId(),
                     command.getCookie().getValue(), meterId.getValue(), MeasurePoint.INGRESS);
-        } else if (message instanceof SingleSwitchFlowInstallRequest) {
-            SingleSwitchFlowInstallRequest command = (SingleSwitchFlowInstallRequest) message;
+        } else if (message instanceof OneSwitchFlowInstallRequest) {
+            OneSwitchFlowInstallRequest command = (OneSwitchFlowInstallRequest) message;
             logMatchedRecord(command, command.getCookie());
 
             MeterId meterId = command.getMeterConfig().getId();

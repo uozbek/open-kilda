@@ -15,7 +15,9 @@
 
 package org.openkilda.floodlight.command.flow;
 
+import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.converter.OfFlowModMapper;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;
 import org.openkilda.floodlight.utils.OfFlowDumpProducer;
 import org.openkilda.floodlight.utils.OfFlowPresenceVerifier;
@@ -58,6 +60,11 @@ public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegm
         OfFlowPresenceVerifier verifier = new OfFlowPresenceVerifier(dumper, expected);
         return verifier.getFinish()
                 .thenApply(verifyResults -> handleVerifyResponse(expected, verifyResults));
+    }
+
+    protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(List<OFFlowMod> requests) {
+        FlowSegmentSchema schema = OfFlowModMapper.INSTANCE.toFlowSegmentSchema(getSw(), requests);
+        return CompletableFuture.completedFuture(new FlowSegmentSchemaReport(this, schema));
     }
 
     protected FlowSegmentReport makeReport(Exception error) {

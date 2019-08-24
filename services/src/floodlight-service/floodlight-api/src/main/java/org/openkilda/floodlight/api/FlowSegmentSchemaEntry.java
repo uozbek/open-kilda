@@ -13,18 +13,27 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.request;
+package org.openkilda.floodlight.api;
 
-import java.util.UUID;
+import org.openkilda.model.Cookie;
+import org.openkilda.model.MeterId;
 
-public interface IFlowSegmentBlank<T extends FlowSegmentRequest> {
-    T makeInstallRequest();
+import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 
-    T makeRemoveRequest();
+import java.io.Serializable;
 
-    T makeVerifyRequest();
+@Value
+@Builder
+@JsonNaming(value = SnakeCaseStrategy.class)
+public class FlowSegmentSchemaEntry implements Serializable {
+    @NonNull
+    private final short tableId;
+    @NonNull
+    private final Cookie cookie;
 
-    T makeSchemaRequest();
-
-    UUID getCommandId();
+    private final MeterId meterId;
 }

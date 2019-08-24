@@ -15,23 +15,24 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest.BlankResolver;
+import org.openkilda.floodlight.api.request.OneSwitchFlowBlankRequest;
+import org.openkilda.floodlight.api.request.OneSwitchFlowBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 
 import org.junit.Assert;
 
-public class SingleSwitchFlowInstallCommandJsonTest extends SingleSwitchFlowBlankCommandJsonTest {
+public class OneSwitchFlowVerifyCommandTest extends OneSwitchFlowBlankCommandJsonTest {
+
     @Override
-    protected void verify(SingleSwitchFlowBlankRequest request,
-                          SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
-        Assert.assertTrue(rawCommand instanceof SingleSwitchFlowInstallCommand);
-        verifyPayload(request, (SingleSwitchFlowInstallCommand) rawCommand);
+    protected void verify(
+            OneSwitchFlowBlankRequest request, SpeakerCommand<? extends SpeakerCommandReport> rawCommand) {
+        Assert.assertTrue(rawCommand instanceof OneSwitchFlowVerifyCommand);
+        verifyPayload(request, (OneSwitchFlowVerifyCommand) rawCommand);
     }
 
     @Override
-    protected SingleSwitchFlowBlankRequest makeRequest(BlankResolver blank) {
-        return blank.makeInstallRequest();
+    protected OneSwitchFlowBlankRequest makeRequest(BlankResolver blank) {
+        return blank.makeVerifyRequest();
     }
 }

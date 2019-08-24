@@ -32,10 +32,10 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SingleSwitchFlowInstallRequest extends SingleSwitchFlowBlankRequest {
+public class OneSwitchFlowRemoveRequest extends OneSwitchFlowBlankRequest {
     @JsonCreator
     @Builder(toBuilder = true)
-    public SingleSwitchFlowInstallRequest(
+    public OneSwitchFlowRemoveRequest(
             @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
@@ -46,7 +46,7 @@ public class SingleSwitchFlowInstallRequest extends SingleSwitchFlowBlankRequest
         super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
 
-    public SingleSwitchFlowInstallRequest(SingleSwitchFlowBlankRequest blank) {
+    public OneSwitchFlowRemoveRequest(OneSwitchFlowBlankRequest blank) {
         super(blank);
     }
 }

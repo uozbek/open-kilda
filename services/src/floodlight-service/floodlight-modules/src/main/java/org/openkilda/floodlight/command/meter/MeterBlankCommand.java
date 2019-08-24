@@ -49,7 +49,7 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
     @Getter(AccessLevel.PROTECTED)
     private Set<SpeakerSwitchView.Feature> switchFeatures;
 
-    MeterBlankCommand(SwitchId switchId, MessageContext messageContext, MeterConfig meterConfig) {
+    MeterBlankCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
         super(messageContext, switchId);
         this.meterConfig = meterConfig;
     }

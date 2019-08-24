@@ -24,7 +24,7 @@ import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
-import org.openkilda.floodlight.api.request.SingleSwitchFlowBlankRequest;
+import org.openkilda.floodlight.api.request.OneSwitchFlowBlankRequest;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Flow;
@@ -169,7 +169,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
             FlowPath path, CommandContext context, FlowEndpoint ingressEndpoint, FlowEndpoint egressEndpoint) {
         UUID commandId = commandIdGenerator.generate();
         MessageContext messageContext = new MessageContext(commandId.toString(), context.getCorrelationId());
-        return SingleSwitchFlowBlankRequest.buildResolver()
+        return OneSwitchFlowBlankRequest.buildResolver()
                 .messageContext(messageContext)
                 .commandId(commandId)
                 .flowId(path.getFlow().getFlowId())

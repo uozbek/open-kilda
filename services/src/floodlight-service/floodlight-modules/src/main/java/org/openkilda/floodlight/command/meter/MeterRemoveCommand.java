@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 public class MeterRemoveCommand extends MeterBlankCommand {
 
     public MeterRemoveCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
-        super(switchId, messageContext, meterConfig);
+        super(messageContext, switchId, meterConfig);
     }
 
     @Override

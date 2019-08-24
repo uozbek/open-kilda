@@ -37,8 +37,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class MeterVerifyCommand extends MeterBlankCommand {
     public MeterVerifyCommand(
-            SwitchId switchId, MessageContext messageContext, MeterConfig meterConfig) {
-        super(switchId, messageContext, meterConfig);
+            MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
+        super(messageContext, switchId, meterConfig);
     }
 
     @Override

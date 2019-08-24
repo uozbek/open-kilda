@@ -13,43 +13,40 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command.flow.ingress;
+package org.openkilda.floodlight.api.request;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
-import org.openkilda.floodlight.command.SpeakerCommandProcessor;
-import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.MeterConfig;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.projectfloodlight.openflow.protocol.OFFactory;
-import org.projectfloodlight.openflow.protocol.OFFlowMod;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
-public class SingleSwitchFlowInstallCommand extends SingleSwitchFlowBlankCommand {
+@Getter
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class OneSwitchFlowSchemaRequest extends OneSwitchFlowBlankRequest {
     @JsonCreator
-    public SingleSwitchFlowInstallCommand(
-            @JsonProperty("message_context") MessageContext context,
+    @Builder(toBuilder = true)
+    public OneSwitchFlowSchemaRequest(
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(context, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+        super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
     }
 
-    @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
-        return makeInstallPlan(commandProcessor);
-    }
-
-    @Override
-    protected OFFlowMod.Builder makeFlowModBuilder(OFFactory of) {
-        return makeFlowAddBuilder(of);
+    public OneSwitchFlowSchemaRequest(OneSwitchFlowBlankRequest other) {
+        super(other);
     }
 }

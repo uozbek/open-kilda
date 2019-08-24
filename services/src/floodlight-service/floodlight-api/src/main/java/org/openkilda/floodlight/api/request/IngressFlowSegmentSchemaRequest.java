@@ -15,10 +15,11 @@
 
 package org.openkilda.floodlight.api.request;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
+import org.openkilda.model.MeterConfig;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,21 +33,22 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SingleSwitchFlowRemoveRequest extends SingleSwitchFlowBlankRequest {
+public class IngressFlowSegmentSchemaRequest extends IngressFlowSegmentBlankRequest {
     @JsonCreator
     @Builder(toBuilder = true)
-    public SingleSwitchFlowRemoveRequest(
+    public IngressFlowSegmentSchemaRequest(
             @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+            @JsonProperty("islPort") Integer islPort,
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
+        super(messageContext, commandId, flowId, cookie, endpoint, meterConfig, islPort, encapsulation);
     }
 
-    public SingleSwitchFlowRemoveRequest(SingleSwitchFlowBlankRequest blank) {
-        super(blank);
+    public IngressFlowSegmentSchemaRequest(IngressFlowSegmentBlankRequest other) {
+        super(other);
     }
 }

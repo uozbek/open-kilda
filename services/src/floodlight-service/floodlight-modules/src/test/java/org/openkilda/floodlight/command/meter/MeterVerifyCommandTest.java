@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 public class MeterVerifyCommandTest extends AbstractSpeakerCommandTest {
     private final MeterConfig meterConfig = new MeterConfig(new MeterId(1), 2048);
     private final MeterVerifyCommand command = new MeterVerifyCommand(
-            mapSwitchId(dpId), new MessageContext(), meterConfig);
+            new MessageContext(), mapSwitchId(dpId), meterConfig);
 
     @Override
     @Before
@@ -86,7 +86,7 @@ public class MeterVerifyCommandTest extends AbstractSpeakerCommandTest {
         // make one more command with altered config, to produce meter config flags/bands
         MeterConfig invalidConfig = new MeterConfig(meterConfig.getId(), meterConfig.getBandwidth() + 1);
         MeterVerifyCommand command2 = new MeterVerifyCommand(
-                command.getSwitchId(), command.getMessageContext(), invalidConfig);
+                command.getMessageContext(), command.getSwitchId(), invalidConfig);
         command2.execute(commandProcessor);  // must be executed, for let .setup() method to initialize all dependencies
 
         OFMeterConfig reply = sw.getOFFactory().buildMeterConfig()

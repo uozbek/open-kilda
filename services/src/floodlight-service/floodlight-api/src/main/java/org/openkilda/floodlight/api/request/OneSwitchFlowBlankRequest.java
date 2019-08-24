@@ -35,12 +35,12 @@ import java.util.UUID;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
-        implements IFlowSegmentBlank<SingleSwitchFlowBlankRequest> {
+public class OneSwitchFlowBlankRequest extends IngressFlowSegmentRequest
+        implements IFlowSegmentBlank<OneSwitchFlowBlankRequest> {
     @JsonProperty("egress_endpoint")
     protected final FlowEndpoint egressEndpoint;
 
-    SingleSwitchFlowBlankRequest(
+    OneSwitchFlowBlankRequest(
             MessageContext context, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
             MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
         super(context, commandId, flowId, cookie, endpoint, meterConfig);
@@ -55,25 +55,25 @@ public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
         this.egressEndpoint = egressEndpoint;
     }
 
-    SingleSwitchFlowBlankRequest(SingleSwitchFlowBlankRequest other) {
+    OneSwitchFlowBlankRequest(OneSwitchFlowBlankRequest other) {
         this(
                 other.messageContext, other.commandId, other.flowId, other.cookie, other.endpoint, other.meterConfig,
                 other.egressEndpoint);
     }
 
     @Override
-    public SingleSwitchFlowInstallRequest makeInstallRequest() {
-        return new SingleSwitchFlowInstallRequest(this);
+    public OneSwitchFlowInstallRequest makeInstallRequest() {
+        return new OneSwitchFlowInstallRequest(this);
     }
 
     @Override
-    public SingleSwitchFlowRemoveRequest makeRemoveRequest() {
-        return new SingleSwitchFlowRemoveRequest(this);
+    public OneSwitchFlowRemoveRequest makeRemoveRequest() {
+        return new OneSwitchFlowRemoveRequest(this);
     }
 
     @Override
-    public SingleSwitchFlowVerifyRequest makeVerifyRequest() {
-        return new SingleSwitchFlowVerifyRequest(this);
+    public OneSwitchFlowVerifyRequest makeVerifyRequest() {
+        return new OneSwitchFlowVerifyRequest(this);
     }
 
     /**
@@ -83,14 +83,14 @@ public class SingleSwitchFlowBlankRequest extends IngressFlowSegmentRequest
     public static BlankResolver makeResolver(
             MessageContext messageContext, UUID commandId, String flowId, Cookie cookie, FlowEndpoint endpoint,
             MeterConfig meterConfig, FlowEndpoint egressEndpoint) {
-        SingleSwitchFlowBlankRequest blank = new SingleSwitchFlowBlankRequest(
+        OneSwitchFlowBlankRequest blank = new OneSwitchFlowBlankRequest(
                 messageContext, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
         return new BlankResolver(blank);
     }
 
     public static class BlankResolver
-            extends FlowSegmentBlankResolver<SingleSwitchFlowBlankRequest> {
-        BlankResolver(IFlowSegmentBlank<SingleSwitchFlowBlankRequest> blank) {
+            extends FlowSegmentBlankResolver<OneSwitchFlowBlankRequest> {
+        BlankResolver(IFlowSegmentBlank<OneSwitchFlowBlankRequest> blank) {
             super(blank);
         }
     }

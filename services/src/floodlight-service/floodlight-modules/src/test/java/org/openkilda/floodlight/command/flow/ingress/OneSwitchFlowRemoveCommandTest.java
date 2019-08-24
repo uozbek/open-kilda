@@ -33,16 +33,16 @@ import org.projectfloodlight.openflow.types.U64;
 
 import java.util.UUID;
 
-public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmentRemoveCommandTest {
+public class OneSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmentRemoveCommandTest {
     private static final FlowEndpoint defaultEgressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 2, 0, 0);
 
     @Test
     public void happyPathDefaultPort() throws Exception {
-        SingleSwitchFlowRemoveCommand command = makeCommand(endpointZeroVlan, meterConfig);
+        OneSwitchFlowRemoveCommand command = makeCommand(endpointZeroVlan, meterConfig);
         executeCommand(command, 2);
 
         OFFlowDeleteStrict expect = of.buildFlowDeleteStrict()
-                .setPriority(SingleSwitchFlowRemoveCommand.FLOW_PRIORITY - 1)
+                .setPriority(OneSwitchFlowRemoveCommand.FLOW_PRIORITY - 1)
                 .setCookie(U64.of(command.getCookie().getValue()))
                 .setMatch(of.buildMatch()
                                   .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
@@ -56,7 +56,7 @@ public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmen
 
     @Test
     public void happyPathOuterVlan() throws Exception {
-        SingleSwitchFlowRemoveCommand command = makeCommand(endpointSingleVlan, meterConfig);
+        OneSwitchFlowRemoveCommand command = makeCommand(endpointSingleVlan, meterConfig);
         executeCommand(command, 3);
 
         verifyOuterVlanMatchRemove(command, getWriteRecord(0).getRequest());
@@ -66,7 +66,7 @@ public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmen
                 OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
         OFFlowDeleteStrict expected = of.buildFlowDeleteStrict()
                 .setTableId(swDesc.getTableIngress())
-                .setPriority(SingleSwitchFlowRemoveCommand.FLOW_PRIORITY - 10)
+                .setPriority(OneSwitchFlowRemoveCommand.FLOW_PRIORITY - 10)
                 .setCookie(U64.of(command.getCookie().getValue()))
                 .setMatch(of.buildMatch()
                                   .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
@@ -81,7 +81,7 @@ public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmen
 
     @Test
     public void happyPathOuterAndInnerVlan() throws Exception {
-        SingleSwitchFlowRemoveCommand command = makeCommand(endpointDoubleVlan, meterConfig);
+        OneSwitchFlowRemoveCommand command = makeCommand(endpointDoubleVlan, meterConfig);
         executeCommand(command, 3);
 
         verifyOuterVlanMatchRemove(command, getWriteRecord(0).getRequest());
@@ -92,7 +92,7 @@ public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmen
 
         OFFlowDeleteStrict expected = of.buildFlowDeleteStrict()
                 .setTableId(swDesc.getTableIngress())
-                .setPriority(SingleSwitchFlowRemoveCommand.FLOW_PRIORITY)
+                .setPriority(OneSwitchFlowRemoveCommand.FLOW_PRIORITY)
                 .setCookie(U64.of(command.getCookie().getValue()))
                 .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getInnerVlanId())
                                   .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
@@ -107,17 +107,17 @@ public class SingleSwitchFlowRemoveCommandTest extends AbstractIngressFlowSegmen
     }
 
     @Override
-    protected SingleSwitchFlowRemoveCommand makeCommand(FlowEndpoint endpoint, MeterConfig meter) {
+    protected OneSwitchFlowRemoveCommand makeCommand(FlowEndpoint endpoint, MeterConfig meter) {
         return makeCommand(endpoint, defaultEgressEndpoint, meter);
     }
 
-    protected SingleSwitchFlowRemoveCommand makeCommand(
+    protected OneSwitchFlowRemoveCommand makeCommand(
             FlowEndpoint endpoint, FlowEndpoint endpointEgress, MeterConfig meter) {
         UUID commandId = UUID.randomUUID();
         String flowId = "single-switch-flow-remove-flow-id";
         Cookie cookie = new Cookie(1);
 
-        return new SingleSwitchFlowRemoveCommand(
+        return new OneSwitchFlowRemoveCommand(
                 messageContext, commandId, flowId, cookie, endpoint, meter, endpointEgress);
     }
 }

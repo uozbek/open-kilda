@@ -13,36 +13,41 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command.flow.ingress;
+package org.openkilda.floodlight.api.request;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
-import org.openkilda.floodlight.command.SpeakerCommandProcessor;
-import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
-public class SingleSwitchFlowVerifyCommand extends SingleSwitchFlowInstallCommand {
+@Getter
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class EgressFlowSegmentSchemaRequest extends EgressFlowSegmentBlankRequest {
     @JsonCreator
-    public SingleSwitchFlowVerifyCommand(
-            @JsonProperty("message_context") MessageContext context,
+    @Builder(toBuilder = true)
+    public EgressFlowSegmentSchemaRequest(
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("endpoint") FlowEndpoint endpoint,
-            @JsonProperty("meter_config") MeterConfig meterConfig,
-            @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint) {
-        super(context, commandId, flowId, cookie, endpoint, meterConfig, egressEndpoint);
+            @JsonProperty("ingress_endpoint") FlowEndpoint ingressEndpoint,
+            @JsonProperty("islPort") Integer islPort,
+            @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation) {
+        super(messageContext, commandId, flowId, cookie, endpoint, ingressEndpoint, islPort, encapsulation);
     }
 
-    @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
-        return makeVerifyPlan(commandProcessor);
+    public EgressFlowSegmentSchemaRequest(EgressFlowSegmentBlankRequest other) {
+        super(other);
     }
 }

@@ -13,18 +13,18 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.request;
+package org.openkilda.floodlight.api;
 
-import java.util.UUID;
+import org.openkilda.model.SwitchId;
 
-public interface IFlowSegmentBlank<T extends FlowSegmentRequest> {
-    T makeInstallRequest();
+import lombok.Value;
 
-    T makeRemoveRequest();
+import java.io.Serializable;
+import java.util.Collection;
 
-    T makeVerifyRequest();
+@Value
+public class FlowSegmentSchema implements Serializable {
+    private final SwitchId datapath;
 
-    T makeSchemaRequest();
-
-    UUID getCommandId();
+    private final Collection<FlowSegmentSchemaEntry> entries;
 }

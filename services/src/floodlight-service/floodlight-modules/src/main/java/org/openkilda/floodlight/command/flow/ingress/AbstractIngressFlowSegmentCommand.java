@@ -15,6 +15,7 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
+import org.openkilda.floodlight.command.meter.MeterInstallDryRunCommand;
 import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
@@ -119,6 +120,15 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
         return future.thenCompose(this::planOfFlowsVerify);
     }
 
+    protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(SpeakerCommandProcessor commandProcessor) {
+        CompletableFuture<MeterId> future = CompletableFuture.completedFuture(null);
+        if (meterConfig != null) {
+            future = planMeterDryRun(commandProcessor)
+                    .thenApply(this::handleMeterReport);
+        }
+        return future.thenCompose(this::planOfFlowsSchema);
+    }
+
     private CompletableFuture<MeterReport> planMeterInstall(SpeakerCommandProcessor commandProcessor) {
         MeterInstallCommand meterCommand = new MeterInstallCommand(messageContext, switchId, meterConfig);
         return commandProcessor.chain(meterCommand);
@@ -131,8 +141,13 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
     }
 
     private CompletableFuture<MeterReport> planMeterVerify(SpeakerCommandProcessor commandProcessor) {
-        MeterVerifyCommand meterVerify = new MeterVerifyCommand(switchId, messageContext, meterConfig);
+        MeterVerifyCommand meterVerify = new MeterVerifyCommand(messageContext, switchId, meterConfig);
         return commandProcessor.chain(meterVerify);
+    }
+
+    private CompletableFuture<MeterReport> planMeterDryRun(SpeakerCommandProcessor commandProcessor) {
+        MeterInstallDryRunCommand meterDryRun = new MeterInstallDryRunCommand(messageContext, switchId, meterConfig);
+        return commandProcessor.chain(meterDryRun);
     }
 
     protected MeterId handleMeterReport(MeterReport report) {
@@ -190,6 +205,10 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
 
     private CompletableFuture<FlowSegmentReport> planOfFlowsVerify(MeterId effectiveMeterId) {
         return makeVerifyPlan(makeIngressModMessages(effectiveMeterId));
+    }
+
+    private CompletableFuture<FlowSegmentReport> planOfFlowsSchema(MeterId effectiveMeterId) {
+        return makeSchemaPlan(makeIngressModMessages(effectiveMeterId));
     }
 
     private void handleMeterRemoveReport(MeterReport report) {

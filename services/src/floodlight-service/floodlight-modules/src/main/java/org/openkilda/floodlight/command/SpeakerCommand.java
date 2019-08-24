@@ -15,18 +15,21 @@
 
 package org.openkilda.floodlight.command;
 
-import org.openkilda.floodlight.api.request.SingleSwitchFlowVerifyRequest;
 import org.openkilda.floodlight.command.flow.egress.EgressFlowSegmentInstallCommand;
 import org.openkilda.floodlight.command.flow.egress.EgressFlowSegmentRemoveCommand;
+import org.openkilda.floodlight.command.flow.egress.EgressFlowSegmentSchemaCommand;
 import org.openkilda.floodlight.command.flow.egress.EgressFlowSegmentVerifyCommand;
 import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentInstallCommand;
 import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentRemoveCommand;
+import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentSchemaCommand;
 import org.openkilda.floodlight.command.flow.ingress.IngressFlowSegmentVerifyCommand;
-import org.openkilda.floodlight.command.flow.ingress.SingleSwitchFlowInstallCommand;
-import org.openkilda.floodlight.command.flow.ingress.SingleSwitchFlowRemoveCommand;
-import org.openkilda.floodlight.command.flow.ingress.SingleSwitchFlowVerifyCommand;
+import org.openkilda.floodlight.command.flow.ingress.OneSwitchFlowInstallCommand;
+import org.openkilda.floodlight.command.flow.ingress.OneSwitchFlowRemoveCommand;
+import org.openkilda.floodlight.command.flow.ingress.OneSwitchFlowSchemaCommand;
+import org.openkilda.floodlight.command.flow.ingress.OneSwitchFlowVerifyCommand;
 import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentInstallCommand;
 import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentRemoveCommand;
+import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentSchemaCommand;
 import org.openkilda.floodlight.command.flow.transit.TransitFlowSegmentVerifyCommand;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
@@ -61,24 +64,32 @@ import java.util.concurrent.CompletionException;
                 name = "org.openkilda.floodlight.api.request.IngressFlowSegmentRemoveRequest"),
         @Type(value = IngressFlowSegmentVerifyCommand.class,
                 name = "org.openkilda.floodlight.api.request.IngressFlowSegmentVerifyRequest"),
-        @Type(value = SingleSwitchFlowInstallCommand.class,
-                name = "org.openkilda.floodlight.api.request.SingleSwitchFlowInstallRequest"),
-        @Type(value = SingleSwitchFlowRemoveCommand.class,
-                name = "org.openkilda.floodlight.api.request.SingleSwitchFlowRemoveRequest"),
-        @Type(value = SingleSwitchFlowVerifyCommand.class,
-                name = "org.openkilda.floodlight.api.request.SingleSwitchFlowVerifyRequest"),
+        @Type(value = IngressFlowSegmentSchemaCommand.class,
+                name = "org.openkilda.floodlight.api.request.IngressFlowSegmentSchemaRequest"),
+        @Type(value = OneSwitchFlowInstallCommand.class,
+                name = "org.openkilda.floodlight.api.request.OneSwitchFlowInstallRequest"),
+        @Type(value = OneSwitchFlowRemoveCommand.class,
+                name = "org.openkilda.floodlight.api.request.OneSwitchFlowRemoveRequest"),
+        @Type(value = OneSwitchFlowVerifyCommand.class,
+                name = "org.openkilda.floodlight.api.request.OneSwitchFlowVerifyRequest"),
+        @Type(value = OneSwitchFlowSchemaCommand.class,
+                name = "org.openkilda.floodlight.api.request.OneSwitchFlowSchemaRequest"),
         @Type(value = TransitFlowSegmentInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest"),
         @Type(value = TransitFlowSegmentRemoveCommand.class,
                 name = "org.openkilda.floodlight.api.request.TransitFlowSegmentRemoveRequest"),
         @Type(value = TransitFlowSegmentVerifyCommand.class,
                 name = "org.openkilda.floodlight.api.request.TransitFlowSegmentVerifyRequest"),
+        @Type(value = TransitFlowSegmentSchemaCommand.class,
+                name = "org.openkilda.floodlight.api.request.TransitFlowSegmentSchemaRequest"),
         @Type(value = EgressFlowSegmentInstallCommand.class,
                 name = "org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest"),
         @Type(value = EgressFlowSegmentRemoveCommand.class,
                 name = "org.openkilda.floodlight.api.request.EgressFlowSegmentRemoveRequest"),
         @Type(value = EgressFlowSegmentVerifyCommand.class,
-                name = "org.openkilda.floodlight.api.request.EgressFlowSegmentVerifyRequest")
+                name = "org.openkilda.floodlight.api.request.EgressFlowSegmentVerifyRequest"),
+        @Type(value = EgressFlowSegmentSchemaCommand.class,
+                name = "org.openkilda.floodlight.api.request.EgressFlowSegmentSchemaRequest")
 })
 @Getter
 public abstract class SpeakerCommand<T extends SpeakerCommandReport> {

@@ -37,6 +37,10 @@ public class FlowSegmentBlankGenericResolver {
         return blank.makeVerifyRequest();
     }
 
+    public FlowSegmentRequest makeSchemaRequest() {
+        return blank.makeSchemaRequest();
+    }
+
     public UUID getCommandId() {
         return blank.getCommandId();
     }
