@@ -16,12 +16,14 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
 import org.openkilda.wfm.topology.switchmanager.service.SpeakerCommandCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.impl.SpeakerWorkerService;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
@@ -29,6 +31,8 @@ import org.openkilda.wfm.topology.utils.MessageTranslator;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+
+import java.util.List;
 
 public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarrier {
 
@@ -47,10 +51,8 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarri
 
     @Override
     protected void onHubRequest(Tuple input) throws PipelineException {
-        String key = input.getStringByField(MessageTranslator.FIELD_ID_KEY);
-        CommandData command = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, CommandData.class);
-
-        service.sendCommand(key, command);
+        SpeakerWorkerCommand command = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, SpeakerWorkerCommand.class);
+        command.apply(this);
     }
 
     @Override
@@ -81,5 +83,16 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerCommandCarri
     public void sendResponse(String key, Message response) {
         Values values = new Values(key, response, getCommandContext());
         emitResponseToHub(getCurrentTuple(), values);
+    }
+
+    // -- carrier implementation --
+
+    // -- commands processing --
+    public void processProxyRequest(String key, CommandData payload) {
+        service.sendCommand(key, payload);
+    }
+
+    public void processFetchSchema(String key, List<FlowSegmentBlankGenericResolver> requests) {
+        // TODO
     }
 }

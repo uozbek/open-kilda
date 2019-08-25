@@ -13,15 +13,24 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.service;
+package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.messaging.Message;
-import org.openkilda.messaging.command.CommandMessage;
-import org.openkilda.wfm.error.PipelineException;
+import org.openkilda.floodlight.api.FlowSegmentSchema;
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 
-public interface SpeakerCommandCarrier {
+import lombok.NonNull;
+import lombok.Value;
 
-    void sendCommand(String key, CommandMessage command);
+import java.util.UUID;
 
-    void sendResponse(String key, Message response) throws PipelineException;
+@Value
+public class FlowSegmentSchemaRequestResponse {
+    @NonNull
+    private final FlowSegmentBlankGenericResolver requestBlank;
+    @NonNull
+    private final FlowSegmentSchema schema;
+
+    public UUID getCommandId() {
+        return requestBlank.getCommandId();
+    }
 }

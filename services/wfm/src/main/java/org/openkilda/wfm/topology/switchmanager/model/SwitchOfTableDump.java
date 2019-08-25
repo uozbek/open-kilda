@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,15 +14,19 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.service;
+package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.messaging.Message;
-import org.openkilda.messaging.command.CommandMessage;
-import org.openkilda.wfm.error.PipelineException;
+import org.openkilda.messaging.info.rule.FlowEntry;
+import org.openkilda.model.SwitchId;
 
-public interface SpeakerCommandCarrier {
+import lombok.Value;
 
-    void sendCommand(String key, CommandMessage command);
+import java.util.List;
 
-    void sendResponse(String key, Message response) throws PipelineException;
+@Value
+public class SwitchOfTableDump {
+    private final SwitchId datapath;
+    private final int tableId;
+
+    private List<FlowEntry> entries;
 }

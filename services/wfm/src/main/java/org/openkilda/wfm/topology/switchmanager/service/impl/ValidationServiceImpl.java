@@ -76,13 +76,21 @@ public class ValidationServiceImpl implements ValidationService {
     public List<FlowSegmentBlankGenericResolver> prepareFlowSegmentRequests(CommandContext context, SwitchId switchId) {
         final Map<PathId, FlowPath> affectedPath = new HashMap<>();
 
+        Set<PathId> avoidIngressRequest = new HashSet<>();
         for (Flow flow : flowRepository.findByEndpointSwitch(switchId)) {
             affectedPath.put(flow.getForwardPathId(), flow.getForwardPath());
             affectedPath.put(flow.getReversePathId(), flow.getReversePath());
 
-            if (flow.isAllocateProtectedPath()) {
-                affectedPath.put(flow.getProtectedForwardPathId(), flow.getProtectedForwardPath());
-                affectedPath.put(flow.getProtectedReversePathId(), flow.getProtectedReversePath());
+            FlowPath path = flow.getProtectedForwardPath();
+            if (path != null) {
+                avoidIngressRequest.add(path.getPathId());
+                affectedPath.put(path.getPathId(), path);
+            }
+
+            path = flow.getProtectedReversePath();
+            if (path != null) {
+                avoidIngressRequest.add(path.getPathId());
+                affectedPath.put(path.getPathId(), path);
             }
         }
 
@@ -116,7 +124,11 @@ public class ValidationServiceImpl implements ValidationService {
             processedPath.add(pathId);
             processedPath.add(oppositePath.getPathId());
 
-            requests.addAll(requestBuilder.buildAll(context, flow, path, oppositePath));
+            if (avoidIngressRequest.contains(pathId)) {
+                requests.addAll(requestBuilder.buildAllExceptIngress(context, flow, path, oppositePath));
+            } else {
+                requests.addAll(requestBuilder.buildAll(context, flow, path, oppositePath));
+            }
         }
 
         return requests;

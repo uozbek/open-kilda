@@ -149,6 +149,8 @@ public class SwitchValidateFsm
         List<FlowSegmentBlankGenericResolver> requestBlanks = validationService.prepareFlowSegmentRequests(
                 commandContext, switchId);
 
+        carrier.speakerFetchSchema(requestBlanks);
+
         // TODO
     }
 

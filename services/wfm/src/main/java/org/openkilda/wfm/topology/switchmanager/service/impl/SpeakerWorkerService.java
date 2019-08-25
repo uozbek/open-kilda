@@ -44,7 +44,7 @@ public class SpeakerWorkerService {
      * @param key unique operation's key.
      * @param command command to be executed.
      */
-    public void sendCommand(String key, CommandData command) throws PipelineException {
+    public void sendCommand(String key, CommandData command) {
         log.debug("Got a request from hub bolt {}", command);
         keyToRequest.put(key, command);
         carrier.sendCommand(key, new CommandMessage(command, System.currentTimeMillis(), key));

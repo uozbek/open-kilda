@@ -13,15 +13,18 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.service;
+package org.openkilda.wfm.topology.switchmanager.bolt.speaker.command;
 
-import org.openkilda.messaging.Message;
-import org.openkilda.messaging.command.CommandMessage;
-import org.openkilda.wfm.error.PipelineException;
+import org.openkilda.wfm.share.ICommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 
-public interface SpeakerCommandCarrier {
+import lombok.Getter;
 
-    void sendCommand(String key, CommandMessage command);
+public abstract class SpeakerWorkerCommand implements ICommand<SpeakerWorkerBolt> {
+    @Getter
+    protected final String key;
 
-    void sendResponse(String key, Message response) throws PipelineException;
+    public SpeakerWorkerCommand(String key) {
+        this.key = key;
+    }
 }

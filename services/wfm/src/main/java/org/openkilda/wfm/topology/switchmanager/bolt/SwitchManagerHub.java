@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
@@ -37,6 +38,8 @@ import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.share.utils.KeyProvider;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerFetchSchemaCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchSyncService;
@@ -52,6 +55,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
+import java.util.List;
 import java.util.Map;
 
 public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
@@ -172,6 +176,21 @@ public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
     @Override
     public double getFlowMeterBurstCoefficient() {
         return flowMeterBurstCoefficient;
+    }
+
+    // -- carrier implementation --
+
+    @Override
+    public void speakerFetchSchema(List<FlowSegmentBlankGenericResolver> requestBlanks) {
+        String key = getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
+        SpeakerFetchSchemaCommand command = new SpeakerFetchSchemaCommand(key, requestBlanks);
+        emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
+    }
+
+    // -- storm interface --
+
+    private Values makeSpeakerWorkerTuple(SpeakerWorkerCommand command) {
+        return new Values(command.getKey(), command, getCommandContext());
     }
 
     @Override

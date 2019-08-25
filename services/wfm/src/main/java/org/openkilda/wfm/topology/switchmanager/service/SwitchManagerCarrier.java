@@ -15,11 +15,14 @@
 
 package org.openkilda.wfm.topology.switchmanager.service;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
+
+import java.util.List;
 
 public interface SwitchManagerCarrier {
     void sendCommandToSpeaker(String key, CommandData command);
@@ -35,4 +38,6 @@ public interface SwitchManagerCarrier {
     double getFlowMeterBurstCoefficient();
 
     void runSwitchSync(String key, SwitchValidateRequest request, ValidationResult validationResult);
+
+    void speakerFetchSchema(List<FlowSegmentBlankGenericResolver> requestBlanks);
 }
