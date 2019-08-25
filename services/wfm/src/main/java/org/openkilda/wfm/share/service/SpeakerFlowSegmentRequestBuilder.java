@@ -31,6 +31,7 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
+import org.openkilda.model.PathId;
 import org.openkilda.model.PathSegment;
 import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.CommandContext;
@@ -43,18 +44,25 @@ import com.fasterxml.uuid.NoArgGenerator;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     private final NoArgGenerator commandIdGenerator = Generators.timeBasedGenerator();
     private final FlowResourcesManager resourcesManager;
-    private final FlowEncapsulationType encapsulationType;
+    private final Set<SwitchId> switchFilter = new HashSet<>();
 
-    public SpeakerFlowSegmentRequestBuilder(FlowResourcesManager resourcesManager,
-                                            FlowEncapsulationType encapsulationType) {
+    public SpeakerFlowSegmentRequestBuilder(FlowResourcesManager resourcesManager) {
+        this(resourcesManager, new SwitchId[0]);
+    }
+
+    public SpeakerFlowSegmentRequestBuilder(FlowResourcesManager resourcesManager, SwitchId... switchOfInterest) {
         this.resourcesManager = resourcesManager;
-        this.encapsulationType = encapsulationType;
+        Collections.addAll(switchFilter, switchOfInterest);
     }
 
     @Override
@@ -91,9 +99,9 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
 
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, path, context, getEncapsulation(path, oppositePath), true, true, true));
+                flow, path, oppositePath, context, true, true, true));
         requests.addAll(makeRequests(
-                flow, oppositePath, context, getEncapsulation(oppositePath, path), true, true, true));
+                flow, oppositePath, path, context, true, true, true));
         return requests;
     }
 
@@ -103,9 +111,9 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
 
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, path, context, getEncapsulation(path, oppositePath), false, true, true));
+                flow, path, oppositePath, context, false, true, true));
         requests.addAll(makeRequests(
-                flow, oppositePath, context, getEncapsulation(oppositePath, path), false, true, true));
+                flow, oppositePath, path, context, false, true, true));
         return requests;
     }
 
@@ -115,23 +123,24 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
 
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, path, context, getEncapsulation(path, oppositePath), true, false, false));
+                flow, path, oppositePath, context, true, false, false));
         requests.addAll(makeRequests(
-                flow, oppositePath, context, getEncapsulation(oppositePath, path), true, false, false));
+                flow, oppositePath, path, context, true, false, false));
         return requests;
     }
 
     private List<FlowSegmentBlankGenericResolver> makeRequests(
-            Flow flow, FlowPath path, CommandContext context, FlowTransitEncapsulation encapsulation,
+            Flow flow, FlowPath path, FlowPath oppositePath, CommandContext context,
             boolean doEnter, boolean doTransit, boolean doExit) {
         ensureFlowPathValid(flow, path);
 
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
 
+        FlowTransitEncapsulation encapsulation = getEncapsulation(flow.getEncapsulationType(), path, oppositePath);
         FlowEndpoint ingressEndpoint = getIngressEndpoint(flow, path);
         FlowEndpoint egressEndpoint = getEgressEndpoint(flow, path);
 
-        if (doEnter) {
+        if (doEnter && isRequiredSwitch(ingressEndpoint.getDatapath())) {
             if (flow.isOneSwitchFlow()) {
                 requests.add(makeOneSwitchFlowRequest(path, context, ingressEndpoint, egressEndpoint));
             } else {
@@ -143,7 +152,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
             requests.addAll(makeTransitRequests(path, context, encapsulation));
         }
 
-        if (doExit) {
+        if (doExit && isRequiredSwitch(egressEndpoint.getDatapath())) {
             requests.add(makeEgressSegmentRequest(
                     path, context, egressEndpoint, ingressEndpoint, encapsulation));
         }
@@ -159,9 +168,12 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
             PathSegment income = segments.get(i - 1);
             PathSegment outcome = segments.get(i);
 
-            requests.add(makeTransitSegmentRequest(
-                    path, context, income.getDestSwitch().getSwitchId(), income.getDestPort(),
-                    outcome.getSrcPort(), encapsulation));
+            SwitchId datapath = income.getDestSwitch().getSwitchId();
+            if (isRequiredSwitch(datapath)) {
+                requests.add(makeTransitSegmentRequest(
+                        path, context, datapath, income.getDestPort(),
+                        outcome.getSrcPort(), encapsulation));
+            }
         }
 
         return requests;
@@ -274,6 +286,13 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         return path.getDestSwitch().getSwitchId().equals(segment.getDestSwitch().getSwitchId());
     }
 
+    private boolean isRequiredSwitch(SwitchId swId) {
+        if (switchFilter.isEmpty()) {
+            return true;
+        }
+        return switchFilter.contains(swId);
+    }
+
     private MeterConfig getMeterConfig(FlowPath path) {
         if (path.getMeterId() == null) {
             return null;
@@ -281,9 +300,10 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         return new MeterConfig(path.getMeterId(), path.getBandwidth());
     }
 
-    private FlowTransitEncapsulation getEncapsulation(FlowPath path, FlowPath oppositePath) {
+    private FlowTransitEncapsulation getEncapsulation(
+            FlowEncapsulationType encapsulation, FlowPath path, FlowPath oppositePath) {
         EncapsulationResources resources = resourcesManager
-                .getEncapsulationResources(path.getPathId(), oppositePath.getPathId(), encapsulationType)
+                .getEncapsulationResources(path.getPathId(), oppositePath.getPathId(), encapsulation)
                 .orElseThrow(() -> new IllegalStateException(format(
                         "No encapsulation resources found for flow path %s (opposite: %s)",
                         path.getPathId(), oppositePath.getPathId())));

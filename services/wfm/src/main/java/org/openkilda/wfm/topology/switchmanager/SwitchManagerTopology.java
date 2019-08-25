@@ -24,7 +24,7 @@ import org.openkilda.wfm.share.hubandspoke.CoordinatorSpout;
 import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.AbstractTopology;
-import org.openkilda.wfm.topology.switchmanager.bolt.SpeakerWorkerBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.bolt.SwitchManagerHub;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
 

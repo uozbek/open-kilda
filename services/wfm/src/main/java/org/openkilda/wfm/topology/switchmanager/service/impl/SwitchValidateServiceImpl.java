@@ -21,7 +21,10 @@ import org.openkilda.messaging.info.meter.SwitchMeterEntries;
 import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
 import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.persistence.PersistenceManager;
+import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
+import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm;
+import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateContext;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
@@ -45,12 +48,14 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
     @VisibleForTesting
     ValidationService validationService;
     private SwitchManagerCarrier carrier;
-    private StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, Object> builder;
+    private StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent,
+            SwitchValidateContext> builder;
 
-    public SwitchValidateServiceImpl(SwitchManagerCarrier carrier, PersistenceManager persistenceManager) {
+    public SwitchValidateServiceImpl(
+            SwitchManagerCarrier carrier, FlowResourcesConfig resourcesConfig, PersistenceManager persistenceManager) {
         this.carrier = carrier;
         this.builder = SwitchValidateFsm.builder();
-        this.validationService = new ValidationServiceImpl(persistenceManager);
+        this.validationService = new ValidationServiceImpl(resourcesConfig, persistenceManager);
     }
 
     @Override

@@ -36,6 +36,7 @@ import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.share.utils.KeyProvider;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchSyncService;
@@ -78,7 +79,8 @@ public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         super.prepare(stormConf, context, collector);
-        validateService = new SwitchValidateServiceImpl(this, persistenceManager);
+
+        validateService = new SwitchValidateServiceImpl(this, flowResourcesConfig, persistenceManager);
         syncService = new SwitchSyncServiceImpl(this, persistenceManager, flowResourcesConfig);
     }
 
@@ -149,7 +151,7 @@ public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
     @Override
     public void sendCommandToSpeaker(String key, CommandData command) {
         emitWithContext(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(),
-                new Values(KeyProvider.generateChainedKey(key), command));
+                        new Values(KeyProvider.generateChainedKey(key), command));
     }
 
     @Override

@@ -62,7 +62,7 @@ public class SpeakerFlowSegmentRequestBuilderTest extends Neo4jBasedTest {
     public void setUp() {
         FlowResourcesManager resourcesManager = new FlowResourcesManager(persistenceManager,
                 configurationProvider.getConfiguration(FlowResourcesConfig.class));
-        target = new SpeakerFlowSegmentRequestBuilder(resourcesManager, FlowEncapsulationType.TRANSIT_VLAN);
+        target = new SpeakerFlowSegmentRequestBuilder(resourcesManager);
         vlanRepository = persistenceManager.getRepositoryFactory().createTransitVlanRepository();
     }
 

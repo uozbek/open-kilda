@@ -15,9 +15,10 @@
 
 package org.openkilda.floodlight.api.request;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public interface IFlowSegmentBlank<T extends FlowSegmentRequest> {
+public interface IFlowSegmentBlank<T extends FlowSegmentRequest> extends Serializable {
     T makeInstallRequest();
 
     T makeRemoveRequest();

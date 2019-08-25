@@ -36,7 +36,7 @@ public class FlowCommandBuilderFactory {
         switch (encapsulationType) {
             case TRANSIT_VLAN:
             case VXLAN:
-                return new SpeakerFlowSegmentRequestBuilder(resourcesManager, encapsulationType);
+                return new SpeakerFlowSegmentRequestBuilder(resourcesManager);
             default:
                 throw new UnsupportedOperationException(
                         String.format("Encapsulation type %s is not supported", encapsulationType));

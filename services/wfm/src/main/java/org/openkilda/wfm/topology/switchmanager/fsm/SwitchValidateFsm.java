@@ -31,6 +31,7 @@ import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.Swi
 import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.VALIDATE_RULES;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.messaging.command.switches.DumpMetersForSwitchManagerRequest;
 import org.openkilda.messaging.command.switches.DumpRulesForSwitchManagerRequest;
 import org.openkilda.messaging.command.switches.GetExpectedDefaultRulesRequest;
@@ -45,7 +46,9 @@ import org.openkilda.messaging.info.switches.MetersValidationEntry;
 import org.openkilda.messaging.info.switches.RulesValidationEntry;
 import org.openkilda.messaging.info.switches.SwitchValidationResponse;
 import org.openkilda.model.SwitchId;
+import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.share.utils.AbstractBaseFsm;
+import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateContext;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
@@ -64,7 +67,7 @@ import java.util.List;
 
 @Slf4j
 public class SwitchValidateFsm
-        extends AbstractBaseFsm<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, Object> {
+        extends AbstractBaseFsm<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, SwitchValidateContext> {
 
     private static final String FINISHED_WITH_ERROR_METHOD_NAME = "finishedWithError";
     private static final String FINISHED_METHOD_NAME = "finished";
@@ -95,18 +98,14 @@ public class SwitchValidateFsm
     /**
      * FSM builder.
      */
-    public static StateMachineBuilder<SwitchValidateFsm, SwitchValidateState,
-            SwitchValidateEvent, Object> builder() {
-        StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, Object> builder =
-                StateMachineBuilderFactory.create(
-                        SwitchValidateFsm.class,
-                        SwitchValidateState.class,
-                        SwitchValidateEvent.class,
-                        Object.class,
-                        SwitchManagerCarrier.class,
-                        String.class,
-                        SwitchValidateRequest.class,
-                        ValidationService.class);
+    public static StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent,
+            SwitchValidateContext> builder() {
+        StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, SwitchValidateContext>
+                builder = StateMachineBuilderFactory.create(
+                        SwitchValidateFsm.class, SwitchValidateState.class, SwitchValidateEvent.class,
+                        SwitchValidateContext.class,
+                        // extra args
+                        SwitchManagerCarrier.class, String.class, SwitchValidateRequest.class, ValidationService.class);
 
         builder.onEntry(INITIALIZED).callMethod("initialized");
         builder.externalTransition().from(INITIALIZED).to(RECEIVE_DATA).on(NEXT)
@@ -145,6 +144,12 @@ public class SwitchValidateFsm
     protected void initialized(SwitchValidateState from, SwitchValidateState to,
                                SwitchValidateEvent event, Object context) {
         log.info("Key: {}, validate FSM initialized", key);
+
+        CommandContext commandContext = carrier.getCommandContext().fork("schema");
+        List<FlowSegmentBlankGenericResolver> requestBlanks = validationService.prepareFlowSegmentRequests(
+                commandContext, switchId);
+
+        // TODO
     }
 
     protected void receiveData(SwitchValidateState from, SwitchValidateState to,

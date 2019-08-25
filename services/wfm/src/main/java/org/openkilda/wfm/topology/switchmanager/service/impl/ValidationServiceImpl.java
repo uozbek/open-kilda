@@ -15,18 +15,28 @@
 
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.info.meter.MeterEntry;
 import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.messaging.info.switches.MeterInfoEntry;
 import org.openkilda.messaging.info.switches.MeterMisconfiguredInfoEntry;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.Meter;
 import org.openkilda.model.MeterId;
+import org.openkilda.model.PathId;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FlowPathRepository;
+import org.openkilda.persistence.repositories.FlowRepository;
+import org.openkilda.persistence.repositories.RepositoryFactory;
+import org.openkilda.wfm.CommandContext;
+import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
+import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
+import org.openkilda.wfm.share.service.SpeakerFlowSegmentRequestBuilder;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
 import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
@@ -37,8 +47,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,10 +60,66 @@ public class ValidationServiceImpl implements ValidationService {
     private static final double E_SWITCH_METER_RATE_EQUALS_DELTA_COEFFICIENT = 0.01;
     private static final double E_SWITCH_METER_BURST_SIZE_EQUALS_DELTA_COEFFICIENT = 0.01;
 
-    private FlowPathRepository flowPathRepository;
+    private final FlowResourcesManager resourceManager;
+    private final FlowRepository flowRepository;
+    private final FlowPathRepository flowPathRepository;
 
-    public ValidationServiceImpl(PersistenceManager persistenceManager) {
-        this.flowPathRepository = persistenceManager.getRepositoryFactory().createFlowPathRepository();
+    public ValidationServiceImpl(FlowResourcesConfig resourcesConfig, PersistenceManager persistenceManager) {
+        resourceManager =  new FlowResourcesManager(persistenceManager, resourcesConfig);
+
+        RepositoryFactory repositories = persistenceManager.getRepositoryFactory();
+        flowRepository = repositories.createFlowRepository();
+        flowPathRepository = repositories.createFlowPathRepository();
+    }
+
+    @Override
+    public List<FlowSegmentBlankGenericResolver> prepareFlowSegmentRequests(CommandContext context, SwitchId switchId) {
+        final Map<PathId, FlowPath> affectedPath = new HashMap<>();
+
+        for (Flow flow : flowRepository.findByEndpointSwitch(switchId)) {
+            affectedPath.put(flow.getForwardPathId(), flow.getForwardPath());
+            affectedPath.put(flow.getReversePathId(), flow.getReversePath());
+
+            if (flow.isAllocateProtectedPath()) {
+                affectedPath.put(flow.getProtectedForwardPathId(), flow.getProtectedForwardPath());
+                affectedPath.put(flow.getProtectedReversePathId(), flow.getProtectedReversePath());
+            }
+        }
+
+        for (FlowPath path : flowPathRepository.findBySegmentSwitch(switchId)) {
+            affectedPath.put(path.getPathId(), path);
+        }
+
+        SpeakerFlowSegmentRequestBuilder requestBuilder = new SpeakerFlowSegmentRequestBuilder(
+                resourceManager, switchId);
+
+        List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
+        Set<PathId> processedPath = new HashSet<>();
+        for (Map.Entry<PathId, FlowPath> pathEntry : affectedPath.entrySet()) {
+            PathId pathId = pathEntry.getKey();
+            if (processedPath.contains(pathId)) {
+                continue;
+            }
+
+            FlowPath path = pathEntry.getValue();
+            Flow flow = path.getFlow();
+            PathId oppositePathId = flow.getOppositePathId(pathId);
+            FlowPath oppositePath = affectedPath.get(oppositePathId);
+            if (oppositePath == null) {
+                // asymmetric path
+                oppositePath = flowPathRepository.findById(oppositePathId)
+                        .orElseThrow(() -> new IllegalStateException(String.format(
+                                "unable to find opposite path to %s (flow: \"%s\") into persistence storage",
+                                pathId, flow.getFlowId())));
+            }
+
+            processedPath.add(pathId);
+            processedPath.add(oppositePath.getPathId());
+
+            requests.addAll(requestBuilder.buildAll(context, flow, path, oppositePath));
+        }
+
+        return requests;
     }
 
     @Override
