@@ -38,6 +38,7 @@ import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.Neo4jBasedTest;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
+import org.openkilda.wfm.share.service.SpeakerFlowSegmentRequestBuilder;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;

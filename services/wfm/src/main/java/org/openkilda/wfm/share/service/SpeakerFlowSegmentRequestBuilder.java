@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,7 +14,7 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.flowhs.service;
+package org.openkilda.wfm.share.service;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -35,6 +36,7 @@ import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.share.flow.resources.EncapsulationResources;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
+import org.openkilda.wfm.topology.flowhs.service.FlowCommandBuilder;
 
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.NoArgGenerator;
