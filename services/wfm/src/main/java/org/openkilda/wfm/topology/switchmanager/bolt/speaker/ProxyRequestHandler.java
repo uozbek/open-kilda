@@ -25,10 +25,8 @@ import org.openkilda.messaging.error.ErrorType;
 import org.openkilda.wfm.topology.switchmanager.service.SpeakerWorkerCarrier;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-public class ProxyRequestHandler implements IHandler {
+public class ProxyRequestHandler extends WorkerHandler {
     private final SpeakerWorkerCarrier carrier;
 
     @Getter

@@ -32,7 +32,6 @@ import org.openkilda.wfm.topology.utils.MessageTranslator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
-import org.apache.storm.shade.org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
@@ -51,7 +50,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
             FieldNameBasedTupleToKafkaMapper.BOLT_KEY, FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE,
             FIELD_ID_CONTEXT);
 
-    private transient Map<String, IHandler> handlers;
+    private transient Map<String, WorkerHandler> handlers;
 
     public SpeakerWorkerBolt(Config config) {
         super(config);
@@ -95,7 +94,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
     }
 
     @Override
-    public void sendFlowSegmentRequest(FlowSegmentRequest request) {
+    public void sendSpeakerCommand(FlowSegmentRequest request) {
         try {
             emitSpeaker(encodeSpeakerStreamPayload(request));
         } catch (JsonProcessingException e) {
@@ -155,8 +154,8 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
         return new Values(key, json, getCommandContext());
     }
 
-    private void installHandler(String key, IHandler h) {
-        IHandler p;
+    private void installHandler(String key, WorkerHandler h) {
+        WorkerHandler p;
         if (! h.isCompleted()) {
             p = handlers.put(key, h);
         } else {
@@ -170,7 +169,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
 
     private class HandlerWrapper implements Closeable {
         private final String key;
-        private final IHandler h;
+        private final WorkerHandler h;
         private boolean forceComplete = false;
 
         private HandlerWrapper(String key) {
@@ -194,7 +193,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
         }
     }
 
-    private static class DummyHandler implements IHandler {
+    private static class DummyHandler extends WorkerHandler {
         private final static DummyHandler INSTANCE = new DummyHandler();
 
         @Override

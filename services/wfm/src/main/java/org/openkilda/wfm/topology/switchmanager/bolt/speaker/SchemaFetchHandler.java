@@ -17,6 +17,11 @@
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.floodlight.api.request.MetersDumpRequest;
+import org.openkilda.floodlight.api.request.TableDumpRequest;
+import org.openkilda.messaging.Message;
+import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.topology.switchmanager.model.FlowSegmentSchemaRequestResponse;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfMeterDump;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
@@ -28,8 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class SchemaFetchHandler implements IHandler {
+public class SchemaFetchHandler extends WorkerHandler {
     private final SpeakerWorkerCarrier carrier;
+    private final MessageContext context;
+
+    private final SwitchId switchId;
 
     private final Map<UUID, FlowSegmentBlankGenericResolver> requestBlanks = new HashMap<>();
     private final Map<UUID, FlowSegmentSchemaRequestResponse> ofSchema = new HashMap<>();
@@ -40,15 +48,31 @@ public class SchemaFetchHandler implements IHandler {
     private UUID metersRequest = null;
     private SwitchOfMeterDump meterDump = null;
 
-    public SchemaFetchHandler(SpeakerWorkerCarrier carrier, List<FlowSegmentBlankGenericResolver> schemaRequests) {
+    public SchemaFetchHandler(
+            SpeakerWorkerCarrier carrier, SwitchId switchId, List<FlowSegmentBlankGenericResolver> schemaRequests) {
         this.carrier = carrier;
+        this.context = (new MessageContext(carrier.getCommandContext().getCorrelationId()))
+                .fork("schema").fork(switchId.toString());
+
+        this.switchId = switchId;
 
         for (FlowSegmentBlankGenericResolver entry : schemaRequests) {
-            carrier.sendFlowSegmentRequest(entry.makeSchemaRequest());
+            carrier.sendSpeakerCommand(entry.makeSchemaRequest());
             requestBlanks.put(entry.getCommandId(), entry);
         }
 
+        // force table 0 dump (to get current system/default OF flows)
         requestOfTableDump(0);
+    }
+
+    @Override
+    public void speakerResponse(Message response) {
+        // TODO
+    }
+
+    @Override
+    public void timeout() {
+        // TODO
     }
 
     @Override
@@ -67,10 +91,21 @@ public class SchemaFetchHandler implements IHandler {
             return;
         }
 
-        UUID requestId = UUID.randomUUID();
+        TableDumpRequest dumpRequest = new TableDumpRequest(
+                context.fork(String.valueOf(tableId)), switchId, UUID.randomUUID(), tableId);
+        carrier.sendSpeakerCommand(dumpRequest);
 
-        // TODO
+        tableRequests.put(tableId, dumpRequest.getCommandId());
+    }
 
-        tableRequests.put(tableId, requestId);
+    private void requestMetersDump() {
+        if (metersRequest != null) {
+            return;
+        }
+
+        MetersDumpRequest dumpRequest = new MetersDumpRequest(context.fork("meters"), switchId, UUID.randomUUID());
+        carrier.sendSpeakerCommand(dumpRequest);
+
+        metersRequest = dumpRequest.getCommandId();
     }
 }

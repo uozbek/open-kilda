@@ -61,22 +61,17 @@ public class TableDumpCommand extends SpeakerRemoteCommand<TableDumpReport> {
     }
 
     private List<FlowEntry> handleFlowsDump(List<OFFlowStatsReply> replyChain) {
-        List<FlowEntry> dump = new ArrayList<>();
+        List<FlowEntry> flows = new ArrayList<>();
         for (OFFlowStatsReply reply : replyChain) {
             for (OFFlowStatsEntry entry : reply.getEntries()) {
-                dump.add(OfFlowStatsMapper.INSTANCE.toFlowEntry(entry));
+                flows.add(OfFlowStatsMapper.INSTANCE.toFlowEntry(entry));
             }
         }
-        return dump;
+        return flows;
     }
 
     private TableDumpReport makeSuccessResponse(List<FlowEntry> dump) {
         return new TableDumpReport(this, dump);
-    }
-
-    @Override
-    protected TableDumpReport makeReport(Exception error) {
-        return new TableDumpReport(this, error);
     }
 
     private OFFlowStatsRequest makeOfFlowStatsRequest() {
@@ -84,5 +79,10 @@ public class TableDumpCommand extends SpeakerRemoteCommand<TableDumpReport> {
         return of.buildFlowStatsRequest()
                 .setTableId(TableId.of(tableId))
                 .build();
+    }
+
+    @Override
+    protected TableDumpReport makeReport(Exception error) {
+        return new TableDumpReport(this, error);
     }
 }

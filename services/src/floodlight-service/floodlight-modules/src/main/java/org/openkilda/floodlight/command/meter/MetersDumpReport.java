@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -14,29 +13,29 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command;
+package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.response.SpeakerMetersDumpResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
-import org.openkilda.floodlight.api.response.SpeakerTableDumpResponse;
-import org.openkilda.messaging.info.rule.FlowEntry;
+import org.openkilda.floodlight.command.SpeakerRemoteCommandReport;
+import org.openkilda.messaging.info.meter.MeterEntry;
 
 import java.util.List;
 
-public class TableDumpReport extends SpeakerRemoteCommandReport {
-    private final TableDumpCommand command;
+public class MetersDumpReport extends SpeakerRemoteCommandReport {
+    private final MetersDumpCommand command;
+    private final List<MeterEntry> entries;
 
-    private final List<FlowEntry> entries;
-
-    public TableDumpReport(TableDumpCommand command, List<FlowEntry> entries) {
+    public MetersDumpReport(MetersDumpCommand command, List<MeterEntry> entries) {
         this(command, entries, null);
     }
 
-    public TableDumpReport(TableDumpCommand command, Exception error) {
+    public MetersDumpReport(MetersDumpCommand command, Exception error) {
         this(command, null, error);
     }
 
-    private TableDumpReport(TableDumpCommand command, List<FlowEntry> entries, Exception error) {
+    private MetersDumpReport(MetersDumpCommand command, List<MeterEntry> entries, Exception error) {
         super(command, error);
         this.command = command;
         this.entries = entries;
@@ -50,11 +49,10 @@ public class TableDumpReport extends SpeakerRemoteCommandReport {
 
     @Override
     protected SpeakerResponse makeSuccessReply() {
-        return SpeakerTableDumpResponse.builder()
+        return SpeakerMetersDumpResponse.builder()
                 .messageContext(command.getMessageContext())
                 .commandId(command.getCommandId())
                 .switchId(command.getSwitchId())
-                .tableId(command.getTableId())
                 .entries(entries)
                 .build();
     }

@@ -1,4 +1,4 @@
-/* Copyright 2018 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,27 +13,30 @@
  *   limitations under the License.
  */
 
-package org.openkilda.messaging.command.switches;
+package org.openkilda.floodlight.api.request;
 
-import org.openkilda.messaging.command.CommandData;
+import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
-// TODO(surabujin) - drop (replaced with TableDumpRequest)
-@Value
-@Builder
-@Deprecated
-public class DumpRulesForSwitchManagerRequest extends CommandData {
+import java.util.UUID;
 
-    @JsonProperty("switch_id")
-    private SwitchId switchId;
-
+@Getter
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class MetersDumpRequest extends SpeakerRequest {
     @JsonCreator
-    public DumpRulesForSwitchManagerRequest(@JsonProperty("switch_id") SwitchId switchId) {
-        this.switchId = switchId;
+    @Builder(toBuilder = true)
+    public MetersDumpRequest(
+            @JsonProperty("message_context") MessageContext messageContext,
+            @JsonProperty("switch_id") SwitchId switchId,
+            @JsonProperty("command_id") UUID commandId) {
+        super(messageContext, switchId, commandId);
     }
 }

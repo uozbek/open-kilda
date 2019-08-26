@@ -18,12 +18,21 @@ package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
 import org.openkilda.messaging.Message;
 
-interface IHandler {
-    void speakerResponse(Message response);
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    void timeout();
+abstract class WorkerHandler {
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    void replaced();
+    public abstract void speakerResponse(Message response);
 
-    boolean isCompleted();
+    public abstract void timeout();
+
+    public void replaced() {
+        log.error(
+                "H&S key worker key reusage/collision detected (drop partially executed command {})",
+                getClass().getName());
+    }
+
+    public abstract boolean isCompleted();
 }

@@ -15,17 +15,16 @@
 
 package org.openkilda.wfm.topology.switchmanager.service;
 
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.wfm.CommandContext;
-import org.openkilda.wfm.error.PipelineException;
 
 public interface SpeakerWorkerCarrier {
 
     void sendSpeakerMessage(String key, CommandMessage command);
 
-    void sendFlowSegmentRequest(FlowSegmentRequest request);
+    void sendSpeakerCommand(SpeakerRequest request);
 
     void sendResponse(String key, Message response);
 
