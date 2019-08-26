@@ -13,10 +13,9 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.response;
+package org.openkilda.floodlight.api.request;
 
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -29,36 +28,20 @@ import lombok.ToString;
 import java.util.UUID;
 
 @Getter
-@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class SpeakerFlowSegmentResponse extends SpeakerResponse {
-
-    @JsonProperty("switch_id")
-    private final SwitchId switchId;
-
-    @JsonProperty("flowid")
-    private final String flowId;
-
-    @JsonProperty("cookie")
-    protected final Cookie cookie;
-
-    @JsonProperty
-    private final boolean success;
+@EqualsAndHashCode(callSuper = true)
+public class TableDumpRequest extends SpeakerRequest {
+    @JsonProperty("table_id")
+    private final int tableId;
 
     @JsonCreator
-    @Builder
-    public SpeakerFlowSegmentResponse(
-            @JsonProperty("command_context") MessageContext messageContext,
-            @JsonProperty("command_id") UUID commandId,
+    @Builder(toBuilder = true)
+    public TableDumpRequest(
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("flowid") String flowId,
-            @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("success") boolean success) {
-        super(messageContext, commandId);
-
-        this.flowId = flowId;
-        this.switchId = switchId;
-        this.cookie = cookie;
-        this.success = success;
+            @JsonProperty("command_id") UUID commandId,
+            @JsonProperty("table_id") int tableId) {
+        super(messageContext, switchId, commandId);
+        this.tableId = tableId;
     }
 }

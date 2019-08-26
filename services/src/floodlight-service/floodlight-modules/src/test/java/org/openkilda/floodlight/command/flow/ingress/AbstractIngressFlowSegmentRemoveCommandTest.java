@@ -44,7 +44,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         switchFeaturesSetup(false);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, null);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, null);
         verifySuccessCompletion(command.execute(commandProcessor));
     }
 
@@ -54,7 +54,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         expectMeter(new UnsupportedSwitchOperationException(dpId, "Switch doesn't support meters (unit-test)"));
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         verifySuccessCompletion(command.execute(commandProcessor));
     }
 
@@ -64,7 +64,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         expectMeter(new SwitchErrorResponseException(dpId, "fake fail to install meter error"));
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyErrorCompletion(result, SwitchErrorResponseException.class);
     }
@@ -74,7 +74,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         switchFeaturesSetup(true);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
 
         getWriteRecord(0).getFuture()
@@ -83,7 +83,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
         verifyErrorCompletion(result, SwitchOperationException.class);
     }
 
-    protected void verifyOuterVlanMatchRemove(AbstractIngressFlowSegmentCommand command, OFMessage actual) {
+    protected void verifyOuterVlanMatchRemove(IngressFlowSegmentCommand command, OFMessage actual) {
         OFFlowMod expect = of.buildFlowDeleteStrict()
                 .setCookie(U64.of(command.getCookie().getValue()))
                 .setPriority(IngressFlowSegmentRemoveCommand.FLOW_PRIORITY)
@@ -95,7 +95,7 @@ abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngre
     }
 
     protected void verifyPreQinqRuleRemove(
-            AbstractIngressFlowSegmentCommand command, SwitchDescriptor swDesc, OFMessage actual) {
+            IngressFlowSegmentCommand command, SwitchDescriptor swDesc, OFMessage actual) {
         OFFlowDelete expect = of.buildFlowDelete()
                 .setTableId(swDesc.getTableDispatch())
                 .setCookie(U64.of(command.getCookie().getValue()))

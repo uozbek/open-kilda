@@ -16,7 +16,13 @@
 package org.openkilda.floodlight.command;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.response.SpeakerErrorCode;
+import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
+import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
+
+import sun.plugin2.os.windows.SECURITY_ATTRIBUTES;
 
 public abstract class SpeakerCommandReport {
     private final Exception error;
@@ -38,6 +44,39 @@ public abstract class SpeakerCommandReport {
         }
     }
 
-    public abstract void reply(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService,
-                               String requestKey);
+    public void reply(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService, String requestKey) {
+        kafkaProducerService.sendMessageAndTrack(getReplyTopic(kafkaChannel), requestKey, assembleResponse());
+    }
+
+    protected SpeakerResponse assembleResponse() {
+        SpeakerErrorCode errorCode;
+        try {
+            errorCode = makeErrorCode();
+        } catch (Exception e) {
+            errorCode = SpeakerErrorCode.UNKNOWN;
+        }
+
+        SpeakerResponse reply;
+        if (errorCode == null) {
+            reply = makeSuccessReply();
+        } else {
+            reply = makeErrorReply(errorCode);
+        }
+        return reply;
+    }
+
+    protected SpeakerErrorCode makeErrorCode() throws Exception {
+        try {
+            raiseError();
+            return null;
+        } catch (SwitchNotFoundException e) {
+            return SpeakerErrorCode.SWITCH_UNAVAILABLE;
+        }
+    }
+
+    protected abstract String getReplyTopic(KafkaChannel kafkaChannel);
+
+    protected abstract SpeakerResponse makeSuccessReply();
+
+    protected abstract SpeakerResponse makeErrorReply(SpeakerErrorCode errorCode);
 }

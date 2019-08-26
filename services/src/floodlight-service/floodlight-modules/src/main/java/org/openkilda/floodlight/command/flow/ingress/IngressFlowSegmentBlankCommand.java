@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-abstract class IngressFlowSegmentBlankCommand extends AbstractIngressFlowSegmentCommand {
+abstract class IngressFlowSegmentBlankCommand extends IngressFlowSegmentCommand {
     // payload
     protected final Integer islPort;
     protected FlowTransitEncapsulation encapsulation;

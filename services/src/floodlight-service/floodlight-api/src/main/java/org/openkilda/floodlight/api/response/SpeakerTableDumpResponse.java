@@ -16,49 +16,37 @@
 package org.openkilda.floodlight.api.response;
 
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.model.Cookie;
+import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
-@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class SpeakerFlowSegmentResponse extends SpeakerResponse {
+public class SpeakerTableDumpResponse extends SpeakerResponse {
+    @JsonProperty("table_id")
+    private final int tableId;
 
-    @JsonProperty("switch_id")
-    private final SwitchId switchId;
+    @JsonProperty("entries")
+    private final List<FlowEntry> entries;
 
-    @JsonProperty("flowid")
-    private final String flowId;
-
-    @JsonProperty("cookie")
-    protected final Cookie cookie;
-
-    @JsonProperty
-    private final boolean success;
-
-    @JsonCreator
     @Builder
-    public SpeakerFlowSegmentResponse(
-            @JsonProperty("command_context") MessageContext messageContext,
+    @JsonCreator
+    public SpeakerTableDumpResponse(
+            @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("flowid") String flowId,
-            @JsonProperty("cookie") Cookie cookie,
-            @JsonProperty("success") boolean success) {
-        super(messageContext, commandId);
-
-        this.flowId = flowId;
-        this.switchId = switchId;
-        this.cookie = cookie;
-        this.success = success;
+            @JsonProperty("table_id") int tableId,
+            @JsonProperty("entries") List<FlowEntry> entries) {
+        super(messageContext, commandId, switchId);
+        this.tableId = tableId;
+        this.entries = entries;
     }
 }

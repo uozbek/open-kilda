@@ -19,7 +19,7 @@ import org.openkilda.floodlight.command.meter.MeterInstallDryRunCommand;
 import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
-import org.openkilda.floodlight.command.flow.AbstractFlowSegmentCommand;
+import org.openkilda.floodlight.command.flow.FlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterInstallCommand;
 import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
@@ -65,7 +65,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentCommand {
+abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
     // payload
     protected final FlowEndpoint endpoint;
     protected final MeterConfig meterConfig;
@@ -76,7 +76,7 @@ abstract class AbstractIngressFlowSegmentCommand extends AbstractFlowSegmentComm
     @Getter(AccessLevel.PROTECTED)
     private Set<SpeakerSwitchView.Feature> switchFeatures;
 
-    AbstractIngressFlowSegmentCommand(
+    IngressFlowSegmentCommand(
             MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
             FlowEndpoint endpoint, MeterConfig meterConfig) {
         super(messageContext, switchId, commandId, flowId, cookie);

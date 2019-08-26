@@ -26,6 +26,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.UUID;
+
 @Getter
 @ToString
 @EqualsAndHashCode(callSuper = false)
@@ -33,11 +35,16 @@ public abstract class SpeakerRequest extends AbstractMessage {
     @JsonProperty("switch_id")
     protected final SwitchId switchId;
 
-    public SpeakerRequest(MessageContext messageContext, SwitchId switchId) {
+    @JsonProperty("command_id")
+    protected final UUID commandId;
+
+    public SpeakerRequest(MessageContext messageContext, SwitchId switchId, UUID commandId) {
         super(messageContext);
 
         requireNonNull(switchId, "Argument switchId must not be null");
+        requireNonNull(commandId, "Argument commandId must not be null");
 
         this.switchId = switchId;
+        this.commandId = commandId;
     }
 }

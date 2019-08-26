@@ -23,7 +23,7 @@ import org.openkilda.messaging.AbstractMessage;
 public class FlowSegmentSchemaReport extends FlowSegmentReport {
     private final FlowSegmentSchema schema;
 
-    public FlowSegmentSchemaReport(AbstractFlowSegmentCommand command, FlowSegmentSchema schema) {
+    public FlowSegmentSchemaReport(FlowSegmentCommand command, FlowSegmentSchema schema) {
         super(command);
 
         this.schema = schema;
@@ -31,6 +31,7 @@ public class FlowSegmentSchemaReport extends FlowSegmentReport {
 
     @Override
     protected AbstractMessage assembleSuccessResponse() {
-        return new SpeakerFlowSegmentSchemaResponse(getCommand().getMessageContext(), schema);
+        FlowSegmentCommand command = getCommand();
+        return new SpeakerFlowSegmentSchemaResponse(command.getMessageContext(), command.getCommandId(), schema);
     }
 }

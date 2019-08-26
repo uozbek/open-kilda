@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-abstract class OneSwitchFlowBlankCommand extends AbstractIngressFlowSegmentCommand {
+abstract class OneSwitchFlowBlankCommand extends IngressFlowSegmentCommand {
     protected final FlowEndpoint egressEndpoint;
 
     OneSwitchFlowBlankCommand(

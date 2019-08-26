@@ -17,7 +17,7 @@ package org.openkilda.floodlight.command.flow.transit;
 
 import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
-import org.openkilda.floodlight.command.flow.AbstractNotIngressFlowSegmentCommand;
+import org.openkilda.floodlight.command.flow.NotIngressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
@@ -34,7 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-abstract class TransitFlowSegmentBlankCommand extends AbstractNotIngressFlowSegmentCommand {
+abstract class TransitFlowSegmentBlankCommand extends NotIngressFlowSegmentCommand {
     protected final Integer egressIslPort;
 
     public TransitFlowSegmentBlankCommand(MessageContext messageContext, SwitchId switchId, UUID commandId,

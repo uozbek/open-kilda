@@ -32,9 +32,6 @@ import java.util.UUID;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public abstract class FlowSegmentRequest extends SpeakerRequest {
-    @JsonProperty("command_id")
-    protected final UUID commandId;
-
     @JsonProperty("flowid")
     protected final String flowId;
 
@@ -43,12 +40,10 @@ public abstract class FlowSegmentRequest extends SpeakerRequest {
 
     public FlowSegmentRequest(
             MessageContext context, SwitchId switchId, UUID commandId, String flowId, Cookie cookie) {
-        super(context, switchId);
+        super(context, switchId, commandId);
 
-        requireNonNull(commandId, "Argument commandId must not be null");
         requireNonNull(flowId, "Argument flowId must not be null");
 
-        this.commandId = commandId;
         this.flowId = flowId;
         this.cookie = cookie;
     }

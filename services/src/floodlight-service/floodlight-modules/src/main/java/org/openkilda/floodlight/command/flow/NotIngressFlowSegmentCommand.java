@@ -31,11 +31,11 @@ import org.projectfloodlight.openflow.types.OFPort;
 import java.util.UUID;
 
 @Getter
-public abstract class AbstractNotIngressFlowSegmentCommand extends AbstractFlowSegmentCommand {
+public abstract class NotIngressFlowSegmentCommand extends FlowSegmentCommand {
     protected final Integer ingressIslPort;
     protected final FlowTransitEncapsulation encapsulation;
 
-    public AbstractNotIngressFlowSegmentCommand(
+    public NotIngressFlowSegmentCommand(
             MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie,
             Integer ingressIslPort, FlowTransitEncapsulation encapsulation) {
         super(messageContext, switchId, commandId, flowId, cookie);

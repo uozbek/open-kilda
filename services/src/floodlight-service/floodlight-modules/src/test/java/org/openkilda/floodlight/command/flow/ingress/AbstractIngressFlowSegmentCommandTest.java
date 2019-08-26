@@ -55,7 +55,7 @@ abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerComm
                 .anyTimes();
     }
 
-    protected void executeCommand(AbstractIngressFlowSegmentCommand command, int writeCount) throws Exception {
+    protected void executeCommand(IngressFlowSegmentCommand command, int writeCount) throws Exception {
         switchFeaturesSetup(true);
         expectMeter();
         replayAll();
@@ -66,5 +66,5 @@ abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerComm
         verifySuccessCompletion(result);
     }
 
-    protected abstract AbstractIngressFlowSegmentCommand makeCommand(FlowEndpoint endpoint, MeterConfig meter);
+    protected abstract IngressFlowSegmentCommand makeCommand(FlowEndpoint endpoint, MeterConfig meter);
 }

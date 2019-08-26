@@ -25,6 +25,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.UUID;
+
 @Getter
 @ToString(callSuper = true)
 public class SpeakerFlowSegmentSchemaResponse extends SpeakerResponse {
@@ -35,8 +37,9 @@ public class SpeakerFlowSegmentSchemaResponse extends SpeakerResponse {
     @JsonCreator
     public SpeakerFlowSegmentSchemaResponse(
             @JsonProperty("message_context") MessageContext messageContext,
+            @JsonProperty("command_id") UUID commandId,
             @JsonProperty("schema") FlowSegmentSchema schema) {
-        super(messageContext);
+        super(messageContext, commandId);
         this.schema = schema;
     }
 }

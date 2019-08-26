@@ -13,34 +13,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.response;
+package org.openkilda.floodlight.command;
 
-import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.util.UUID;
 
 @Getter
-public abstract class SpeakerResponse extends AbstractMessage {
-    @JsonProperty("command_id")
+public abstract class SpeakerRemoteCommand<T extends SpeakerCommandReport> extends SpeakerCommand<T> {
     protected final UUID commandId;
 
-    @JsonProperty("switch_id")
-    protected final SwitchId switchId;
-
-    public SpeakerResponse(MessageContext messageContext,
-                           @NonNull UUID commandId, @NonNull SwitchId switchId) {
-        super(messageContext);
+    public SpeakerRemoteCommand(MessageContext messageContext, SwitchId switchId, UUID commandId) {
+        super(messageContext, switchId);
         this.commandId = commandId;
-        this.switchId = switchId;
-    }
-
-    public boolean isSuccess() {
-        return ! (this instanceof SpeakerErrorResponse);
     }
 }

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.ToString;
 
 import java.io.Serializable;
@@ -35,7 +36,7 @@ public abstract class AbstractMessage implements Serializable {
     @JsonProperty("message_context")
     protected MessageContext messageContext;
 
-    public AbstractMessage(MessageContext messageContext) {
+    public AbstractMessage(@NonNull MessageContext messageContext) {
         this.messageContext = messageContext;
     }
 }

@@ -37,13 +37,13 @@ import org.projectfloodlight.openflow.protocol.errormsg.OFFlowModFailedErrorMsg;
 @Slf4j
 public class FlowSegmentReport extends SpeakerCommandReport {
     @Getter(AccessLevel.PROTECTED)
-    private final AbstractFlowSegmentCommand command;
+    private final FlowSegmentCommand command;
 
-    protected FlowSegmentReport(AbstractFlowSegmentCommand command) {
+    protected FlowSegmentReport(FlowSegmentCommand command) {
         this(command, null);
     }
 
-    protected FlowSegmentReport(AbstractFlowSegmentCommand command, Exception error) {
+    protected FlowSegmentReport(FlowSegmentCommand command, Exception error) {
         super(error);
         this.command = command;
     }

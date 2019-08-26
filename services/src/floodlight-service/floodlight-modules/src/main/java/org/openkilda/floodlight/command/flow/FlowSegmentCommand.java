@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.command.SpeakerRemoteCommand;
 import org.openkilda.floodlight.converter.OfFlowModMapper;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;
 import org.openkilda.floodlight.utils.OfFlowDumpProducer;
@@ -38,19 +39,17 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-public abstract class AbstractFlowSegmentCommand extends SpeakerCommand<FlowSegmentReport> {
+public abstract class FlowSegmentCommand extends SpeakerRemoteCommand<FlowSegmentReport> {
     protected static final long FLOW_COOKIE_MASK = 0x7FFFFFFFFFFFFFFFL;
     public static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
 
     // payload
-    protected final UUID commandId;
     protected final String flowId;
     protected final Cookie cookie;
 
-    public AbstractFlowSegmentCommand(
+    public FlowSegmentCommand(
             MessageContext messageContext, SwitchId switchId, UUID commandId, String flowId, Cookie cookie) {
-        super(messageContext, switchId);
-        this.commandId = commandId;
+        super(messageContext, switchId, commandId);
         this.flowId = flowId;
         this.cookie = cookie;
     }

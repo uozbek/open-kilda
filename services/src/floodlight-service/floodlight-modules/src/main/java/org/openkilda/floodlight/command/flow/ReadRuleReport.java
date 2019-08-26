@@ -58,7 +58,7 @@ public class ReadRuleReport extends FlowSegmentReport {
 
     @Override
     protected AbstractMessage assembleSuccessResponse() {
-        AbstractFlowSegmentCommand command = getCommand();
+        FlowSegmentCommand command = getCommand();
         FlowRuleResponse.FlowRuleResponseBuilder builder = FlowRuleResponse.flowRuleResponseBuilder()
                 .commandId(command.getCommandId())
                 .messageContext(command.getMessageContext())

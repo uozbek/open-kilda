@@ -54,7 +54,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         switchFeaturesSetup(true);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, null);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, null);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyWriteCount(2);
         verifySuccessCompletion(result);
@@ -67,7 +67,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         expectMeter(new UnsupportedSwitchOperationException(dpId, "Switch doesn't support meters (unit-test)"));
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyWriteCount(2);
         verifySuccessCompletion(result);
@@ -82,7 +82,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         reset(session);
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
         verifyErrorCompletion(result, SwitchErrorResponseException.class);
     }
@@ -93,7 +93,7 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
         expectMeter();
         replayAll();
 
-        AbstractIngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
+        IngressFlowSegmentCommand command = makeCommand(endpointSingleVlan, meterConfig);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
 
         getWriteRecord(0).getFuture()
@@ -128,13 +128,13 @@ abstract class AbstractIngressFlowSegmentInstallCommandTest extends AbstractIngr
                 .andReturn(CompletableFuture.completedFuture(report));
     }
 
-    protected OFFlowAdd makeOuterVlanMatchAddReference(AbstractIngressFlowSegmentCommand command) {
+    protected OFFlowAdd makeOuterVlanMatchAddReference(IngressFlowSegmentCommand command) {
         SwitchDescriptor swDesc = new SwitchDescriptor(sw);
         MetadataAdapter.MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
                 OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
 
         return of.buildFlowAdd()
-                .setPriority(AbstractIngressFlowSegmentCommand.FLOW_PRIORITY)
+                .setPriority(IngressFlowSegmentCommand.FLOW_PRIORITY)
                 .setCookie(U64.of(command.getCookie().getValue()))
                 .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getOuterVlanId())
                                   .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
