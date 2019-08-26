@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,15 +14,16 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.service;
+package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
 import org.openkilda.messaging.Message;
-import org.openkilda.messaging.command.CommandMessage;
-import org.openkilda.wfm.error.PipelineException;
 
-public interface SpeakerCommandCarrier {
+interface IHandler {
+    void speakerResponse(Message response);
 
-    void sendCommand(String key, CommandMessage command);
+    void timeout();
 
-    void sendResponse(String key, Message response) throws PipelineException;
+    void replaced();
+
+    boolean isCompleted();
 }

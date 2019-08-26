@@ -248,10 +248,8 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
      *
      * @param topic Kafka topic
      * @return {@link KafkaBolt}
-     * @deprecated replaced by {@link AbstractTopology#buildKafkaBolt(String)}
      */
-    @Deprecated
-    protected KafkaBolt<String, String> createKafkaBolt(final String topic) {
+    protected KafkaBolt<String, String> buildKafkaJsonBolt(final String topic) {
         return new KafkaBolt<String, String>()
                 .withProducerProperties(getKafkaProducerProperties())
                 .withTopicSelector(new DefaultTopicSelector(topic))

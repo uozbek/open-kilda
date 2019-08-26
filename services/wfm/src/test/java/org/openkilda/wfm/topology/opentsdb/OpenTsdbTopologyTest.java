@@ -138,7 +138,7 @@ public class OpenTsdbTopologyTest extends StableAbstractStormTest {
         }
 
         @Override
-        protected KafkaBolt createKafkaBolt(String topic) {
+        protected KafkaBolt buildKafkaJsonBolt(String topic) {
             return kafkaBolt;
         }
 

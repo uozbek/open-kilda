@@ -130,7 +130,7 @@ public class FlowTopology extends AbstractTopology<FlowTopologyConfig> {
         /*
          * Bolt sends Speaker requests
          */
-        KafkaBolt speakerKafkaBolt = createKafkaBolt(topologyConfig.getKafkaSpeakerFlowTopic());
+        KafkaBolt speakerKafkaBolt = buildKafkaJsonBolt(topologyConfig.getKafkaSpeakerFlowTopic());
         builder.setBolt(ComponentType.SPEAKER_KAFKA_BOLT.toString(), speakerKafkaBolt, parallelism)
                 .shuffleGrouping(ComponentType.TRANSACTION_BOLT.toString(), StreamType.CREATE.toString())
                 .shuffleGrouping(ComponentType.TRANSACTION_BOLT.toString(), StreamType.DELETE.toString())
@@ -139,7 +139,7 @@ public class FlowTopology extends AbstractTopology<FlowTopologyConfig> {
         /*
          * Bolt sends requests back to CrudBolt
          */
-        KafkaBolt flowKafkaBolt = createKafkaBolt(topologyConfig.getKafkaFlowTopic());
+        KafkaBolt flowKafkaBolt = buildKafkaJsonBolt(topologyConfig.getKafkaFlowTopic());
         builder.setBolt(ComponentType.FLOW_KAFKA_BOLT.toString(), flowKafkaBolt, parallelism)
                 .shuffleGrouping(ComponentType.TRANSACTION_BOLT.toString());
 
@@ -164,7 +164,7 @@ public class FlowTopology extends AbstractTopology<FlowTopologyConfig> {
         /*
          * Bolt sends Northbound responses
          */
-        KafkaBolt northboundKafkaBolt = createKafkaBolt(topologyConfig.getKafkaNorthboundTopic());
+        KafkaBolt northboundKafkaBolt = buildKafkaJsonBolt(topologyConfig.getKafkaNorthboundTopic());
         builder.setBolt(ComponentType.NORTHBOUND_KAFKA_BOLT.toString(), northboundKafkaBolt, parallelism)
                 .shuffleGrouping(ComponentType.NORTHBOUND_REPLY_BOLT.toString(), StreamType.RESPONSE.toString());
 

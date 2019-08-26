@@ -91,7 +91,7 @@ public class SwitchManagerTopology extends AbstractTopology<SwitchManagerTopolog
         builder.setBolt(NB_KAFKA_BOLT, buildKafkaBolt(topologyConfig.getKafkaNorthboundTopic()))
                 .shuffleGrouping(SwitchManagerHub.ID, StreamType.TO_NORTHBOUND.toString());
 
-        builder.setBolt(SPEAKER_KAFKA_BOLT, buildKafkaBolt(topologyConfig.getKafkaSpeakerTopic()))
+        builder.setBolt(SPEAKER_KAFKA_BOLT, buildKafkaJsonBolt(topologyConfig.getKafkaSpeakerTopic()))
                 .shuffleGrouping(SpeakerWorkerBolt.ID, StreamType.TO_FLOODLIGHT.toString());
 
         return builder.createTopology();

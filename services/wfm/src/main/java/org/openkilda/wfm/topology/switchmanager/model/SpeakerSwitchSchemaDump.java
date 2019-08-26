@@ -28,31 +28,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class SpeakerSwitchSchemaDump {
-    private final Map<UUID, FlowSegmentBlankGenericResolver> requestBlanks = new HashMap<>();
-    private final Map<UUID, FlowSegmentSchemaRequestResponse> ofSchema = new HashMap<>();
 
-    private final Map<Integer, UUID> tableRequests = new HashMap<>();
-    private final List<SwitchOfTableDump> tableDumps = new ArrayList<>();
 
-    @Getter
-    private UUID metersRequest = null;
-    private SwitchOfMeterDump meterDump = null;
-
-    public SpeakerSwitchSchemaDump(List<FlowSegmentBlankGenericResolver> schemaRequests) {
-        for (FlowSegmentBlankGenericResolver entry : schemaRequests) {
-            requestBlanks.put(entry.getCommandId(), entry);
-        }
-    }
-
-    public boolean isComplete() {
-        if (requestBlanks.size() != ofSchema.size()) {
-            return false;
-        }
-        if (tableRequests.size() != tableDumps.size()) {
-            return false;
-        }
-        return metersRequest == null || meterDump != null;
-    }
 
     public boolean saveSchemaResponse(UUID requestId, FlowSegmentSchema schema) {
         FlowSegmentBlankGenericResolver blank = requestBlanks.remove(requestId);
@@ -77,13 +54,6 @@ public class SpeakerSwitchSchemaDump {
     }
 
     public Optional<UUID> registerTableRequestId(Integer tableId) {
-        if (tableRequests.containsKey(tableId)) {
-            return Optional.empty();
-        }
-
-        UUID requestId = UUID.randomUUID();
-        tableRequests.put(tableId, requestId);
-        return Optional.of(requestId);
     }
 
     public Optional<UUID> registerMeterRequestId() {

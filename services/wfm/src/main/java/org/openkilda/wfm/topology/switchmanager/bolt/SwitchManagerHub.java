@@ -32,6 +32,7 @@ import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
 import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.messaging.info.switches.DeleteMeterResponse;
 import org.openkilda.persistence.PersistenceManager;
+import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.hubandspoke.HubBolt;
@@ -185,6 +186,11 @@ public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
         String key = getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
         SpeakerFetchSchemaCommand command = new SpeakerFetchSchemaCommand(key, requestBlanks);
         emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
+    }
+
+    @Override
+    public CommandContext getCommandContext() {
+        return super.getCommandContext();
     }
 
     // -- storm interface --

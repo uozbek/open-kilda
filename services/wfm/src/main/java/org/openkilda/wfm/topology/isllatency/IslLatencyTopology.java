@@ -84,7 +84,7 @@ public class IslLatencyTopology extends AbstractTopology<IslLatencyTopologyConfi
 
     private void createOpenTsdbBolt(TopologyBuilder builder) {
         String openTsdbTopic = topologyConfig.getKafkaOtsdbTopic();
-        KafkaBolt openTsdbBolt = createKafkaBolt(openTsdbTopic);
+        KafkaBolt openTsdbBolt = buildKafkaJsonBolt(openTsdbTopic);
         builder.setBolt(ISL_LATENCY_OTSDB_BOLT_ID, openTsdbBolt, topologyConfig.getNewParallelism())
                 .shuffleGrouping(ISL_STATS_BOLT_ID);
     }
