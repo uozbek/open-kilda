@@ -79,6 +79,11 @@ public class TransitFlowSegmentBlankRequest extends FlowSegmentRequest
         return new TransitFlowSegmentVerifyRequest(this);
     }
 
+    @Override
+    public TransitFlowSegmentBlankRequest makeSchemaRequest() {
+        return new TransitFlowSegmentSchemaRequest(this);
+    }
+
     /**
      * Create "blank" resolver - object capable to create any "real" request type.
      */

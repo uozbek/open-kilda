@@ -19,6 +19,7 @@ import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
+import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 
@@ -39,5 +40,5 @@ public interface SwitchManagerCarrier {
 
     void runSwitchSync(String key, SwitchValidateRequest request, ValidationResult validationResult);
 
-    void speakerFetchSchema(List<FlowSegmentBlankGenericResolver> requestBlanks);
+    void speakerFetchSchema(SwitchId switchId, List<FlowSegmentBlankGenericResolver> requestBlanks);
 }

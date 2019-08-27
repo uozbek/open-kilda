@@ -77,6 +77,11 @@ public class IngressFlowSegmentBlankRequest extends IngressFlowSegmentRequest
         return new IngressFlowSegmentVerifyRequest(this);
     }
 
+    @Override
+    public IngressFlowSegmentBlankRequest makeSchemaRequest() {
+        return new IngressFlowSegmentSchemaRequest(this);
+    }
+
     /**
      * Create "blank" resolver - object capable to create any "real" request type.
      */

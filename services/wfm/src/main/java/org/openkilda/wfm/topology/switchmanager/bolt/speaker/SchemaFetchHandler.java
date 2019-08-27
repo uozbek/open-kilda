@@ -19,6 +19,10 @@ package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.MetersDumpRequest;
 import org.openkilda.floodlight.api.request.TableDumpRequest;
+import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentSchemaResponse;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
+import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
@@ -67,12 +71,28 @@ public class SchemaFetchHandler extends WorkerHandler {
 
     @Override
     public void speakerResponse(Message response) {
+        throw new UnsupportedOperationException(String.format(
+                "Reject %s speaker response, ony %s based responses accepted/expected",
+                response.getClass().getName(), SpeakerResponse.class.getName()));
+    }
+
+    @Override
+    public void speakerResponse(SpeakerResponse response) {
         // TODO
+        if (response instanceof SpeakerFlowSegmentSchemaResponse) {
+            handleSpeakerResponse((SpeakerFlowSegmentSchemaResponse) response);
+        } else if (response instanceof FlowErrorResponse) {
+            handleSpeakerResponse((FlowErrorResponse) response);
+        } else {
+            throw new UnsupportedOperationException(String.format(
+                    "Reject %s speaker response (unexpected/unsupported response type)",
+                    response.getClass().getName()));
+        }
     }
 
     @Override
     public void timeout() {
-        // TODO
+        carrier.sendHubValidationError(null);
     }
 
     @Override
@@ -84,6 +104,14 @@ public class SchemaFetchHandler extends WorkerHandler {
             return false;
         }
         return metersRequest == null || meterDump != null;
+    }
+
+    private void handleSpeakerResponse(SpeakerFlowSegmentSchemaResponse schemaResponse) {
+        // TODO
+    }
+
+    private void handleSpeakerResponse(FlowErrorResponse error) {
+        carrier.sendHubValidationError(error);
     }
 
     private void requestOfTableDump(Integer tableId) {

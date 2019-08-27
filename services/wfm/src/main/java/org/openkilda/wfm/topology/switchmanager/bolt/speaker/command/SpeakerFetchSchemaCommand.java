@@ -16,20 +16,24 @@
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker.command;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 
 import java.util.List;
 
 public class SpeakerFetchSchemaCommand extends SpeakerWorkerCommand {
+    private final SwitchId switchId;
+
     private final List<FlowSegmentBlankGenericResolver> requests;
 
-    public SpeakerFetchSchemaCommand(String key, List<FlowSegmentBlankGenericResolver> requests) {
+    public SpeakerFetchSchemaCommand(String key, SwitchId switchId, List<FlowSegmentBlankGenericResolver> requests) {
         super(key);
+        this.switchId = switchId;
         this.requests = requests;
     }
 
     @Override
     public void apply(SpeakerWorkerBolt handler) {
-        handler.processFetchSchema(key, requests);
+        handler.processFetchSchema(key, switchId, requests);
     }
 }

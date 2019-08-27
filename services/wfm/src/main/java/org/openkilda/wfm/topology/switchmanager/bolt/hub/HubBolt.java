@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,9 +14,11 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.bolt;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
@@ -31,13 +34,14 @@ import org.openkilda.messaging.info.meter.SwitchMeterUnsupported;
 import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
 import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.messaging.info.switches.DeleteMeterResponse;
+import org.openkilda.model.SwitchId;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
-import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.share.utils.KeyProvider;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerFetchSchemaCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
@@ -59,7 +63,7 @@ import org.apache.storm.tuple.Values;
 import java.util.List;
 import java.util.Map;
 
-public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
+public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt implements SwitchManagerCarrier {
     public static final String ID = "switch.manager.hub";
     public static final String INCOME_STREAM = "switch.manage.command";
 
@@ -71,9 +75,9 @@ public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
     private long flowMeterMinBurstSizeInKbits;
     private double flowMeterBurstCoefficient;
 
-    public SwitchManagerHub(HubBolt.Config hubConfig, PersistenceManager persistenceManager,
-                            long flowMeterMinBurstSizeInKbits, double flowMeterBurstCoefficient,
-                            FlowResourcesConfig flowResourcesConfig) {
+    public HubBolt(org.openkilda.wfm.share.hubandspoke.HubBolt.Config hubConfig, PersistenceManager persistenceManager,
+                   long flowMeterMinBurstSizeInKbits, double flowMeterBurstCoefficient,
+                   FlowResourcesConfig flowResourcesConfig) {
         super(hubConfig);
         this.persistenceManager = persistenceManager;
         this.flowMeterMinBurstSizeInKbits = flowMeterMinBurstSizeInKbits;
@@ -114,31 +118,8 @@ public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
 
     @Override
     protected void onWorkerResponse(Tuple input) throws PipelineException {
-        String key = KeyProvider.getParentKey(input.getStringByField(MessageTranslator.FIELD_ID_KEY));
-        Message message = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, Message.class);
-
-        if (message instanceof InfoMessage) {
-            InfoData data = ((InfoMessage) message).getData();
-            if (data instanceof SwitchFlowEntries) {
-                validateService.handleFlowEntriesResponse(key, (SwitchFlowEntries) data);
-            } else if (data instanceof SwitchExpectedDefaultFlowEntries) {
-                validateService.handleExpectedDefaultFlowEntriesResponse(key, (SwitchExpectedDefaultFlowEntries) data);
-            } else if (data instanceof SwitchMeterData) {
-                handleMetersResponse(key, (SwitchMeterData) data);
-            } else if (data instanceof FlowInstallResponse) {
-                syncService.handleInstallRulesResponse(key);
-            } else if (data instanceof FlowRemoveResponse) {
-                syncService.handleRemoveRulesResponse(key);
-            } else if (data instanceof DeleteMeterResponse) {
-                syncService.handleRemoveMetersResponse(key);
-            } else {
-                log.warn("Receive unexpected InfoData for key {}: {}", key, data);
-            }
-        } else if (message instanceof ErrorMessage) {
-            log.warn("Receive ErrorMessage for key {}", key);
-            validateService.handleTaskError(key, (ErrorMessage) message);
-            syncService.handleTaskError(key, (ErrorMessage) message);
-        }
+        HubCommand command = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, HubCommand.class);
+        command.apply(this);
     }
 
     @Override
@@ -179,12 +160,43 @@ public class SwitchManagerHub extends HubBolt implements SwitchManagerCarrier {
         return flowMeterBurstCoefficient;
     }
 
+    // -- commands processing --
+
+    public void processValidateErrorResponse(String key, SpeakerResponse response) {
+        validateService.handleSpeakerErrorResponse(key, response);
+    }
+
+    public void processMessage(String key, Message message) {
+        if (message instanceof InfoMessage) {
+            InfoData data = ((InfoMessage) message).getData();
+            if (data instanceof SwitchFlowEntries) {
+                validateService.handleFlowEntriesResponse(key, (SwitchFlowEntries) data);
+            } else if (data instanceof SwitchExpectedDefaultFlowEntries) {
+                validateService.handleExpectedDefaultFlowEntriesResponse(key, (SwitchExpectedDefaultFlowEntries) data);
+            } else if (data instanceof SwitchMeterData) {
+                handleMetersResponse(key, (SwitchMeterData) data);
+            } else if (data instanceof FlowInstallResponse) {
+                syncService.handleInstallRulesResponse(key);
+            } else if (data instanceof FlowRemoveResponse) {
+                syncService.handleRemoveRulesResponse(key);
+            } else if (data instanceof DeleteMeterResponse) {
+                syncService.handleRemoveMetersResponse(key);
+            } else {
+                log.warn("Receive unexpected InfoData for key {}: {}", key, data);
+            }
+        } else if (message instanceof ErrorMessage) {
+            log.warn("Receive ErrorMessage for key {}", key);
+            validateService.handleTaskError(key, (ErrorMessage) message);
+            syncService.handleTaskError(key, (ErrorMessage) message);
+        }
+    }
+
     // -- carrier implementation --
 
     @Override
-    public void speakerFetchSchema(List<FlowSegmentBlankGenericResolver> requestBlanks) {
+    public void speakerFetchSchema(SwitchId switchId, List<FlowSegmentBlankGenericResolver> requestBlanks) {
         String key = getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
-        SpeakerFetchSchemaCommand command = new SpeakerFetchSchemaCommand(key, requestBlanks);
+        SpeakerFetchSchemaCommand command = new SpeakerFetchSchemaCommand(key, switchId, requestBlanks);
         emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
     }
 

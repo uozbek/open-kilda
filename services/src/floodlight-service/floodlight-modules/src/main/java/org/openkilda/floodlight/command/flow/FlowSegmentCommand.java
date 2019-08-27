@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.command.SpeakerRemoteCommand;
 import org.openkilda.floodlight.converter.OfFlowModMapper;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;

@@ -16,6 +16,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 
 import org.slf4j.Logger;
@@ -25,6 +26,8 @@ abstract class WorkerHandler {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     public abstract void speakerResponse(Message response);
+
+    public abstract void speakerResponse(SpeakerResponse response);
 
     public abstract void timeout();
 

@@ -17,21 +17,27 @@
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.request.SpeakerRequest;
+import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.Utils;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
+import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubValidateErrorResponseCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
 import org.openkilda.wfm.topology.switchmanager.service.SpeakerWorkerCarrier;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
+import org.apache.storm.shade.org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
@@ -69,9 +75,17 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
 
     @Override
     protected void onAsyncResponse(Tuple input) throws PipelineException {
-        String key = input.getStringByField(MessageTranslator.FIELD_ID_KEY);
+        String key = pullValue(input, MessageTranslator.FIELD_ID_KEY, String.class);
+        Object raw = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, Object.class);
+
         try (HandlerWrapper w = new HandlerWrapper(key)) {
-            w.speakerResponse(pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, Message.class));
+            if (raw instanceof Message) {
+                w.speakerResponse((Message) raw);
+            } else if (raw instanceof SpeakerResponse) {
+                w.speakerResponse((SpeakerResponse) raw);
+            } else {
+                unhandledInput(input);
+            }
         }
     }
 
@@ -94,7 +108,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
     }
 
     @Override
-    public void sendSpeakerCommand(FlowSegmentRequest request) {
+    public void sendSpeakerCommand(SpeakerRequest request) {
         try {
             emitSpeaker(encodeSpeakerStreamPayload(request));
         } catch (JsonProcessingException e) {
@@ -109,6 +123,11 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
         emitResponseToHub(getCurrentTuple(), values);
     }
 
+    @Override
+    public void sendHubValidationError(SpeakerResponse error) {
+        HubValidateErrorResponseCommand command = new HubValidateErrorResponseCommand(getKey(), error);
+        emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
+    }
 
     @Override
     public CommandContext getCommandContext() {
@@ -121,8 +140,8 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
         installHandler(key, new ProxyRequestHandler(this, key, payload));
     }
 
-    public void processFetchSchema(String key, List<FlowSegmentBlankGenericResolver> requests) {
-        installHandler(key, new SchemaFetchHandler(this, requests));
+    public void processFetchSchema(String key, SwitchId switchId, List<FlowSegmentBlankGenericResolver> requests) {
+        installHandler(key, new SchemaFetchHandler(this, switchId, requests));
     }
 
     // -- storm interface --
@@ -137,8 +156,7 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
     // -- service code --
 
     private void emitSpeaker(String json) {
-        String key = getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
-        Values output = makeTuple(key, json);
+        Values output = makeSpeakerTuple(getKey(), json);
         emit(StreamType.TO_FLOODLIGHT.toString(), getCurrentTuple(), output);
     }
 
@@ -146,12 +164,20 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
         return Utils.MAPPER.writeValueAsString(message);
     }
 
-    private String encodeSpeakerStreamPayload(FlowSegmentRequest request) throws JsonProcessingException {
+    private String encodeSpeakerStreamPayload(SpeakerRequest request) throws JsonProcessingException {
         return Utils.MAPPER.writeValueAsString(request);
     }
 
-    private Values makeTuple(String key, String json) {
+    private Values makeHubTuple(HubCommand command) {
+        return new Values(command.getKey(), command, getCommandContext());
+    }
+
+    private Values makeSpeakerTuple(String key, String json) {
         return new Values(key, json, getCommandContext());
+    }
+
+    private String getKey() {
+        return getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
     }
 
     private void installHandler(String key, WorkerHandler h) {
@@ -181,6 +207,10 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
             h.speakerResponse(response);
         }
 
+        void speakerResponse(SpeakerResponse response) {
+            h.speakerResponse(response);
+        }
+
         void timeout() {
             forceComplete = true;
             h.timeout();
@@ -198,6 +228,11 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
 
         @Override
         public void speakerResponse(Message response) {
+            // dummy handler
+        }
+
+        @Override
+        public void speakerResponse(SpeakerResponse response) {
             // dummy handler
         }
 

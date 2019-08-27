@@ -13,23 +13,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.service;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.floodlight.api.request.SpeakerRequest;
-import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
-import org.openkilda.messaging.command.CommandMessage;
-import org.openkilda.wfm.CommandContext;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 
-public interface SpeakerWorkerCarrier {
+public class HubMessageProxyCommand extends HubCommand {
+    private final Message payload;
 
-    void sendSpeakerMessage(String key, CommandMessage command);
+    public HubMessageProxyCommand(String key, Message payload) {
+        super(key);
+        this.payload = payload;
+    }
 
-    void sendSpeakerCommand(SpeakerRequest request);
-
-    void sendResponse(String key, Message response);
-
-    void sendHubValidationError(SpeakerResponse error);
-
-    CommandContext getCommandContext();
+    @Override
+    public void apply(HubBolt handler) {
+        handler.processMessage(key, payload);
+    }
 }

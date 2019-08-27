@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.messaging.error.ErrorMessage;
 import org.openkilda.messaging.info.meter.SwitchMeterEntries;
@@ -22,7 +23,6 @@ import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
 import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
-import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateContext;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent;
@@ -63,7 +63,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         SwitchValidateFsm fsm =
                 builder.newStateMachine(SwitchValidateState.INITIALIZED, carrier, key, request, validationService);
 
-        process(fsm);
+        skipIntermediateStates(fsm);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         }
 
         fsm.fire(SwitchValidateEvent.RULES_RECEIVED, data.getFlowEntries());
-        process(fsm);
+        skipIntermediateStates(fsm);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         }
 
         fsm.fire(SwitchValidateEvent.EXPECTED_DEFAULT_RULES_RECEIVED, data.getFlowEntries());
-        process(fsm);
+        skipIntermediateStates(fsm);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         }
 
         fsm.fire(SwitchValidateEvent.METERS_RECEIVED, data.getMeterEntries());
-        process(fsm);
+        skipIntermediateStates(fsm);
     }
 
     @Override
@@ -111,7 +111,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         }
 
         fsm.fire(SwitchValidateEvent.METERS_UNSUPPORTED);
-        process(fsm);
+        skipIntermediateStates(fsm);
     }
 
     @Override
@@ -122,7 +122,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         }
 
         fsm.fire(SwitchValidateEvent.TIMEOUT);
-        process(fsm);
+        skipIntermediateStates(fsm);
     }
 
     @Override
@@ -133,14 +133,34 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         }
 
         fsm.fire(SwitchValidateEvent.ERROR, message);
-        process(fsm);
+        skipIntermediateStates(fsm);
+    }
+
+    @Override
+    public void handleSpeakerErrorResponse(String key, SpeakerResponse response) {
+        SwitchValidateContext context = SwitchValidateContext.builder()
+                .speakerResponse(response)
+                .build();
+        SwitchValidateEvent event = response == null ? SwitchValidateEvent.TIMEOUT : SwitchValidateEvent.ERROR;
+        feedFsm(key, event, context);
+    }
+
+    private void feedFsm(String key, SwitchValidateEvent event, SwitchValidateContext context) {
+        SwitchValidateFsm fsm = fsms.get(key);
+        if (fsm == null) {
+            log.debug("There is no FSM to receive {} with context {}", event, context);
+            return;
+        }
+
+        fsm.fire(event, context);
+        skipIntermediateStates(fsm);
     }
 
     private void logFsmNotFound(String key) {
         log.warn("Switch validate FSM with key {} not found", key);
     }
 
-    void process(SwitchValidateFsm fsm) {
+    void skipIntermediateStates(SwitchValidateFsm fsm) {
         final List<SwitchValidateState> stopStates = Arrays.asList(
                 SwitchValidateState.RECEIVE_DATA,
                 SwitchValidateState.FINISHED,

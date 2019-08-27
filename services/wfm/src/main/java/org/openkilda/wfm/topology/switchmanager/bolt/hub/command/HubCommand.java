@@ -13,23 +13,18 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.request;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.model.SwitchId;
+import org.openkilda.wfm.share.ICommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 
-import java.io.Serializable;
-import java.util.UUID;
+import lombok.Getter;
 
-public interface IFlowSegmentBlank<T extends FlowSegmentRequest> extends Serializable {
-    T makeInstallRequest();
+public abstract class HubCommand implements ICommand<HubBolt> {
+    @Getter
+    protected final String key;
 
-    T makeRemoveRequest();
-
-    T makeVerifyRequest();
-
-    T makeSchemaRequest();
-
-    UUID getCommandId();
-
-    SwitchId getSwitchId();
+    public HubCommand(String key) {
+        this.key = key;
+    }
 }

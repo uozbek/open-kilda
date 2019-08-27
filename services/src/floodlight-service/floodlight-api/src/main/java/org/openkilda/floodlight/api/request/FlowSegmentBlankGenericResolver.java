@@ -15,6 +15,8 @@
 
 package org.openkilda.floodlight.api.request;
 
+import org.openkilda.model.SwitchId;
+
 import java.util.UUID;
 
 public class FlowSegmentBlankGenericResolver {
@@ -43,5 +45,9 @@ public class FlowSegmentBlankGenericResolver {
 
     public UUID getCommandId() {
         return blank.getCommandId();
+    }
+
+    public SwitchId getSwitchId() {
+        return blank.getSwitchId();
     }
 }

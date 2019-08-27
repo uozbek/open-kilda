@@ -16,7 +16,9 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.response.SpeakerErrorCode;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;
@@ -49,15 +51,16 @@ public class FlowSegmentReport extends SpeakerCommandReport {
     }
 
     @Override
-    public void reply(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService, String requestKey) {
-        kafkaProducerService.sendMessageAndTrack(getResponseTopic(kafkaChannel), requestKey, assembleResponse());
+    protected String getReplyTopic(KafkaChannel kafkaChannel) {
+        return kafkaChannel.getSpeakerFlowHsTopic();
     }
 
-    protected AbstractMessage assembleResponse() {
+    @Override
+    protected SpeakerResponse assembleResponse() {
         FlowErrorResponseBuilder errorResponse = makeErrorTemplate();
         try {
             raiseError();
-            return assembleSuccessResponse();
+            return makeSuccessReply();
         } catch (SwitchNotFoundException e) {
             errorResponse.errorCode(ErrorCode.SWITCH_UNAVAILABLE);
         } catch (SessionErrorResponseException e) {
@@ -77,7 +80,8 @@ public class FlowSegmentReport extends SpeakerCommandReport {
         return response;
     }
 
-    protected AbstractMessage assembleSuccessResponse() {
+    @Override
+    protected SpeakerResponse makeSuccessReply() {
         return SpeakerFlowSegmentResponse.builder()
                 .commandId(command.getCommandId())
                 .flowId(command.getFlowId())
@@ -86,6 +90,11 @@ public class FlowSegmentReport extends SpeakerCommandReport {
                 .switchId(command.getSwitchId())
                 .success(true)
                 .build();
+    }
+
+    @Override
+    protected SpeakerResponse makeErrorReply(SpeakerErrorCode errorCode) {
+        throw new IllegalStateException("Must never be called, because of custom response assemble method");
     }
 
     protected void decodeError(FlowErrorResponseBuilder errorResponse, OFErrorMsg error) {
@@ -113,16 +122,12 @@ public class FlowSegmentReport extends SpeakerCommandReport {
         }
     }
 
-    protected FlowErrorResponse.FlowErrorResponseBuilder makeErrorTemplate() {
+    private FlowErrorResponse.FlowErrorResponseBuilder makeErrorTemplate() {
         return FlowErrorResponse.errorBuilder()
                 .messageContext(command.getMessageContext())
                 .commandId(command.getCommandId())
                 .switchId(command.getSwitchId())
                 .flowId(command.getFlowId())
                 .cookie(command.getCookie());
-    }
-
-    protected String getResponseTopic(KafkaChannel kafkaChannel) {
-        return kafkaChannel.getSpeakerFlowHsTopic();
     }
 }

@@ -18,7 +18,7 @@ package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentSchemaResponse;
-import org.openkilda.messaging.AbstractMessage;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 
 public class FlowSegmentSchemaReport extends FlowSegmentReport {
     private final FlowSegmentSchema schema;
@@ -30,7 +30,7 @@ public class FlowSegmentSchemaReport extends FlowSegmentReport {
     }
 
     @Override
-    protected AbstractMessage assembleSuccessResponse() {
+    protected SpeakerResponse makeSuccessReply() {
         FlowSegmentCommand command = getCommand();
         return new SpeakerFlowSegmentSchemaResponse(command.getMessageContext(), command.getCommandId(), schema);
     }

@@ -32,6 +32,8 @@ import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.Swi
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.command.switches.DumpMetersForSwitchManagerRequest;
 import org.openkilda.messaging.command.switches.DumpRulesForSwitchManagerRequest;
 import org.openkilda.messaging.command.switches.GetExpectedDefaultRulesRequest;
@@ -149,7 +151,7 @@ public class SwitchValidateFsm
         List<FlowSegmentBlankGenericResolver> requestBlanks = validationService.prepareFlowSegmentRequests(
                 commandContext, switchId);
 
-        carrier.speakerFetchSchema(requestBlanks);
+        carrier.speakerFetchSchema(switchId, requestBlanks);
 
         // TODO
     }
@@ -284,11 +286,7 @@ public class SwitchValidateFsm
     @Value
     @Builder
     public static class SwitchValidateContext {
-        private final String requestId;
-
-        private final short ofTableId;
-        private final List<FlowEntry> ofTableDump;
-        private final FlowSegmentSchema flowSegmentSchema;
+        private final SpeakerResponse speakerResponse;
     }
 
     public enum SwitchValidateState {
