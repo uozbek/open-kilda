@@ -2,11 +2,11 @@
 title Switch validate FSM
 
 [*] --> INIT
-INIT --> WAIT_SCHEMA
+INIT --> FETCH_SCHEMA
 
-WAIT_SCHEMA --> ERROR : error\ntimeout
-WAIT_SCHEMA --> VALIDATE : complete
-WAIT_SCHEMA : enter / schema-request
+FETCH_SCHEMA --> ERROR : error\ntimeout
+FETCH_SCHEMA --> VALIDATE : complete
+FETCH_SCHEMA : enter / schema-request
 
 VALIDATE --> [*]
 VALIDATE : enter / validate-flows

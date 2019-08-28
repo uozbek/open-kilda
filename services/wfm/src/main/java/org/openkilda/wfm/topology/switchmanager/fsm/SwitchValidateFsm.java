@@ -15,33 +15,11 @@
 
 package org.openkilda.wfm.topology.switchmanager.fsm;
 
-import static java.util.Collections.emptyList;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent.ERROR;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent.EXPECTED_DEFAULT_RULES_RECEIVED;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent.METERS_RECEIVED;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent.METERS_UNSUPPORTED;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent.NEXT;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent.RULES_RECEIVED;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent.TIMEOUT;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.FINISHED;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.FINISHED_WITH_ERROR;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.INITIALIZED;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.RECEIVE_DATA;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.VALIDATE_METERS;
-import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.VALIDATE_RULES;
-
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
-import org.openkilda.messaging.command.switches.DumpMetersForSwitchManagerRequest;
-import org.openkilda.messaging.command.switches.DumpRulesForSwitchManagerRequest;
-import org.openkilda.messaging.command.switches.GetExpectedDefaultRulesRequest;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
-import org.openkilda.messaging.error.ErrorData;
 import org.openkilda.messaging.error.ErrorMessage;
-import org.openkilda.messaging.error.ErrorType;
 import org.openkilda.messaging.info.InfoMessage;
-import org.openkilda.messaging.info.meter.MeterEntry;
-import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.messaging.info.switches.MetersValidationEntry;
 import org.openkilda.messaging.info.switches.RulesValidationEntry;
 import org.openkilda.messaging.info.switches.SwitchValidationResponse;
@@ -69,140 +47,88 @@ import java.util.List;
 public class SwitchValidateFsm
         extends AbstractBaseFsm<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, SwitchValidateContext> {
 
-    private static final String FINISHED_WITH_ERROR_METHOD_NAME = "finishedWithError";
-    private static final String FINISHED_METHOD_NAME = "finished";
     private static final String ERROR_LOG_MESSAGE = "Key: {}, message: {}";
 
-    private final String key;
-    private final SwitchValidateRequest request;
     private final SwitchManagerCarrier carrier;
     private final ValidationService validationService;
+    private final SwitchValidateRequest request;
+    private final String key;
+
     private SwitchId switchId;
-    private boolean processMeters;
-    private List<FlowEntry> flowEntries;
-    private List<FlowEntry> expectedDefaultFlowEntries;
-    private List<MeterEntry> presentMeters;
+
     private ValidateRulesResult validateRulesResult;
     private ValidateMetersResult validateMetersResult;
 
-    public SwitchValidateFsm(SwitchManagerCarrier carrier, String key, SwitchValidateRequest request,
-                             ValidationService validationService) {
+    public static SwitchValidateFsmFactory factory(SwitchManagerCarrier carrier, ValidationService service) {
+        return new SwitchValidateFsmFactory(carrier, service);
+    }
+
+    public SwitchValidateFsm(
+            SwitchManagerCarrier carrier, ValidationService validationService, SwitchValidateRequest request,
+            String key) {
         this.carrier = carrier;
-        this.key = key;
-        this.request = request;
         this.validationService = validationService;
         this.processMeters = request.isProcessMeters();
         this.switchId = request.getSwitchId();
-    }
+        this.request = request;
+        this.key = key;
 
-    /**
-     * FSM builder.
-     */
-    public static StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent,
-            SwitchValidateContext> builder() {
-        StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, SwitchValidateContext>
-                builder = StateMachineBuilderFactory.create(
-                        SwitchValidateFsm.class, SwitchValidateState.class, SwitchValidateEvent.class,
-                        SwitchValidateContext.class,
-                        // extra args
-                        SwitchManagerCarrier.class, String.class, SwitchValidateRequest.class, ValidationService.class);
-
-        builder.onEntry(INITIALIZED).callMethod("initialized");
-        builder.externalTransition().from(INITIALIZED).to(RECEIVE_DATA).on(NEXT)
-                .callMethod("receiveData");
-        builder.internalTransition().within(RECEIVE_DATA).on(RULES_RECEIVED).callMethod("rulesReceived");
-        builder.internalTransition().within(RECEIVE_DATA).on(METERS_RECEIVED).callMethod("metersReceived");
-        builder.internalTransition().within(RECEIVE_DATA).on(EXPECTED_DEFAULT_RULES_RECEIVED)
-                .callMethod("expectedDefaultRulesReceived");
-        builder.internalTransition().within(RECEIVE_DATA).on(METERS_UNSUPPORTED)
-                .callMethod("metersUnsupported");
-
-        builder.externalTransition().from(RECEIVE_DATA).to(FINISHED_WITH_ERROR).on(TIMEOUT)
-                .callMethod("receivingDataFailedByTimeout");
-        builder.externalTransition().from(RECEIVE_DATA).to(FINISHED_WITH_ERROR).on(ERROR)
-                .callMethod(FINISHED_WITH_ERROR_METHOD_NAME);
-        builder.externalTransition().from(RECEIVE_DATA).to(VALIDATE_RULES).on(NEXT)
-                .callMethod("validateRules");
-
-        builder.externalTransition().from(VALIDATE_RULES).to(FINISHED_WITH_ERROR).on(ERROR)
-                .callMethod(FINISHED_WITH_ERROR_METHOD_NAME);
-        builder.externalTransition().from(VALIDATE_RULES).to(VALIDATE_METERS).on(NEXT)
-                .callMethod("validateMeters");
-
-        builder.externalTransition().from(VALIDATE_METERS).to(FINISHED_WITH_ERROR).on(ERROR)
-                .callMethod(FINISHED_WITH_ERROR_METHOD_NAME);
-        builder.externalTransition().from(VALIDATE_METERS).to(FINISHED).on(NEXT)
-                .callMethod(FINISHED_METHOD_NAME);
-
-        return builder;
+        log.info("Key: {}, validate FSM initialized", key);
     }
 
     public String getKey() {
         return key;
     }
 
-    protected void initialized(SwitchValidateState from, SwitchValidateState to,
-                               SwitchValidateEvent event, Object context) {
-        log.info("Key: {}, validate FSM initialized", key);
+    public void fetchSchemaEnter(
+            SwitchValidateState from, SwitchValidateState to, SwitchValidateEvent event,
+            SwitchValidateContext context) {
+        log.info("Key: {}, sending requests to get switch rules and meters", key);
 
         CommandContext commandContext = carrier.getCommandContext().fork("schema");
         List<FlowSegmentBlankGenericResolver> requestBlanks = validationService.prepareFlowSegmentRequests(
                 commandContext, switchId);
-
         carrier.speakerFetchSchema(switchId, requestBlanks);
+    }
 
+    protected void validateEnter(
+            SwitchValidateState from, SwitchValidateState to, SwitchValidateEvent event,
+            SwitchValidateContext context) {
+        log.info("Key: {}, validate rules", key);
         // TODO
-    }
+        try {
+            validateRulesResult = validationService.validateRules(switchId, flowEntries, expectedDefaultFlowEntries);
+        } catch (Exception e) {
+            sendException(e);
+        }
 
-    protected void receiveData(SwitchValidateState from, SwitchValidateState to,
-                               SwitchValidateEvent event, Object context) {
-        log.info("Key: {}, sending requests to get switch rules and meters", key);
-
-        carrier.sendCommandToSpeaker(key, new DumpRulesForSwitchManagerRequest(switchId));
-        carrier.sendCommandToSpeaker(key, new GetExpectedDefaultRulesRequest(switchId));
-
-        if (processMeters) {
-            carrier.sendCommandToSpeaker(key, new DumpMetersForSwitchManagerRequest(switchId));
-        } else {
-            presentMeters = emptyList();
+        try {
+            if (processMeters) {
+                log.info("Key: {}, validate meters", key);
+                validateMetersResult = validationService.validateMeters(switchId, presentMeters,
+                                                                        carrier.getFlowMeterMinBurstSizeInKbits(),
+                                                                        carrier.getFlowMeterBurstCoefficient());
+            }
+        } catch (Exception e) {
+            sendException(e);
         }
     }
 
-    protected void rulesReceived(SwitchValidateState from, SwitchValidateState to,
-                                 SwitchValidateEvent event, Object context) {
-        log.info("Key: {}, switch rules received", key);
-        this.flowEntries = (List<FlowEntry>) context;
-        checkAllDataReceived();
+    protected void errorEnter(
+            SwitchValidateState from, SwitchValidateState to, SwitchValidateEvent event,
+            SwitchValidateContext context) {
+        // TODO
+        ErrorMessage sourceError = (ErrorMessage) context;
+        ErrorMessage message = new ErrorMessage(sourceError.getData(), System.currentTimeMillis(), key);
+
+        log.error(ERROR_LOG_MESSAGE, key, message.getData().getErrorMessage());
+
+        carrier.cancelTimeoutCallback(key);
+        carrier.response(key, message);
     }
 
-    protected void expectedDefaultRulesReceived(SwitchValidateState from, SwitchValidateState to,
-                                                SwitchValidateEvent event, Object context) {
-        log.info("Key: {}, switch expected default rules received", key);
-        this.expectedDefaultFlowEntries = (List<FlowEntry>) context;
-        checkAllDataReceived();
-    }
 
-    protected void metersReceived(SwitchValidateState from, SwitchValidateState to,
-                                  SwitchValidateEvent event, Object context) {
-        log.info("Key: {}, switch meters received", key);
-        this.presentMeters = (List<MeterEntry>) context;
-        checkAllDataReceived();
-    }
-
-    protected void metersUnsupported(SwitchValidateState from, SwitchValidateState to,
-                                  SwitchValidateEvent event, Object context) {
-        log.info("Key: {}, switch meters unsupported", key);
-        this.presentMeters = emptyList();
-        this.processMeters = false;
-        checkAllDataReceived();
-    }
-
-    private void checkAllDataReceived() {
-        if (flowEntries != null && presentMeters != null && expectedDefaultFlowEntries != null) {
-            fire(NEXT);
-        }
-    }
-
+/*
     protected void receivingDataFailedByTimeout(SwitchValidateState from, SwitchValidateState to,
                                                  SwitchValidateEvent event, Object context) {
         ErrorData errorData = new ErrorData(ErrorType.OPERATION_TIMED_OUT, "Receiving data failed by timeout",
@@ -212,30 +138,7 @@ public class SwitchValidateFsm
         log.warn(ERROR_LOG_MESSAGE, key, errorData.getErrorMessage());
         carrier.response(key, errorMessage);
     }
-
-    protected void validateRules(SwitchValidateState from, SwitchValidateState to,
-                                 SwitchValidateEvent event, Object context) {
-        log.info("Key: {}, validate rules", key);
-        try {
-            validateRulesResult = validationService.validateRules(switchId, flowEntries, expectedDefaultFlowEntries);
-        } catch (Exception e) {
-            sendException(e);
-        }
-    }
-
-    protected void validateMeters(SwitchValidateState from, SwitchValidateState to,
-                                  SwitchValidateEvent event, Object context) {
-        try {
-            if (processMeters) {
-                log.info("Key: {}, validate meters", key);
-                validateMetersResult = validationService.validateMeters(switchId, presentMeters,
-                        carrier.getFlowMeterMinBurstSizeInKbits(), carrier.getFlowMeterBurstCoefficient());
-            }
-
-        } catch (Exception e) {
-            sendException(e);
-        }
-    }
+*/
 
     protected void finished(SwitchValidateState from, SwitchValidateState to,
                             SwitchValidateEvent event, Object context) {
@@ -263,22 +166,75 @@ public class SwitchValidateFsm
         }
     }
 
-    protected void finishedWithError(SwitchValidateState from, SwitchValidateState to,
-                                     SwitchValidateEvent event, Object context) {
-        ErrorMessage sourceError = (ErrorMessage) context;
-        ErrorMessage message = new ErrorMessage(sourceError.getData(), System.currentTimeMillis(), key);
-
-        log.error(ERROR_LOG_MESSAGE, key, message.getData().getErrorMessage());
-
-        carrier.cancelTimeoutCallback(key);
-        carrier.response(key, message);
-    }
-
+/*
     private void sendException(Exception e) {
         ErrorData errorData = new ErrorData(ErrorType.INTERNAL_ERROR, e.getMessage(),
                 "Error in SwitchValidateFsm");
         ErrorMessage errorMessage = new ErrorMessage(errorData, System.currentTimeMillis(), key);
         fire(ERROR, errorMessage);
+    }
+*/
+
+    public static class SwitchValidateFsmFactory {
+        private final SwitchManagerCarrier carrier;
+        private final ValidationService service;
+
+        private final StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent,
+                SwitchValidateContext> builder;
+
+        SwitchValidateFsmFactory(SwitchManagerCarrier carrier, ValidationService service) {
+            this.carrier = carrier;
+            this.service = service;
+
+            builder = StateMachineBuilderFactory.create(
+                    SwitchValidateFsm.class, SwitchValidateState.class, SwitchValidateEvent.class,
+                    SwitchValidateContext.class,
+                    // extra args
+                    SwitchManagerCarrier.class, ValidationService.class, SwitchValidateRequest.class, String.class);
+
+            // INIT
+            builder.transition()
+                    .from(SwitchValidateState.INIT).to(SwitchValidateState.FETCH_SCHEMA).on(SwitchValidateEvent.NEXT);
+
+            // FETCH_SCHEMA
+            builder.transition()
+                    .from(SwitchValidateState.FETCH_SCHEMA).to(SwitchValidateState.VALIDATE)
+                    .on(SwitchValidateEvent.COMPLETE);
+            builder.transition()
+                    .from(SwitchValidateState.FETCH_SCHEMA).to(SwitchValidateState.ERROR)
+                    .on(SwitchValidateEvent.ERROR);
+            builder.transition()
+                    .from(SwitchValidateState.FETCH_SCHEMA).to(SwitchValidateState.ERROR)
+                    .on(SwitchValidateEvent.WORKER_ERROR);
+            builder.transition()
+                    .from(SwitchValidateState.FETCH_SCHEMA).to(SwitchValidateState.ERROR)
+                    .on(SwitchValidateEvent.TIMEOUT);
+            builder.onEntry(SwitchValidateState.FETCH_SCHEMA)
+                    .callMethod("fetchSchemaEnter");
+
+            // VALIDATE
+            builder.transition()
+                    .from(SwitchValidateState.VALIDATE).to(SwitchValidateState.EXIT)
+                    .on(SwitchValidateEvent.NEXT);
+            builder.onEntry(SwitchValidateState.VALIDATE)
+                    .callMethod("validateEnter");
+
+            // ERROR
+            builder.transition()
+                    .from(SwitchValidateState.ERROR).to(SwitchValidateState.EXIT)
+                    .on(SwitchValidateEvent.NEXT);
+            builder.onEntry(SwitchValidateState.ERROR)
+                    .callMethod("errorEnter");
+
+            // EXIT
+            builder.defineFinalState(SwitchValidateState.EXIT);
+        }
+
+        public SwitchValidateFsm produce(SwitchValidateRequest request, String key) {
+            SwitchValidateFsm fsm = builder.newStateMachine(SwitchValidateState.INIT, carrier, service, request, key);
+            fsm.start();
+            return fsm;
+        }
     }
 
     @Value
@@ -289,20 +245,15 @@ public class SwitchValidateFsm
     }
 
     public enum SwitchValidateState {
-        INITIALIZED,
-        RECEIVE_DATA,
-        VALIDATE_RULES,
-        VALIDATE_METERS,
-        FINISHED_WITH_ERROR,
-        FINISHED
+        INIT,
+        FETCH_SCHEMA,
+        VALIDATE,
+        ERROR,
+        EXIT
     }
 
     public enum SwitchValidateEvent {
-        NEXT,
-        RULES_RECEIVED,
-        METERS_RECEIVED,
-        EXPECTED_DEFAULT_RULES_RECEIVED,
-        METERS_UNSUPPORTED,
+        NEXT, COMPLETE,
         TIMEOUT,
         ERROR,
         WORKER_ERROR

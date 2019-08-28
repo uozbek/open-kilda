@@ -26,6 +26,7 @@ import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateContext;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent;
+import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateFsmFactory;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchValidateService;
@@ -33,7 +34,6 @@ import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
 
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
-import org.squirrelframework.foundation.fsm.StateMachineBuilder;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,21 +48,19 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
     @VisibleForTesting
     ValidationService validationService;
     private SwitchManagerCarrier carrier;
-    private StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent,
-            SwitchValidateContext> builder;
+    private SwitchValidateFsmFactory fsmFactory;
 
     public SwitchValidateServiceImpl(
             SwitchManagerCarrier carrier, FlowResourcesConfig resourcesConfig, PersistenceManager persistenceManager) {
         this.carrier = carrier;
-        this.builder = SwitchValidateFsm.builder();
-        this.validationService = new ValidationServiceImpl(resourcesConfig, persistenceManager);
+
+        validationService = new ValidationServiceImpl(resourcesConfig, persistenceManager);
+        fsmFactory = SwitchValidateFsm.factory(carrier, validationService);
     }
 
     @Override
     public void handleSwitchValidateRequest(String key, SwitchValidateRequest request) {
-        SwitchValidateFsm fsm =
-                builder.newStateMachine(SwitchValidateState.INITIALIZED, carrier, key, request, validationService);
-
+        SwitchValidateFsm fsm = fsmFactory.produce(request, key);
         skipIntermediateStates(fsm);
     }
 
@@ -170,9 +168,9 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
 
     void skipIntermediateStates(SwitchValidateFsm fsm) {
         final List<SwitchValidateState> stopStates = Arrays.asList(
-                SwitchValidateState.RECEIVE_DATA,
-                SwitchValidateState.FINISHED,
-                SwitchValidateState.FINISHED_WITH_ERROR
+                SwitchValidateState.FETCH_SCHEMA,
+                SwitchValidateState.EXIT,
+                SwitchValidateState.ERROR
         );
 
         while (!stopStates.contains(fsm.getCurrentState())) {
@@ -181,8 +179,8 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         }
 
         final List<SwitchValidateState> exitStates = Arrays.asList(
-                SwitchValidateState.FINISHED,
-                SwitchValidateState.FINISHED_WITH_ERROR
+                SwitchValidateState.EXIT,
+                SwitchValidateState.ERROR
         );
 
         if (exitStates.contains(fsm.getCurrentState())) {
