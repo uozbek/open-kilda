@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -17,7 +16,6 @@
 package org.openkilda.wfm.topology.switchmanager.bolt.hub;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
@@ -43,8 +41,9 @@ import org.openkilda.wfm.share.utils.KeyProvider;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
-import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerFetchSchemaCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerSwitchSchemaDumpCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchSyncService;
@@ -162,6 +161,14 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
 
     // -- commands processing --
 
+    public void processSwitchSchemaDump(String key, SpeakerSwitchSchema switchSchema) {
+        validateService.handleSwitchSchemaDump(key, switchSchema);
+    }
+
+    public void processValidateWorkerError(String key, String errorMessage) {
+        validateService.handleWorkerError(key, errorMessage);
+    }
+
     public void processValidateErrorResponse(String key, SpeakerResponse response) {
         validateService.handleSpeakerErrorResponse(key, response);
     }
@@ -196,7 +203,7 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     @Override
     public void speakerFetchSchema(SwitchId switchId, List<FlowSegmentBlankGenericResolver> requestBlanks) {
         String key = getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
-        SpeakerFetchSchemaCommand command = new SpeakerFetchSchemaCommand(key, switchId, requestBlanks);
+        SpeakerSwitchSchemaDumpCommand command = new SpeakerSwitchSchemaDumpCommand(key, switchId, requestBlanks);
         emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
     }
 

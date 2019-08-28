@@ -20,6 +20,7 @@ import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.wfm.CommandContext;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 
 public interface SpeakerWorkerCarrier {
 
@@ -27,9 +28,13 @@ public interface SpeakerWorkerCarrier {
 
     void sendSpeakerCommand(SpeakerRequest request);
 
-    void sendResponse(String key, Message response);
+    void sendHubResponse(String key, Message response);
+
+    void sendHubValidationWorkerError(String errorMessage);
 
     void sendHubValidationError(SpeakerResponse error);
+
+    void sendHubSwitchSchema(SpeakerSwitchSchema switchSchema);
 
     CommandContext getCommandContext();
 }

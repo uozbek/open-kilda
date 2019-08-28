@@ -137,6 +137,14 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
     }
 
     @Override
+    public void handleWorkerError(String key, String errorMessage) {
+        SwitchValidateContext context = SwitchValidateContext.builder()
+                .workerError(errorMessage)
+                .build();
+        feedFsm(key, SwitchValidateEvent.WORKER_ERROR, context);
+    }
+
+    @Override
     public void handleSpeakerErrorResponse(String key, SpeakerResponse response) {
         SwitchValidateContext context = SwitchValidateContext.builder()
                 .speakerResponse(response)

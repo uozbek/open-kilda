@@ -13,15 +13,15 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api.response;
+package org.openkilda.floodlight.api.request;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -29,18 +29,14 @@ import java.util.UUID;
 
 @Getter
 @ToString(callSuper = true)
-public class SpeakerFlowSegmentSchemaResponse extends SpeakerResponse {
-    @JsonProperty("schema")
-    private final FlowSegmentSchema schema;
-
-    @Builder
+@EqualsAndHashCode(callSuper = true)
+public class DefaultFlowsSchemaRequest extends SpeakerRequest {
     @JsonCreator
-    public SpeakerFlowSegmentSchemaResponse(
+    @Builder(toBuilder = true)
+    public DefaultFlowsSchemaRequest(
             @JsonProperty("message_context") MessageContext messageContext,
-            @JsonProperty("command_id") UUID commandId,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("schema") FlowSegmentSchema schema) {
-        super(messageContext, commandId, switchId);
-        this.schema = schema;
+            @JsonProperty("command_id") UUID commandId) {
+        super(messageContext, switchId, commandId);
     }
 }

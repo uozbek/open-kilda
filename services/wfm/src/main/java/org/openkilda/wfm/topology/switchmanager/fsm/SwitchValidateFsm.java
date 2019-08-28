@@ -30,9 +30,7 @@ import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.Swi
 import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.VALIDATE_METERS;
 import static org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState.VALIDATE_RULES;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.command.switches.DumpMetersForSwitchManagerRequest;
 import org.openkilda.messaging.command.switches.DumpRulesForSwitchManagerRequest;
@@ -286,6 +284,7 @@ public class SwitchValidateFsm
     @Value
     @Builder
     public static class SwitchValidateContext {
+        private final String workerError;
         private final SpeakerResponse speakerResponse;
     }
 
@@ -305,6 +304,7 @@ public class SwitchValidateFsm
         EXPECTED_DEFAULT_RULES_RECEIVED,
         METERS_UNSUPPORTED,
         TIMEOUT,
-        ERROR
+        ERROR,
+        WORKER_ERROR
     }
 }

@@ -20,7 +20,7 @@ import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 
 public abstract class SpeakerRemoteCommandReport extends SpeakerCommandReport {
-    private final SpeakerRemoteCommand<?> command;
+    protected final SpeakerRemoteCommand<?> command;
 
     protected SpeakerRemoteCommandReport(SpeakerRemoteCommand<?> command, Exception error) {
         super(error);

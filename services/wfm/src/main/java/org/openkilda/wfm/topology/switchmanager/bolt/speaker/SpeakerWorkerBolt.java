@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -18,7 +17,6 @@ package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.SpeakerRequest;
-import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.Utils;
@@ -30,14 +28,16 @@ import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubSwitchSchemaDumpCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubValidateErrorResponseCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubValidateWorkerErrorCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.service.SpeakerWorkerCarrier;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
-import org.apache.storm.shade.org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
@@ -116,16 +116,27 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
         }
     }
 
-    // FIXME
     @Override
-    public void sendResponse(String key, Message response) {
+    public void sendHubResponse(String key, Message response) {
         Values values = new Values(key, response, getCommandContext());
         emitResponseToHub(getCurrentTuple(), values);
     }
 
     @Override
+    public void sendHubValidationWorkerError(String errorMessage) {
+        HubValidateWorkerErrorCommand command = new HubValidateWorkerErrorCommand(getKey(), errorMessage);
+        emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
+    }
+
+    @Override
     public void sendHubValidationError(SpeakerResponse error) {
         HubValidateErrorResponseCommand command = new HubValidateErrorResponseCommand(getKey(), error);
+        emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
+    }
+
+    @Override
+    public void sendHubSwitchSchema(SpeakerSwitchSchema switchSchema) {
+        HubSwitchSchemaDumpCommand command = new HubSwitchSchemaDumpCommand(getKey(), switchSchema);
         emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
     }
 

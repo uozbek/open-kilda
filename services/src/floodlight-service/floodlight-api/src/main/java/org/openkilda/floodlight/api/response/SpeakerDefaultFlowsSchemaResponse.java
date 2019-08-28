@@ -15,8 +15,8 @@
 
 package org.openkilda.floodlight.api.response;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -25,22 +25,23 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
 @ToString(callSuper = true)
-public class SpeakerFlowSegmentSchemaResponse extends SpeakerResponse {
-    @JsonProperty("schema")
-    private final FlowSegmentSchema schema;
+public class SpeakerDefaultFlowsSchemaResponse extends SpeakerResponse {
+    @JsonProperty("entries")
+    private final List<FlowEntry> entries;
 
     @Builder
     @JsonCreator
-    public SpeakerFlowSegmentSchemaResponse(
+    public SpeakerDefaultFlowsSchemaResponse(
             @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("schema") FlowSegmentSchema schema) {
+            @JsonProperty("entries") List<FlowEntry> entries) {
         super(messageContext, commandId, switchId);
-        this.schema = schema;
+        this.entries = entries;
     }
 }

@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -25,9 +24,17 @@ import org.slf4j.LoggerFactory;
 abstract class WorkerHandler {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    public abstract void speakerResponse(Message response);
+    public void speakerResponse(Message response) {
+        throw new UnsupportedOperationException(String.format(
+                "Reject %s speaker response, ony %s based responses accepted/expected",
+                response.getClass().getName(), Message.class.getName()));
+    }
 
-    public abstract void speakerResponse(SpeakerResponse response);
+    public void speakerResponse(SpeakerResponse response) {
+        throw new UnsupportedOperationException(String.format(
+                "Reject %s speaker response, ony %s based responses accepted/expected",
+                response.getClass().getName(), SpeakerResponse.class.getName()));
+    }
 
     public abstract void timeout();
 

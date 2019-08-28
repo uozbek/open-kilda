@@ -17,7 +17,6 @@ package org.openkilda.floodlight.converter;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
-import org.openkilda.floodlight.api.FlowSegmentSchemaEntry.FlowSegmentSchemaEntryBuilder;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
@@ -30,7 +29,6 @@ import org.projectfloodlight.openflow.protocol.action.OFActionMeter;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyActions;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionMeter;
-import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.TableId;
 
 import java.util.List;

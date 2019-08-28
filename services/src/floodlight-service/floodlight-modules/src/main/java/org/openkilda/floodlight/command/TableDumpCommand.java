@@ -16,7 +16,6 @@
 package org.openkilda.floodlight.command;
 
 import org.openkilda.floodlight.converter.OfFlowStatsMapper;
-import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.info.rule.FlowEntry;

@@ -13,19 +13,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.messaging.info.rule.FlowEntry;
-import org.openkilda.model.SwitchId;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 
-import lombok.Value;
+public class HubSwitchSchemaDumpCommand extends HubCommand {
+    private final SpeakerSwitchSchema switchSchema;
 
-import java.util.List;
+    public HubSwitchSchemaDumpCommand(String key, SpeakerSwitchSchema switchSchema) {
+        super(key);
+        this.switchSchema = switchSchema;
+    }
 
-@Value
-public class SwitchOfTableDump {
-    private final SwitchId datapath;
-    private final int tableId;
-
-    private List<FlowEntry> entries;
+    @Override
+    public void apply(HubBolt handler) {
+        handler.processSwitchSchemaDump(getKey(), switchSchema);
+    }
 }

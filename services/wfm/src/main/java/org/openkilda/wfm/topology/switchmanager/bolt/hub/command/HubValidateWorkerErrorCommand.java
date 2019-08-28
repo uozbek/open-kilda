@@ -13,19 +13,20 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.messaging.info.rule.FlowEntry;
-import org.openkilda.model.SwitchId;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 
-import lombok.Value;
+public class HubValidateWorkerErrorCommand extends HubCommand {
+    private final String errorMessage;
 
-import java.util.List;
+    public HubValidateWorkerErrorCommand(String key, String errorMessage) {
+        super(key);
+        this.errorMessage = errorMessage;
+    }
 
-@Value
-public class SwitchOfTableDump {
-    private final SwitchId datapath;
-    private final int tableId;
-
-    private List<FlowEntry> entries;
+    @Override
+    public void apply(HubBolt handler) {
+        handler.processValidateWorkerError(getKey(), errorMessage);
+    }
 }

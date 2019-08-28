@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -48,7 +47,7 @@ public class ProxyRequestHandler extends WorkerHandler {
         completed = true;
 
         log.debug("Got a response from speaker {}", response);
-        carrier.sendResponse(key, response);
+        carrier.sendHubResponse(key, response);
     }
 
     @Override
@@ -60,12 +59,7 @@ public class ProxyRequestHandler extends WorkerHandler {
                 "Error in SpeakerWorkerService");
         ErrorMessage errorMessage = new ErrorMessage(errorData, System.currentTimeMillis(), key);
 
-        carrier.sendResponse(key, errorMessage);
-    }
-
-    @Override
-    public void replaced() {
-        // nothing to do here
+        carrier.sendHubResponse(key, errorMessage);
     }
 
     private void emitRequest() {

@@ -22,6 +22,7 @@ import org.openkilda.messaging.error.ErrorMessage;
 import org.openkilda.messaging.info.meter.SwitchMeterEntries;
 import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
 import org.openkilda.messaging.info.rule.SwitchFlowEntries;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 
 public interface SwitchValidateService {
 
@@ -38,6 +39,10 @@ public interface SwitchValidateService {
     void handleTaskTimeout(String key);
 
     void handleTaskError(String key, ErrorMessage message);
+
+    void handleSwitchSchemaDump(String key, SpeakerSwitchSchema switchSchema);
+
+    void handleWorkerError(String key, String errorMessage);
 
     void handleSpeakerErrorResponse(String key, SpeakerResponse response);
 }

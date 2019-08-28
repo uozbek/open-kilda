@@ -29,7 +29,7 @@ public class GetExpectedDefaultRulesRequest extends CommandData {
     @JsonProperty("switch_id")
     private SwitchId switchId;
 
-    public GetExpectedDefaultRulesRequest(@JsonProperty("switch_id") SwitchId switchId) {
+    public  GetExpectedDefaultRulesRequest(@JsonProperty("switch_id") SwitchId switchId) {
         this.switchId = switchId;
     }
 }

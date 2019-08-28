@@ -15,22 +15,16 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.messaging.info.rule.FlowEntry;
+import org.openkilda.model.SwitchId;
 
-import lombok.NonNull;
 import lombok.Value;
 
-import java.util.UUID;
+import java.util.List;
 
 @Value
-public class FlowSegmentSchemaRequestResponse {
-    @NonNull
-    private final FlowSegmentBlankGenericResolver requestBlank;
-    @NonNull
-    private final FlowSegmentSchema schema;
+public class SwitchDefaultFlowsSchema {
+    private final SwitchId datapath;
 
-    public UUID getCommandId() {
-        return requestBlank.getCommandId();
-    }
+    private final List<FlowEntry> entries;
 }

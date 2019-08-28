@@ -16,28 +16,25 @@
 package org.openkilda.floodlight.command;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.response.SpeakerDefaultFlowsSchemaResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
-import org.openkilda.floodlight.api.response.SpeakerTableDumpResponse;
 import org.openkilda.messaging.info.rule.FlowEntry;
 
 import java.util.List;
 
-public class TableDumpReport extends SpeakerRemoteCommandReport {
-    private final TableDumpCommand command;
-
+public class DefaultFlowsSchemaReport extends SpeakerRemoteCommandReport {
     private final List<FlowEntry> entries;
 
-    public TableDumpReport(TableDumpCommand command, List<FlowEntry> entries) {
+    public DefaultFlowsSchemaReport(DefaultFlowsSchemaCommand command, List<FlowEntry> entries) {
         this(command, entries, null);
     }
 
-    public TableDumpReport(TableDumpCommand command, Exception error) {
+    public DefaultFlowsSchemaReport(DefaultFlowsSchemaCommand command, Exception error) {
         this(command, null, error);
     }
 
-    private TableDumpReport(TableDumpCommand command, List<FlowEntry> entries, Exception error) {
+    private DefaultFlowsSchemaReport(DefaultFlowsSchemaCommand command, List<FlowEntry> entries, Exception error) {
         super(command, error);
-        this.command = command;
         this.entries = entries;
     }
 
@@ -49,11 +46,10 @@ public class TableDumpReport extends SpeakerRemoteCommandReport {
 
     @Override
     protected SpeakerResponse makeSuccessReply() {
-        return SpeakerTableDumpResponse.builder()
+        return SpeakerDefaultFlowsSchemaResponse.builder()
                 .messageContext(command.getMessageContext())
                 .commandId(command.getCommandId())
                 .switchId(command.getSwitchId())
-                .tableId(command.getTableId())
                 .entries(entries)
                 .build();
     }
