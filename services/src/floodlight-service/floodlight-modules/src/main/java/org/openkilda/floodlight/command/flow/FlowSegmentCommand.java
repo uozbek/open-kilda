@@ -16,10 +16,10 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.command.SpeakerCommand;
-import org.openkilda.floodlight.command.SpeakerCommandReport;
+import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerRemoteCommand;
-import org.openkilda.floodlight.converter.OfFlowModMapper;
+import org.openkilda.floodlight.command.meter.MeterReport;
+import org.openkilda.floodlight.converter.FlowSegmentSchemaMapper;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;
 import org.openkilda.floodlight.utils.OfFlowDumpProducer;
 import org.openkilda.floodlight.utils.OfFlowPresenceVerifier;
@@ -63,7 +63,12 @@ public abstract class FlowSegmentCommand extends SpeakerRemoteCommand<FlowSegmen
     }
 
     protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(List<OFFlowMod> requests) {
-        FlowSegmentSchema schema = OfFlowModMapper.INSTANCE.toFlowSegmentSchema(getSw(), requests);
+        return makeSchemaPlan(null, requests);
+    }
+
+    protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(MeterReport meterReport, List<OFFlowMod> requests) {
+        MeterSchema meterSchema = meterReport != null ? meterReport.getSchema() : null;
+        FlowSegmentSchema schema = FlowSegmentSchemaMapper.INSTANCE.toFlowSegmentSchema(getSw(), meterSchema, requests);
         return CompletableFuture.completedFuture(new FlowSegmentSchemaReport(this, schema));
     }
 

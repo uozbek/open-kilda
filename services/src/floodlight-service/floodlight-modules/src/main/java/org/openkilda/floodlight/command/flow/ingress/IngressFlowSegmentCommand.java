@@ -98,7 +98,8 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
         CompletableFuture<MeterId> future = CompletableFuture.completedFuture(null);
         if (meterConfig != null) {
             future = planMeterInstall(commandProcessor)
-                    .thenApply(this::handleMeterReport);
+                    .thenApply(this::handleMeterReport)
+                    .thenApply(MeterReport::getMeterId);
         }
         return future.thenCompose(this::planOfFlowsInstall);
     }
@@ -115,13 +116,14 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
         CompletableFuture<MeterId> future = CompletableFuture.completedFuture(null);
         if (meterConfig != null) {
             future = planMeterVerify(commandProcessor)
-                    .thenApply(this::handleMeterReport);
+                    .thenApply(this::handleMeterReport)
+                    .thenApply(MeterReport::getMeterId);
         }
         return future.thenCompose(this::planOfFlowsVerify);
     }
 
     protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(SpeakerCommandProcessor commandProcessor) {
-        CompletableFuture<MeterId> future = CompletableFuture.completedFuture(null);
+        CompletableFuture<MeterReport> future = CompletableFuture.completedFuture(null);
         if (meterConfig != null) {
             future = planMeterDryRun(commandProcessor)
                     .thenApply(this::handleMeterReport);
@@ -150,20 +152,17 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
         return commandProcessor.chain(meterDryRun);
     }
 
-    protected MeterId handleMeterReport(MeterReport report) {
-        MeterId effectiveMeterId;
+    protected MeterReport handleMeterReport(MeterReport report) {
         try {
             report.raiseError();
-            effectiveMeterId = report.getMeterId();
         } catch (UnsupportedSwitchOperationException e) {
             log.info("Do not install meter id {} on {} - {}", meterConfig.getId(), switchId, e.getMessage());
             // switch do not support meters, setup rules without meter
-            effectiveMeterId = null;
         } catch (Exception e) {
             throw maskCallbackException(e);
         }
 
-        return effectiveMeterId;
+        return report;
     }
 
     private CompletableFuture<FlowSegmentReport> planOfFlowsInstall(MeterId effectiveMeterId) {
@@ -207,8 +206,12 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
         return makeVerifyPlan(makeIngressModMessages(effectiveMeterId));
     }
 
-    private CompletableFuture<FlowSegmentReport> planOfFlowsSchema(MeterId effectiveMeterId) {
-        return makeSchemaPlan(makeIngressModMessages(effectiveMeterId));
+    private CompletableFuture<FlowSegmentReport> planOfFlowsSchema(MeterReport meterReport) {
+        MeterId effectiveMeterId = null;
+        if (meterReport != null) {
+            effectiveMeterId = meterReport.getMeterId();
+        }
+        return makeSchemaPlan(meterReport, makeIngressModMessages(effectiveMeterId));
     }
 
     private void handleMeterRemoveReport(MeterReport report) {

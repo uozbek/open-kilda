@@ -57,7 +57,8 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         this.commandProcessor = commandProcessor;
 
-        return writeSwitchRequest(makeMeterAddMessage())
+        OFMeterMod meterMod = makeMeterAddMessage();
+        return writeSwitchRequest(meterMod)
                 .thenApply(ignore -> new MeterReport(meterConfig.getId()));
     }
 

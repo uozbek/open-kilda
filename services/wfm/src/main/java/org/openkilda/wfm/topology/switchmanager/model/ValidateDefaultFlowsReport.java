@@ -23,12 +23,11 @@ import java.util.List;
 
 @Value
 @Builder
-public class ValidateSwitchReport {
+public class ValidateDefaultFlowsReport {
     @Singular
-    private final List<OfFlowReference> cookieCollisions;
-
+    private final List<OfFlowReference> properFlows;
     @Singular
-    private final List<ValidateFlowSegmentReport> segmentReports;
-
-    private final ValidateDefaultFlowsReport defaultFlowsReport;
+    private final List<OfFlowReference> missingFlows;
+    @Singular
+    private final List<OfFlowReference> invalidFlows;
 }

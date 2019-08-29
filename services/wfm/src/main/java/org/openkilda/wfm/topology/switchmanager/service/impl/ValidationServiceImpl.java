@@ -41,15 +41,20 @@ import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.share.service.SpeakerFlowSegmentRequestBuilder;
 import org.openkilda.wfm.topology.switchmanager.model.OfFlowReference;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchDefaultFlowsSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateDefaultFlowsReport;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateDefaultFlowsReport.ValidateDefaultFlowsReportBuilder;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentEntry;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport.ValidateSwitchReportBuilder;
 import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
 
 import com.google.common.collect.ImmutableList;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -60,6 +65,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -150,8 +156,11 @@ public class ValidationServiceImpl implements ValidationService {
         Map<OfFlowReference, List<FlowEntry>> existingOfFlows = unpackOfFlows(switchSchema);
 
         ValidateSwitchReport.ValidateSwitchReportBuilder switchReport = ValidateSwitchReport.builder();
+
+        // verify methods alter existingOfFlows list (remove matching entries)
         verifyCookieCollisions(switchReport, existingOfFlows);
-        verifyFlowSegments(switchReport, switchSchema.getFlowSegments(), existingOfFlows); // alter existingOfFlows
+        verifyFlowSegments(switchReport, switchSchema.getFlowSegments(), existingOfFlows);
+        verifyDefaultFlows(switchReport, switchSchema.getDefaultFlowsSchema(), existingOfFlows);
 
         // TODO
 
@@ -192,44 +201,6 @@ public class ValidationServiceImpl implements ValidationService {
                 ImmutableList.copyOf(properRules),
                 ImmutableList.copyOf(excessRules),
                 ImmutableList.copyOf(misconfiguredRules));
-    }
-
-    private void validateDefaultRules(List<FlowEntry> presentRules, List<FlowEntry> expectedDefaultRules,
-                                      Set<Long> missingRules, Set<Long> properRules, Set<Long> excessRules,
-                                      Set<Long> misconfiguredRules) {
-        List<FlowEntry> presentDefaultRules = presentRules.stream()
-                .filter(rule -> Cookie.isDefaultRule(rule.getCookie()))
-                .collect(Collectors.toList());
-
-        expectedDefaultRules.forEach(expectedDefaultRule -> {
-            List<FlowEntry> defaultRule = presentDefaultRules.stream()
-                    .filter(rule -> rule.getCookie() == expectedDefaultRule.getCookie())
-                    .collect(Collectors.toList());
-
-            if (defaultRule.isEmpty()) {
-                missingRules.add(expectedDefaultRule.getCookie());
-            } else {
-                if (defaultRule.contains(expectedDefaultRule)) {
-                    properRules.add(expectedDefaultRule.getCookie());
-                } else {
-                    misconfiguredRules.add(expectedDefaultRule.getCookie());
-                }
-
-                if (defaultRule.size() > 1) {
-                    excessRules.add(expectedDefaultRule.getCookie());
-                }
-            }
-        });
-
-        presentDefaultRules.forEach(presentDefaultRule -> {
-            List<FlowEntry> defaultRule = expectedDefaultRules.stream()
-                    .filter(rule -> rule.getCookie() == presentDefaultRule.getCookie())
-                    .collect(Collectors.toList());
-
-            if (defaultRule.isEmpty()) {
-                excessRules.add(presentDefaultRule.getCookie());
-            }
-        });
     }
 
     private static String cookiesIntoLogRepresentation(Collection<Long> rules) {
@@ -419,7 +390,8 @@ public class ValidationServiceImpl implements ValidationService {
             FlowSegmentSchema schema = segment.getSchema();
             for (FlowSegmentSchemaEntry entry : schema.getEntries()) {
                 OfFlowReference ref = new OfFlowReference(schema, entry);
-                if (removeFirstOfFlowMatch(existingOfFlows, ref, entry)) {
+                FlowSegmentEntryEqualDetector equalDetector = new FlowSegmentEntryEqualDetector(entry);
+                if (removeFirstOfFlowMatch(existingOfFlows, ref, equalDetector)) {
                     segmentReport.properFlow(ref);
                 } else {
                     segmentReport.missingFlow(ref);
@@ -429,9 +401,34 @@ public class ValidationServiceImpl implements ValidationService {
         }
     }
 
+    private void verifyDefaultFlows(
+            ValidateSwitchReportBuilder switchReport, SwitchDefaultFlowsSchema schema,
+            Map<OfFlowReference, List<FlowEntry>> existingOfFlows) {
+        ValidateDefaultFlowsReport.ValidateDefaultFlowsReportBuilder report = ValidateDefaultFlowsReport.builder();
+
+        for (FlowEntry schemaEntry : schema.getEntries()) {
+            OfFlowReference ref = new OfFlowReference(schema.getDatapath(), schemaEntry);
+            DefaultFlowsSchemaEntryEqualDetector equalDetector = new DefaultFlowsSchemaEntryEqualDetector(schemaEntry);
+            if (! isOfFlowExists(existingOfFlows, ref)) {
+                report.missingFlow(ref);
+            } else if (removeFirstOfFlowMatch(existingOfFlows, ref, equalDetector)) {
+                report.properFlow(ref);
+            } else {
+                report.invalidFlow(ref);
+            }
+        }
+
+        switchReport.defaultFlowsReport(report.build());
+    }
+
+    private boolean isOfFlowExists(Map<OfFlowReference, List<FlowEntry>> existingOfFlows, OfFlowReference ref) {
+        List<FlowEntry> sequence = existingOfFlows.get(ref);
+        return sequence != null && 0 < sequence.size();
+    }
+
     private boolean removeFirstOfFlowMatch(
             Map<OfFlowReference, List<FlowEntry>> existingOfFlows, OfFlowReference ref,
-            FlowSegmentSchemaEntry schemaEntry) {
+            SchemaEqualDetector equalDetector) {
         List<FlowEntry> sequence = existingOfFlows.get(ref);
         if (sequence == null) {
             return false;
@@ -440,7 +437,7 @@ public class ValidationServiceImpl implements ValidationService {
         Iterator<FlowEntry> iter = sequence.iterator();
         boolean match = false;
         while (iter.hasNext()) {
-            if (isSchemaEntryMatch(schemaEntry, iter.next())) {
+            if (equalDetector.isEquals(iter.next())) {
                 match = true;
                 iter.remove();
                 break;
@@ -449,17 +446,37 @@ public class ValidationServiceImpl implements ValidationService {
         return match;
     }
 
-    private boolean isSchemaEntryMatch(FlowSegmentSchemaEntry schemaEntry, FlowEntry flowEntry) {
-        // cookie and tableId match is guaranteed by reference match, so it can be skipped
-        final MeterId meterId = schemaEntry.getMeterId();
-        if (meterId != null) {
-            FlowInstructions instructions = flowEntry.getInstructions();
-            MeterId actualMeter = new MeterId(instructions.getGoToMeter());
-            if (meterId.equals(actualMeter)) {
-                log.info("Invalid meter {} != {} into flow entry {}", meterId, actualMeter, flowEntry);
-                return false;
+    private abstract static class SchemaEqualDetector {
+        abstract boolean isEquals(FlowEntry actualEntry);
+    }
+
+    @AllArgsConstructor
+    private static class FlowSegmentEntryEqualDetector extends SchemaEqualDetector {
+        private final FlowSegmentSchemaEntry schemaEntry;
+
+        @Override
+        boolean isEquals(FlowEntry actualEntry) {
+            // cookie and tableId match is guaranteed by reference match, so it can be skipped
+            final MeterId meterId = schemaEntry.getMeterId();
+            if (meterId != null) {
+                FlowInstructions instructions = actualEntry.getInstructions();
+                MeterId actualMeter = new MeterId(instructions.getGoToMeter());
+                if (meterId.equals(actualMeter)) {
+                    log.info("Invalid meter {} != {} into flow entry {}", meterId, actualMeter, actualEntry);
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
+    }
+
+    @AllArgsConstructor
+    private static class DefaultFlowsSchemaEntryEqualDetector extends SchemaEqualDetector {
+        private final FlowEntry schemaEntry;
+
+        @Override
+        boolean isEquals(FlowEntry actualEntry) {
+            return Objects.equals(schemaEntry, actualEntry);
+        }
     }
 }

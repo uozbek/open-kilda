@@ -15,6 +15,8 @@
 
 package org.openkilda.floodlight.command.meter;
 
+import org.openkilda.floodlight.api.MeterSchema;
+import org.openkilda.floodlight.converter.MeterSchemaMapper;
 import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.config.provider.FloodlightModuleConfigurationProvider;
@@ -35,6 +37,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import org.projectfloodlight.openflow.protocol.OFMeterFlags;
+import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
 
 import java.util.List;
@@ -59,8 +62,9 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
         return new MeterReport(error);
     }
 
-    protected MeterReport makeSuccessReport() {
-        return new MeterReport(meterConfig.getId());
+    protected MeterReport makeSuccessReport(OFMeterMod meterMod) {
+        MeterSchema schema = MeterSchemaMapper.INSTANCE.map(getSw().getId(), meterMod);
+        return new MeterReport(schema);
     }
 
     Set<OFMeterFlags> makeMeterFlags() {

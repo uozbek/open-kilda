@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
 import org.openkilda.model.MeterId;
@@ -24,23 +25,27 @@ import lombok.Value;
 
 @Value
 public class MeterReport extends SpeakerCommandReport {
-    private MeterId meterId;
+    private MeterSchema schema;
 
-    public MeterReport(MeterId meterId) {
-        this(null, meterId);
+    public MeterReport(MeterSchema schema) {
+        this(schema, null);
     }
 
     public MeterReport(Exception error) {
-        this(error, null);
+        this(null, error);
     }
 
-    private MeterReport(Exception error, MeterId meterId) {
+    private MeterReport(MeterSchema schema, Exception error) {
         super(error);
-        this.meterId = meterId;
+        this.schema = schema;
     }
 
     @Override
     public void reply(KafkaChannel kafkaChannel, IKafkaProducerService kafkaProducerService, String requestKey) {
         // at this moment meters command used only as nested command from flow command, so no reply required
+    }
+
+    public MeterId getMeterId() {
+        return schema.getMeterId();
     }
 }

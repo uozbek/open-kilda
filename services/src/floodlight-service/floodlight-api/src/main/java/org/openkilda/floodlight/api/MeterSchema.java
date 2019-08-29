@@ -13,28 +13,28 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.floodlight.api;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
-import org.openkilda.messaging.info.rule.FlowEntry;
+import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 
+import java.io.Serializable;
+import java.util.List;
+import java.util.Set;
+
 @Value
-@AllArgsConstructor
-public class OfFlowReference {
-    private final int tableId;
-    private final long cookie;
+@Builder
+public class MeterSchema implements Serializable {
     private final SwitchId datapath;
 
-    public OfFlowReference(FlowSegmentSchema schema, FlowSegmentSchemaEntry entry) {
-        this(entry.getTableId(), entry.getCookie().getValue(), schema.getDatapath());
-    }
+    private final MeterId meterId;
 
-    public OfFlowReference(SwitchId datapath, FlowEntry entry) {
-        this((int) entry.getTableId(), entry.getCookie(), datapath);
-    }
+    @Singular
+    private final Set<String> flags;
+    @Singular
+    private final List<MeterSchemaBand> bands;
 }

@@ -17,6 +17,7 @@ package org.openkilda.floodlight.converter;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
+import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
@@ -35,10 +36,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class OfFlowModMapper {
-    public static final OfFlowModMapper INSTANCE = new OfFlowModMapper();
+public class FlowSegmentSchemaMapper {
+    public static final FlowSegmentSchemaMapper INSTANCE = new FlowSegmentSchemaMapper();
 
-    public FlowSegmentSchema toFlowSegmentSchema(IOFSwitch sw, List<OFFlowMod> ofRequests) {
+    public FlowSegmentSchema toFlowSegmentSchema(IOFSwitch sw, MeterSchema meterSchema, List<OFFlowMod> ofRequests) {
         ImmutableList<FlowSegmentSchemaEntry> entries = ImmutableList.copyOf(
                 ofRequests.stream()
                         .map(this::toFlowSegmentSchemaEntry)
@@ -94,5 +95,5 @@ public class OfFlowModMapper {
         schemaEntry.meterId(new MeterId(action.getMeterId()));
     }
 
-    private OfFlowModMapper() {}
+    private FlowSegmentSchemaMapper() {}
 }
