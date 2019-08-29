@@ -21,7 +21,7 @@ import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.SwitchValidateReport;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
 
@@ -31,7 +31,7 @@ public interface ValidationService {
     List<FlowSegmentBlankGenericResolver> prepareFlowSegmentRequests(CommandContext context, SwitchId switchId);
 
 
-    SwitchValidateReport validateSwitch(SpeakerSwitchSchema switchSchema);
+    ValidateSwitchReport validateSwitch(SpeakerSwitchSchema switchSchema);
 
     ValidateRulesResult validateRules(SwitchId switchId, List<FlowEntry> presentRules,
                                       List<FlowEntry> expectedDefaultRules);

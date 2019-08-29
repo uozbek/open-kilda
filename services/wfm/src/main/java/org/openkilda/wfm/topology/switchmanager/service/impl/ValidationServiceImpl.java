@@ -15,9 +15,12 @@
 
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
+import org.openkilda.floodlight.api.FlowSegmentSchema;
+import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.messaging.info.meter.MeterEntry;
 import org.openkilda.messaging.info.rule.FlowEntry;
+import org.openkilda.messaging.info.rule.FlowInstructions;
 import org.openkilda.messaging.info.switches.MeterInfoEntry;
 import org.openkilda.messaging.info.switches.MeterMisconfiguredInfoEntry;
 import org.openkilda.model.Cookie;
@@ -36,13 +39,14 @@ import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.share.service.SpeakerFlowSegmentRequestBuilder;
-import org.openkilda.wfm.topology.switchmanager.model.OfFlowAddress;
+import org.openkilda.wfm.topology.switchmanager.model.OfFlowReference;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
-import org.openkilda.wfm.topology.switchmanager.model.SwitchValidateReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentEntry;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
 import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
 
 import com.google.common.collect.ImmutableList;
@@ -53,6 +57,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,35 +144,18 @@ public class ValidationServiceImpl implements ValidationService {
     }
 
     @Override
-    public SwitchValidateReport validateSwitch(SpeakerSwitchSchema switchSchema) {
-        Map<OfFlowAddress, List<FlowEntry>> existingOfFlows = unpackOfFlows(switchSchema);
+    public ValidateSwitchReport validateSwitch(SpeakerSwitchSchema switchSchema) {
+        log.debug("Validating rules on switch {}", switchSchema.getDatapath());
 
-        Set<OfFlowAddress> valid = new HashSet<>();
-        Set<OfFlowAddress> missing = new HashSet<>();
-        Set<OfFlowAddress> extra = new HashSet<>();
-        for (ValidateFlowSegmentEntry entry : switchSchema.getFlowSegments()) {
+        Map<OfFlowReference, List<FlowEntry>> existingOfFlows = unpackOfFlows(switchSchema);
 
-        }
+        ValidateSwitchReport.ValidateSwitchReportBuilder switchReport = ValidateSwitchReport.builder();
+        verifyCookieCollisions(switchReport, existingOfFlows);
+        verifyFlowSegments(switchReport, switchSchema.getFlowSegments(), existingOfFlows); // alter existingOfFlows
+
+        // TODO
 
         return null;
-    }
-
-    @Override
-    public ValidateRulesResult validateRules(SwitchId switchId, List<FlowEntry> presentRules,
-                                             List<FlowEntry> expectedDefaultRules) {
-        log.debug("Validating rules on switch {}", switchId);
-
-        Set<Long> expectedCookies = flowPathRepository.findBySegmentDestSwitch(switchId).stream()
-                .map(FlowPath::getCookie)
-                .map(Cookie::getValue)
-                .collect(Collectors.toSet());
-
-        flowPathRepository.findByEndpointSwitch(switchId).stream()
-                .map(FlowPath::getCookie)
-                .map(Cookie::getValue)
-                .forEach(expectedCookies::add);
-
-        return makeRulesResponse(expectedCookies, presentRules, expectedDefaultRules, switchId);
     }
 
     private ValidateRulesResult makeRulesResponse(Set<Long> expectedCookies, List<FlowEntry> presentRules,
@@ -179,7 +167,7 @@ public class ValidationServiceImpl implements ValidationService {
 
         Set<Long> missingRules = new HashSet<>(expectedCookies);
         missingRules.removeAll(presentCookies);
-        if (!missingRules.isEmpty() && log.isErrorEnabled()) {
+        if (! missingRules.isEmpty() && log.isErrorEnabled()) {
             log.error("On switch {} the following rules are missed: {}", switchId,
                     cookiesIntoLogRepresentation(missingRules));
         }
@@ -390,8 +378,8 @@ public class ValidationServiceImpl implements ValidationService {
         return Math.abs(actual - expected) <= METER_BURST_SIZE_EQUALS_DELTA;
     }
 
-    private Map<OfFlowAddress, List<FlowEntry>> unpackOfFlows(SpeakerSwitchSchema switchSchema) {
-        final Map<OfFlowAddress, List<FlowEntry>> ofFlows = new HashMap<>();
+    private Map<OfFlowReference, List<FlowEntry>> unpackOfFlows(SpeakerSwitchSchema switchSchema) {
+        final Map<OfFlowReference, List<FlowEntry>> ofFlows = new HashMap<>();
 
         SwitchId datapath;
         int tableId;
@@ -400,12 +388,78 @@ public class ValidationServiceImpl implements ValidationService {
             tableId = tableDump.getTableId();
 
             for (FlowEntry entry : tableDump.getEntries()) {
-                OfFlowAddress key = new OfFlowAddress(tableId, entry.getCookie(), datapath);
+                OfFlowReference key = new OfFlowReference(tableId, entry.getCookie(), datapath);
                 ofFlows.computeIfAbsent(key, ignore -> new ArrayList<>())
                         .add(entry);
             }
         }
 
         return ofFlows;
+    }
+
+    private void verifyCookieCollisions(
+            ValidateSwitchReport.ValidateSwitchReportBuilder switchReport,
+            Map<OfFlowReference, List<FlowEntry>> flows) {
+        for (Map.Entry<OfFlowReference, List<FlowEntry>> entry : flows.entrySet()) {
+            if (1 < entry.getValue().size()) {
+                switchReport.cookieCollision(entry.getKey());
+            }
+        }
+    }
+
+    private void verifyFlowSegments(
+            ValidateSwitchReport.ValidateSwitchReportBuilder switchReport, List<ValidateFlowSegmentEntry> flowSegments,
+            Map<OfFlowReference, List<FlowEntry>> existingOfFlows) {
+
+        for (ValidateFlowSegmentEntry segment : flowSegments) {
+            ValidateFlowSegmentReport.ValidateFlowSegmentReportBuilder segmentReport = ValidateFlowSegmentReport
+                    .builder()
+                    .requestBlank(segment.getRequestBlank());
+
+            FlowSegmentSchema schema = segment.getSchema();
+            for (FlowSegmentSchemaEntry entry : schema.getEntries()) {
+                OfFlowReference ref = new OfFlowReference(schema, entry);
+                if (removeFirstOfFlowMatch(existingOfFlows, ref, entry)) {
+                    segmentReport.properFlow(ref);
+                } else {
+                    segmentReport.missingFlow(ref);
+                }
+            }
+            switchReport.segmentReport(segmentReport.build());
+        }
+    }
+
+    private boolean removeFirstOfFlowMatch(
+            Map<OfFlowReference, List<FlowEntry>> existingOfFlows, OfFlowReference ref,
+            FlowSegmentSchemaEntry schemaEntry) {
+        List<FlowEntry> sequence = existingOfFlows.get(ref);
+        if (sequence == null) {
+            return false;
+        }
+
+        Iterator<FlowEntry> iter = sequence.iterator();
+        boolean match = false;
+        while (iter.hasNext()) {
+            if (isSchemaEntryMatch(schemaEntry, iter.next())) {
+                match = true;
+                iter.remove();
+                break;
+            }
+        }
+        return match;
+    }
+
+    private boolean isSchemaEntryMatch(FlowSegmentSchemaEntry schemaEntry, FlowEntry flowEntry) {
+        // cookie and tableId match is guaranteed by reference match, so it can be skipped
+        final MeterId meterId = schemaEntry.getMeterId();
+        if (meterId != null) {
+            FlowInstructions instructions = flowEntry.getInstructions();
+            MeterId actualMeter = new MeterId(instructions.getGoToMeter());
+            if (meterId.equals(actualMeter)) {
+                log.info("Invalid meter {} != {} into flow entry {}", meterId, actualMeter, flowEntry);
+                return false;
+            }
+        }
+        return true;
     }
 }

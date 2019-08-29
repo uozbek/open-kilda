@@ -15,13 +15,23 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.model.SwitchId;
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Singular;
 import lombok.Value;
 
+import java.util.List;
+
 @Value
-public class OfFlowAddress {
-    private final int tableId;
-    private final long cookie;
-    private final SwitchId datapath;
+@Builder
+public class ValidateFlowSegmentReport {
+    @NonNull
+    private final FlowSegmentBlankGenericResolver requestBlank;
+
+    @Singular
+    private final List<OfFlowReference> properFlows;
+    @Singular
+    private final List<OfFlowReference> missingFlows;
 }

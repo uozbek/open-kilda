@@ -15,11 +15,21 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import lombok.Builder;
+import org.openkilda.floodlight.api.FlowSegmentSchema;
+import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
+import org.openkilda.model.SwitchId;
+
+import lombok.AllArgsConstructor;
 import lombok.Value;
 
 @Value
-@Builder
-public class SwitchValidateReport {
-    List<>
+@AllArgsConstructor
+public class OfFlowReference {
+    private final int tableId;
+    private final long cookie;
+    private final SwitchId datapath;
+
+    public OfFlowReference(FlowSegmentSchema schema, FlowSegmentSchemaEntry entry) {
+        this(entry.getTableId(), entry.getCookie().getValue(), schema.getDatapath());
+    }
 }
