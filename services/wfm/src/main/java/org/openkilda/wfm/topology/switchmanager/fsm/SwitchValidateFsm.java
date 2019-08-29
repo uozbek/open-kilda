@@ -54,8 +54,6 @@ public class SwitchValidateFsm
     private final SwitchValidateRequest request;
     private final String key;
 
-    private SwitchId switchId;
-
     private ValidateRulesResult validateRulesResult;
     private ValidateMetersResult validateMetersResult;
 
@@ -68,8 +66,6 @@ public class SwitchValidateFsm
             String key) {
         this.carrier = carrier;
         this.validationService = validationService;
-        this.processMeters = request.isProcessMeters();
-        this.switchId = request.getSwitchId();
         this.request = request;
         this.key = key;
 
@@ -86,6 +82,7 @@ public class SwitchValidateFsm
         log.info("Key: {}, sending requests to get switch rules and meters", key);
 
         CommandContext commandContext = carrier.getCommandContext().fork("schema");
+        SwitchId switchId = request.getSwitchId();
         List<FlowSegmentBlankGenericResolver> requestBlanks = validationService.prepareFlowSegmentRequests(
                 commandContext, switchId);
         carrier.speakerFetchSchema(switchId, requestBlanks);

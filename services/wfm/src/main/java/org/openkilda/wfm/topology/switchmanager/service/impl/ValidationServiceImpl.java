@@ -16,7 +16,6 @@
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.info.meter.MeterEntry;
 import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.messaging.info.switches.MeterInfoEntry;
@@ -37,6 +36,11 @@ import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.share.service.SpeakerFlowSegmentRequestBuilder;
+import org.openkilda.wfm.topology.switchmanager.model.OfFlowAddress;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchValidateReport;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentEntry;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
 import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
@@ -132,6 +136,20 @@ public class ValidationServiceImpl implements ValidationService {
         }
 
         return requests;
+    }
+
+    @Override
+    public SwitchValidateReport validateSwitch(SpeakerSwitchSchema switchSchema) {
+        Map<OfFlowAddress, List<FlowEntry>> existingOfFlows = unpackOfFlows(switchSchema);
+
+        Set<OfFlowAddress> valid = new HashSet<>();
+        Set<OfFlowAddress> missing = new HashSet<>();
+        Set<OfFlowAddress> extra = new HashSet<>();
+        for (ValidateFlowSegmentEntry entry : switchSchema.getFlowSegments()) {
+
+        }
+
+        return null;
     }
 
     @Override
@@ -370,5 +388,24 @@ public class ValidationServiceImpl implements ValidationService {
             return Math.abs(actual - expected) <= expected * E_SWITCH_METER_BURST_SIZE_EQUALS_DELTA_COEFFICIENT;
         }
         return Math.abs(actual - expected) <= METER_BURST_SIZE_EQUALS_DELTA;
+    }
+
+    private Map<OfFlowAddress, List<FlowEntry>> unpackOfFlows(SpeakerSwitchSchema switchSchema) {
+        final Map<OfFlowAddress, List<FlowEntry>> ofFlows = new HashMap<>();
+
+        SwitchId datapath;
+        int tableId;
+        for (SwitchOfTableDump tableDump : switchSchema.getTables().values()) {
+            datapath = tableDump.getDatapath();
+            tableId = tableDump.getTableId();
+
+            for (FlowEntry entry : tableDump.getEntries()) {
+                OfFlowAddress key = new OfFlowAddress(tableId, entry.getCookie(), datapath);
+                ofFlows.computeIfAbsent(key, ignore -> new ArrayList<>())
+                        .add(entry);
+            }
+        }
+
+        return ofFlows;
     }
 }

@@ -15,22 +15,11 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.model.SwitchId;
-
 import lombok.Builder;
 import lombok.Value;
 
-import java.util.List;
-import java.util.Map;
-
 @Value
 @Builder
-public class SpeakerSwitchSchema {
-    private final SwitchId datapath;
-
-    private final SwitchDefaultFlowsSchema defaultFlowsSchema;
-    private final List<ValidateFlowSegmentEntry> flowSegments;
-
-    private final SwitchOfMeterDump meters;
-    private final Map<Integer, SwitchOfTableDump> tables;
+public class SwitchValidateReport {
+    List<>
 }

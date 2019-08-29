@@ -199,6 +199,7 @@ public class SchemaFetchHandler extends WorkerHandler {
         }
 
         SpeakerSwitchSchema.SpeakerSwitchSchemaBuilder schemaBuilder = SpeakerSwitchSchema.builder()
+                .datapath(switchId)
                 .flowSegments(ImmutableList.copyOf(ofSchema.values()))
                 .tables(ImmutableMap.copyOf(tableDumps));
         for (ResponseMapper mapper : otherResponses.values()) {
