@@ -16,7 +16,7 @@
 package org.openkilda.floodlight.converter;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
+import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
@@ -24,6 +24,8 @@ import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
 import net.floodlightcontroller.core.IOFSwitch;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.action.OFActionMeter;
@@ -32,24 +34,32 @@ import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyAct
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionMeter;
 import org.projectfloodlight.openflow.types.TableId;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class FlowSegmentSchemaMapper {
-    public static final FlowSegmentSchemaMapper INSTANCE = new FlowSegmentSchemaMapper();
+@Mapper
+public abstract class FlowSegmentSchemaMapper {
+    public static final FlowSegmentSchemaMapper INSTANCE = Mappers.getMapper(FlowSegmentSchemaMapper.class);
 
-    public FlowSegmentSchema toFlowSegmentSchema(IOFSwitch sw, MeterSchema meterSchema, List<OFFlowMod> ofRequests) {
-        ImmutableList<FlowSegmentSchemaEntry> entries = ImmutableList.copyOf(
+    public FlowSegmentSchema toFlowSegmentSchema(IOFSwitch sw, List<MeterSchema> meters, List<OFFlowMod> ofRequests) {
+        Map<MeterId, MeterSchema> metersMap = new HashMap<>();
+        for (MeterSchema entry : meters) {
+            metersMap.put(entry.getMeterId(), entry);
+        }
+
+        ImmutableList<OfFlowSchema> entries = ImmutableList.copyOf(
                 ofRequests.stream()
-                        .map(this::toFlowSegmentSchemaEntry)
+                        .map(item -> toFlowSegmentSchemaEntry(metersMap, item))
                         .collect(Collectors.toList()));
         SwitchId datapathId = new SwitchId(sw.getId().getLong());
         return new FlowSegmentSchema(datapathId, entries);
     }
 
-    public FlowSegmentSchemaEntry toFlowSegmentSchemaEntry(OFFlowMod ofRequest) {
-        FlowSegmentSchemaEntry.FlowSegmentSchemaEntryBuilder schemaEntry = FlowSegmentSchemaEntry.builder();
+    public OfFlowSchema toFlowSegmentSchemaEntry(Map<MeterId, MeterSchema> meters, OFFlowMod ofRequest) {
+        OfFlowSchema.FlowSegmentSchemaEntryBuilder schemaEntry = OfFlowSchema.builder();
 
         schemaEntry.tableId(Optional.ofNullable(ofRequest.getTableId())
                                     .map(TableId::getValue)
@@ -59,16 +69,17 @@ public class FlowSegmentSchemaMapper {
                                    .map(ofCookie -> new Cookie(ofCookie.getValue()))
                                    .orElse(new Cookie(0)));
 
-        decodeInstruction(ofRequest.getInstructions(), schemaEntry);
+        decodeInstruction(meters, ofRequest.getInstructions(), schemaEntry);
 
         return schemaEntry.build();
     }
 
     private void decodeInstruction(
-            List<OFInstruction> instructions, FlowSegmentSchemaEntry.FlowSegmentSchemaEntryBuilder schemaEntry) {
+            Map<MeterId, MeterSchema> meters, List<OFInstruction> instructions,
+            OfFlowSchema.FlowSegmentSchemaEntryBuilder schemaEntry) {
         for (OFInstruction instructionEntry : instructions) {
             if (instructionEntry instanceof OFInstructionMeter) {
-                decodeInstruction((OFInstructionMeter) instructionEntry, schemaEntry);
+                decodeInstruction(meters, (OFInstructionMeter) instructionEntry, schemaEntry);
             } else if (instructionEntry instanceof OFInstructionApplyActions) {
                 decodeInstruction((OFInstructionApplyActions) instructionEntry, schemaEntry);
             }
@@ -77,12 +88,15 @@ public class FlowSegmentSchemaMapper {
     }
 
     private void decodeInstruction(
-            OFInstructionMeter instruction, FlowSegmentSchemaEntry.FlowSegmentSchemaEntryBuilder schemaEntry) {
-        schemaEntry.meterId(new MeterId(instruction.getMeterId()));
+            Map<MeterId, MeterSchema> meters, OFInstructionMeter instruction,
+            OfFlowSchema.FlowSegmentSchemaEntryBuilder schemaEntry) {
+        MeterId flowMeterId = new MeterId(instruction.getMeterId());
+        schemaEntry.meterId(flowMeterId);
+        schemaEntry.meterSchema(meters.get(flowMeterId));
     }
 
     private void decodeInstruction(
-            OFInstructionApplyActions instruction, FlowSegmentSchemaEntry.FlowSegmentSchemaEntryBuilder schemaEntry) {
+            OFInstructionApplyActions instruction, OfFlowSchema.FlowSegmentSchemaEntryBuilder schemaEntry) {
         for (OFAction actionEntry : instruction.getActions()) {
             if (actionEntry instanceof OFActionMeter) {
                 decodeAction((OFActionMeter) actionEntry, schemaEntry);
@@ -91,7 +105,7 @@ public class FlowSegmentSchemaMapper {
         }
     }
 
-    private void decodeAction(OFActionMeter action, FlowSegmentSchemaEntry.FlowSegmentSchemaEntryBuilder schemaEntry) {
+    private void decodeAction(OFActionMeter action, OfFlowSchema.FlowSegmentSchemaEntryBuilder schemaEntry) {
         schemaEntry.meterId(new MeterId(action.getMeterId()));
     }
 

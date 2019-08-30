@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
-import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
+import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.floodlight.api.request.DefaultFlowsSchemaRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.MetersDumpRequest;
@@ -183,7 +183,7 @@ public class SchemaFetchHandler extends WorkerHandler {
 
         ofSchema.put(blank.getCommandId(), new ValidateFlowSegmentEntry(blank, schema));
 
-        for (FlowSegmentSchemaEntry entry : schema.getEntries()) {
+        for (OfFlowSchema entry : schema.getEntries()) {
             requestOfTableDump((int) entry.getTableId());
             if (entry.getMeterId() != null) {
                 requestOther(RequestType.METERS);

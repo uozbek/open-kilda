@@ -16,18 +16,18 @@
 package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.floodlight.api.response.SpeakerMetersDumpResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.floodlight.command.SpeakerRemoteCommandReport;
-import org.openkilda.messaging.info.meter.MeterEntry;
 
 import java.util.List;
 
 public class MetersDumpReport extends SpeakerRemoteCommandReport {
     private final MetersDumpCommand command;
-    private final List<MeterEntry> entries;
+    private final List<MeterSchema> entries;
 
-    public MetersDumpReport(MetersDumpCommand command, List<MeterEntry> entries) {
+    public MetersDumpReport(MetersDumpCommand command, List<MeterSchema> entries) {
         this(command, entries, null);
     }
 
@@ -35,7 +35,7 @@ public class MetersDumpReport extends SpeakerRemoteCommandReport {
         this(command, null, error);
     }
 
-    private MetersDumpReport(MetersDumpCommand command, List<MeterEntry> entries, Exception error) {
+    private MetersDumpReport(MetersDumpCommand command, List<MeterSchema> entries, Exception error) {
         super(command, error);
         this.command = command;
         this.entries = entries;

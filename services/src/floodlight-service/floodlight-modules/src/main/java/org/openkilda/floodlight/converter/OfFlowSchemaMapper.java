@@ -13,30 +13,14 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command;
+package org.openkilda.floodlight.converter;
 
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
-@ToString
-@EqualsAndHashCode
-public abstract class SpeakerCommandReport {
-    private final Exception error;
+@Mapper
+public abstract class OfFlowSchemaMapper {
+    public static final OfFlowSchemaMapper INSTANCE = Mappers.getMapper(OfFlowSchemaMapper.class);
 
-    public SpeakerCommandReport() {
-        this(null);
-    }
-
-    public SpeakerCommandReport(Exception error) {
-        this.error = error;
-    }
-
-    /**
-     * Throw error if command ends with error.
-     */
-    public void raiseError() throws Exception {
-        if (error != null) {
-            throw error;
-        }
-    }
+    // TODO
 }

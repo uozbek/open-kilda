@@ -15,6 +15,7 @@
 
 package org.openkilda.floodlight.api.response;
 
+import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.info.meter.MeterEntry;
 import org.openkilda.model.SwitchId;
@@ -32,7 +33,7 @@ import java.util.UUID;
 @ToString(callSuper = true)
 public class SpeakerMetersDumpResponse extends SpeakerResponse {
     @JsonProperty("entries")
-    private final List<MeterEntry> entries;
+    private final List<MeterSchema> entries;
 
     @Builder
     @JsonCreator
@@ -40,7 +41,7 @@ public class SpeakerMetersDumpResponse extends SpeakerResponse {
             @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("entries") List<MeterEntry> entries) {
+            @JsonProperty("entries") List<MeterSchema> entries) {
         super(messageContext, commandId, switchId);
         this.entries = entries;
     }

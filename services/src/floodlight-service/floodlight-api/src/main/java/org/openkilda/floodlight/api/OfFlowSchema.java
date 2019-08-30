@@ -29,11 +29,13 @@ import java.io.Serializable;
 @Value
 @Builder
 @JsonNaming(value = SnakeCaseStrategy.class)
-public class FlowSegmentSchemaEntry implements Serializable {
+public class OfFlowSchema implements Serializable {
     @NonNull
     private final short tableId;
     @NonNull
     private final Cookie cookie;
 
     private final MeterId meterId;
+
+    private final MeterSchema meterSchema;
 }

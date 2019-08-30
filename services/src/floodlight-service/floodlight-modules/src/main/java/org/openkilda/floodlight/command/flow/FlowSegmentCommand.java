@@ -27,6 +27,7 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
+import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -67,8 +68,8 @@ public abstract class FlowSegmentCommand extends SpeakerRemoteCommand<FlowSegmen
     }
 
     protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(MeterReport meterReport, List<OFFlowMod> requests) {
-        MeterSchema meterSchema = meterReport != null ? meterReport.getSchema() : null;
-        FlowSegmentSchema schema = FlowSegmentSchemaMapper.INSTANCE.toFlowSegmentSchema(getSw(), meterSchema, requests);
+        List<MeterSchema> meters = meterReport != null ? ImmutableList.of(meterReport.getSchema()) : null;
+        FlowSegmentSchema schema = FlowSegmentSchemaMapper.INSTANCE.toFlowSegmentSchema(getSw(), meters, requests);
         return CompletableFuture.completedFuture(new FlowSegmentSchemaReport(this, schema));
     }
 

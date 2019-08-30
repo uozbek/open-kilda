@@ -26,6 +26,5 @@ import java.util.Collection;
 public class FlowSegmentSchema implements Serializable {
     private final SwitchId datapath;
 
-    private final MeterSchema meter;
-    private final Collection<FlowSegmentSchemaEntry> entries;
+    private final Collection<OfFlowSchema> entries;
 }

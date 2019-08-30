@@ -22,25 +22,52 @@ import org.openkilda.model.SwitchId;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
+import org.projectfloodlight.openflow.protocol.OFMeterConfig;
 import org.projectfloodlight.openflow.protocol.OFMeterFlags;
 import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
 import org.projectfloodlight.openflow.protocol.meterband.OFMeterBandDrop;
 import org.projectfloodlight.openflow.types.DatapathId;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public abstract class MeterSchemaMapper {
     public static final MeterSchemaMapper INSTANCE = Mappers.getMapper(MeterSchemaMapper.class);
+
+    public MeterSchema map(DatapathId datapath, OFMeterConfig meterConfig) {
+        MeterSchema.MeterSchemaBuilder schema = MeterSchema.builder()
+                .datapath(new SwitchId(datapath.getLong()))
+                .meterId(new MeterId(meterConfig.getMeterId()));
+
+        fillFlags(schema, meterConfig.getFlags());
+        fillBands(schema, meterConfig.getEntries());
+
+        return schema.build();
+    }
 
     public MeterSchema map(DatapathId datapath, OFMeterMod meterMod) {
         MeterSchema.MeterSchemaBuilder schema = MeterSchema.builder()
                 .datapath(new SwitchId(datapath.getLong()))
                 .meterId(new MeterId(meterMod.getMeterId()));
+        fillFlags(schema, meterMod.getFlags());
+        fillBands(schema, meterMod.getBands());
+        return schema.build();
+    }
 
-        for (OFMeterFlags flag : meterMod.getFlags()) {
-            schema.flag(mapFlag(flag));
+    public String mapFlag(OFMeterFlags value) {
+        return value.name();
+    }
+
+    private void fillFlags(MeterSchema.MeterSchemaBuilder schema, Collection<OFMeterFlags> flagsSet) {
+        for (OFMeterFlags entry : flagsSet) {
+            schema.flag(mapFlag(entry));
         }
-        for (OFMeterBand rawBand : meterMod.getBands()) {
+    }
+
+    private void fillBands(MeterSchema.MeterSchemaBuilder schema, List<OFMeterBand> bandsSequence) {
+        for (OFMeterBand rawBand : bandsSequence) {
             MeterSchemaBand.MeterSchemaBandBuilder band = MeterSchemaBand.builder()
                     .type(rawBand.getType());
             if (rawBand instanceof OFMeterBandDrop) {
@@ -49,12 +76,8 @@ public abstract class MeterSchemaMapper {
                 band.burstSize(actualBand.getBurstSize());
             }
             // do not make detailed parsing of other meter's band types
+
+            schema.band(band.build());
         }
-
-        return schema.build();
-    }
-
-    public String mapFlag(OFMeterFlags value) {
-        return value.name();
     }
 }

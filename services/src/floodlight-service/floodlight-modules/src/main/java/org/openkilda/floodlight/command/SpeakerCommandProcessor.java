@@ -54,7 +54,14 @@ public class SpeakerCommandProcessor {
         }
     }
 
+    // TODO(surabujin) redesign report(command) hierarchy, there should no be internal/remote variants
     private void handleResult(SpeakerCommandReport report, String kafkaKey) {
+        if (report instanceof SpeakerRemoteCommandReport) {
+            handleResult((SpeakerRemoteCommandReport) report, kafkaKey);
+        }
+    }
+
+    private void handleResult(SpeakerRemoteCommandReport report, String kafkaKey) {
         KafkaUtilityService kafkaUtil = moduleContext.getServiceImpl(KafkaUtilityService.class);
         IKafkaProducerService kafkaProducer = moduleContext.getServiceImpl(IKafkaProducerService.class);
         report.reply(kafkaUtil.getKafkaChannel(), kafkaProducer, kafkaKey);

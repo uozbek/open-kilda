@@ -15,26 +15,24 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.OfFlowSchema;
-import org.openkilda.messaging.info.rule.FlowEntry;
-import org.openkilda.model.SwitchId;
-
 import lombok.AllArgsConstructor;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
-@Value
+@Getter
+@ToString
+@EqualsAndHashCode
 @AllArgsConstructor
-public class OfFlowReference {
-    private final int tableId;
-    private final long cookie;
-    private final SwitchId datapath;
+public abstract class ValidateDefect<T> {
+    protected final T actual;
+    protected final T expected;
 
-    public OfFlowReference(FlowSegmentSchema schema, OfFlowSchema entry) {
-        this(entry.getTableId(), entry.getCookie().getValue(), schema.getDatapath());
+    public boolean isMissing() {
+        return actual == null;
     }
 
-    public OfFlowReference(SwitchId datapath, FlowEntry entry) {
-        this((int) entry.getTableId(), entry.getCookie(), datapath);
+    public boolean isInvalid() {
+        return actual != null && expected != null;
     }
 }

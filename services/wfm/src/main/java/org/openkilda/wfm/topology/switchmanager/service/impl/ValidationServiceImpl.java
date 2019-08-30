@@ -16,7 +16,7 @@
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
 import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.FlowSegmentSchemaEntry;
+import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.messaging.info.meter.MeterEntry;
 import org.openkilda.messaging.info.rule.FlowEntry;
@@ -44,16 +44,13 @@ import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchDefaultFlowsSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateDefaultFlowsReport;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateDefaultFlowsReport.ValidateDefaultFlowsReportBuilder;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentEntry;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport.ValidateSwitchReportBuilder;
 import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
 
-import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -157,50 +154,16 @@ public class ValidationServiceImpl implements ValidationService {
 
         ValidateSwitchReport.ValidateSwitchReportBuilder switchReport = ValidateSwitchReport.builder();
 
-        // verify methods alter existingOfFlows list (remove matching entries)
         verifyCookieCollisions(switchReport, existingOfFlows);
+        verifyMeterCollisions(switchReport, existingOfFlows);
+
+        // verify methods alter existingOfFlows list (remove matching entries)
         verifyFlowSegments(switchReport, switchSchema.getFlowSegments(), existingOfFlows);
         verifyDefaultFlows(switchReport, switchSchema.getDefaultFlowsSchema(), existingOfFlows);
 
         // TODO
 
         return null;
-    }
-
-    private ValidateRulesResult makeRulesResponse(Set<Long> expectedCookies, List<FlowEntry> presentRules,
-                                                  List<FlowEntry> expectedDefaultRules, SwitchId switchId) {
-        Set<Long> presentCookies = presentRules.stream()
-                .map(FlowEntry::getCookie)
-                .filter(cookie -> !Cookie.isDefaultRule(cookie))
-                .collect(Collectors.toSet());
-
-        Set<Long> missingRules = new HashSet<>(expectedCookies);
-        missingRules.removeAll(presentCookies);
-        if (! missingRules.isEmpty() && log.isErrorEnabled()) {
-            log.error("On switch {} the following rules are missed: {}", switchId,
-                    cookiesIntoLogRepresentation(missingRules));
-        }
-
-        Set<Long> properRules = new HashSet<>(expectedCookies);
-        properRules.retainAll(presentCookies);
-
-        Set<Long> excessRules = new HashSet<>(presentCookies);
-        excessRules.removeAll(expectedCookies);
-        if (!excessRules.isEmpty() && log.isWarnEnabled()) {
-            log.warn("On switch {} the following rules are excessive: {}", switchId,
-                    cookiesIntoLogRepresentation(excessRules));
-        }
-
-        Set<Long> misconfiguredRules = new HashSet<>();
-
-        validateDefaultRules(presentRules, expectedDefaultRules, missingRules, properRules, excessRules,
-                misconfiguredRules);
-
-        return new ValidateRulesResult(
-                ImmutableList.copyOf(missingRules),
-                ImmutableList.copyOf(properRules),
-                ImmutableList.copyOf(excessRules),
-                ImmutableList.copyOf(misconfiguredRules));
     }
 
     private static String cookiesIntoLogRepresentation(Collection<Long> rules) {
@@ -378,6 +341,16 @@ public class ValidationServiceImpl implements ValidationService {
         }
     }
 
+    private void verifyMeterCollisions(
+            ValidateSwitchReportBuilder switchReport, Map<OfFlowReference, List<FlowEntry>> existingOfFlows) {
+        Map<MeterId, Integer> meterUsageMap = new HashMap<>();
+        for (List<FlowEntry> entryByRef : existingOfFlows.values()) {
+            for (FlowEntry entry : entryByRef) {
+                // TODO
+            }
+        }
+    }
+
     private void verifyFlowSegments(
             ValidateSwitchReport.ValidateSwitchReportBuilder switchReport, List<ValidateFlowSegmentEntry> flowSegments,
             Map<OfFlowReference, List<FlowEntry>> existingOfFlows) {
@@ -388,7 +361,7 @@ public class ValidationServiceImpl implements ValidationService {
                     .requestBlank(segment.getRequestBlank());
 
             FlowSegmentSchema schema = segment.getSchema();
-            for (FlowSegmentSchemaEntry entry : schema.getEntries()) {
+            for (OfFlowSchema entry : schema.getEntries()) {
                 OfFlowReference ref = new OfFlowReference(schema, entry);
                 FlowSegmentEntryEqualDetector equalDetector = new FlowSegmentEntryEqualDetector(entry);
                 if (removeFirstOfFlowMatch(existingOfFlows, ref, equalDetector)) {
@@ -452,7 +425,7 @@ public class ValidationServiceImpl implements ValidationService {
 
     @AllArgsConstructor
     private static class FlowSegmentEntryEqualDetector extends SchemaEqualDetector {
-        private final FlowSegmentSchemaEntry schemaEntry;
+        private final OfFlowSchema schemaEntry;
 
         @Override
         boolean isEquals(FlowEntry actualEntry) {

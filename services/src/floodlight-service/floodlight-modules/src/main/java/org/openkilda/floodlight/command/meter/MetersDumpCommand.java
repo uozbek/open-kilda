@@ -15,8 +15,10 @@
 
 package org.openkilda.floodlight.command.meter;
 
+import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.SpeakerRemoteCommand;
+import org.openkilda.floodlight.converter.MeterSchemaMapper;
 import org.openkilda.floodlight.converter.OfMeterConverter;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
@@ -56,17 +58,17 @@ public class MetersDumpCommand extends SpeakerRemoteCommand<MetersDumpReport> {
                 .thenApply(this::makeSuccessReport);
     }
 
-    private List<MeterEntry> handleMetersDump(List<OFMeterConfigStatsReply> replyChain) {
-        List<MeterEntry> meters = new ArrayList<>();
+    private List<MeterSchema> handleMetersDump(List<OFMeterConfigStatsReply> replyChain) {
+        List<MeterSchema> meters = new ArrayList<>();
         for (OFMeterConfigStatsReply reply : replyChain) {
             for (OFMeterConfig entry : reply.getEntries()) {
-                meters.add(OfMeterConverter.toMeterEntry(entry));
+                meters.add(MeterSchemaMapper.INSTANCE.map(getSw().getId(), entry));
             }
         }
         return meters;
     }
 
-    private MetersDumpReport makeSuccessReport(List<MeterEntry> meters) {
+    private MetersDumpReport makeSuccessReport(List<MeterSchema> meters) {
         return new MetersDumpReport(this, meters);
     }
 

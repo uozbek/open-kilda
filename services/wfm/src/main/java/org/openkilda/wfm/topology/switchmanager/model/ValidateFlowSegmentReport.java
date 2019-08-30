@@ -16,6 +16,7 @@
 package org.openkilda.wfm.topology.switchmanager.model;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.model.MeterId;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -34,4 +35,9 @@ public class ValidateFlowSegmentReport {
     private final List<OfFlowReference> properFlows;
     @Singular
     private final List<OfFlowReference> missingFlows;
+
+    @Singular
+    private final List<MeterId> properMeters;
+    @Singular
+    private final List<MeterDefect> meters;
 }
