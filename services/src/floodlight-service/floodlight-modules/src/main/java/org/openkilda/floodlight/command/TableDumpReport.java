@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command;
 
 import org.openkilda.floodlight.KafkaChannel;
+import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.floodlight.api.response.SpeakerTableDumpResponse;
 import org.openkilda.messaging.info.rule.FlowEntry;
@@ -25,9 +26,9 @@ import java.util.List;
 public class TableDumpReport extends SpeakerRemoteCommandReport {
     private final TableDumpCommand command;
 
-    private final List<FlowEntry> entries;
+    private final List<OfFlowSchema> entries;
 
-    public TableDumpReport(TableDumpCommand command, List<FlowEntry> entries) {
+    public TableDumpReport(TableDumpCommand command, List<OfFlowSchema> entries) {
         this(command, entries, null);
     }
 
@@ -35,7 +36,7 @@ public class TableDumpReport extends SpeakerRemoteCommandReport {
         this(command, null, error);
     }
 
-    private TableDumpReport(TableDumpCommand command, List<FlowEntry> entries, Exception error) {
+    private TableDumpReport(TableDumpCommand command, List<OfFlowSchema> entries, Exception error) {
         super(command, error);
         this.command = command;
         this.entries = entries;

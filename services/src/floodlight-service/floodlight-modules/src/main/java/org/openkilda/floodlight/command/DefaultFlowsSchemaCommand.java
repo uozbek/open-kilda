@@ -15,6 +15,8 @@
 
 package org.openkilda.floodlight.command;
 
+import org.openkilda.floodlight.api.OfFlowSchema;
+import org.openkilda.floodlight.converter.OfFlowSchemaMapper;
 import org.openkilda.floodlight.converter.OfFlowStatsMapper;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.SwitchOperationException;
@@ -52,7 +54,7 @@ public class DefaultFlowsSchemaCommand extends SpeakerRemoteCommand<DefaultFlows
     @Override
     protected CompletableFuture<DefaultFlowsSchemaReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor)
             throws Exception {
-        List<FlowEntry> entries = evaluateSchema();
+        List<OfFlowSchema> entries = evaluateSchema();
         DefaultFlowsSchemaReport report = new DefaultFlowsSchemaReport(this, entries);
         return CompletableFuture.completedFuture(report);
     }
@@ -63,11 +65,11 @@ public class DefaultFlowsSchemaCommand extends SpeakerRemoteCommand<DefaultFlows
         switchManager = moduleContext.getServiceImpl(ISwitchManager.class);
     }
 
-    private List<FlowEntry> evaluateSchema() throws SwitchOperationException {
+    private List<OfFlowSchema> evaluateSchema() throws SwitchOperationException {
         log.debug("Loading expected default rules for switch {}", switchId);
 
         return switchManager.getExpectedDefaultFlows(DatapathId.of(switchId.toLong())).stream()
-                .map(OfFlowStatsMapper.INSTANCE::toFlowEntry)
+                .map(OfFlowSchemaMapper.INSTANCE::map)
                 .collect(Collectors.toList());
     }
 

@@ -20,6 +20,7 @@ import lombok.Value;
 import java.util.List;
 
 @Value
+@Deprecated
 public class ValidateRulesResult {
 
     private List<Long> missingRules;

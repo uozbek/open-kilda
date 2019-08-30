@@ -15,6 +15,8 @@
 
 package org.openkilda.floodlight.command;
 
+import org.openkilda.floodlight.api.OfFlowSchema;
+import org.openkilda.floodlight.converter.OfFlowSchemaMapper;
 import org.openkilda.floodlight.converter.OfFlowStatsMapper;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
@@ -59,17 +61,17 @@ public class TableDumpCommand extends SpeakerRemoteCommand<TableDumpReport> {
                 .thenApply(this::makeSuccessResponse);
     }
 
-    private List<FlowEntry> handleFlowsDump(List<OFFlowStatsReply> replyChain) {
-        List<FlowEntry> flows = new ArrayList<>();
+    private List<OfFlowSchema> handleFlowsDump(List<OFFlowStatsReply> replyChain) {
+        List<OfFlowSchema> flows = new ArrayList<>();
         for (OFFlowStatsReply reply : replyChain) {
             for (OFFlowStatsEntry entry : reply.getEntries()) {
-                flows.add(OfFlowStatsMapper.INSTANCE.toFlowEntry(entry));
+                flows.add(OfFlowSchemaMapper.INSTANCE.map(entry));
             }
         }
         return flows;
     }
 
-    private TableDumpReport makeSuccessResponse(List<FlowEntry> dump) {
+    private TableDumpReport makeSuccessResponse(List<OfFlowSchema> dump) {
         return new TableDumpReport(this, dump);
     }
 

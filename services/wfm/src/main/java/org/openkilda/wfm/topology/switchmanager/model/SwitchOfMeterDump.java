@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
+import org.openkilda.floodlight.api.MeterSchema;
 import org.openkilda.messaging.info.meter.MeterEntry;
 import org.openkilda.model.SwitchId;
 
@@ -26,5 +27,5 @@ import java.util.List;
 public class SwitchOfMeterDump {
     private final SwitchId data;
 
-    private final List<MeterEntry> entries;
+    private final List<MeterSchema> entries;
 }

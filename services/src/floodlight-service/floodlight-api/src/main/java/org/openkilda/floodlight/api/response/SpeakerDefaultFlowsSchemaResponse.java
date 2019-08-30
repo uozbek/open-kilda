@@ -15,6 +15,7 @@
 
 package org.openkilda.floodlight.api.response;
 
+import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
@@ -32,7 +33,7 @@ import java.util.UUID;
 @ToString(callSuper = true)
 public class SpeakerDefaultFlowsSchemaResponse extends SpeakerResponse {
     @JsonProperty("entries")
-    private final List<FlowEntry> entries;
+    private final List<OfFlowSchema> entries;
 
     @Builder
     @JsonCreator
@@ -40,7 +41,7 @@ public class SpeakerDefaultFlowsSchemaResponse extends SpeakerResponse {
             @JsonProperty("message_context") MessageContext messageContext,
             @JsonProperty("command_id") UUID commandId,
             @JsonProperty("switch_id") SwitchId switchId,
-            @JsonProperty("entries") List<FlowEntry> entries) {
+            @JsonProperty("entries") List<OfFlowSchema> entries) {
         super(messageContext, commandId, switchId);
         this.entries = entries;
     }

@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
+import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
 
@@ -27,5 +28,5 @@ public class SwitchOfTableDump {
     private final SwitchId datapath;
     private final int tableId;
 
-    private List<FlowEntry> entries;
+    private List<OfFlowSchema> entries;
 }

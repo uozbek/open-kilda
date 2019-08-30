@@ -22,6 +22,7 @@ import lombok.Value;
 import java.util.List;
 
 @Value
+@Deprecated
 public class ValidationResult {
     List<FlowEntry> flowEntries;
     boolean processMeters;

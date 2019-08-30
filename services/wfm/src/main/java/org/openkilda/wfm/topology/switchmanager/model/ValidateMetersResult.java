@@ -22,6 +22,7 @@ import lombok.Value;
 import java.util.List;
 
 @Value
+@Deprecated
 public class ValidateMetersResult {
 
     private List<MeterInfoEntry> missingMeters;
