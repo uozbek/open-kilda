@@ -68,7 +68,7 @@ public class SwitchValidateServiceImplTest {
     private PersistenceManager persistenceManager;
 
     @Mock
-    private ValidationServiceImpl validationService;
+    private ValidateServiceImpl validationService;
 
     @Mock
     private SwitchManagerCarrier carrier;

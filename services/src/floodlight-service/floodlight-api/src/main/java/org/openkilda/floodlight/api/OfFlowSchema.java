@@ -27,7 +27,7 @@ import lombok.Value;
 import java.io.Serializable;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 @JsonNaming(value = SnakeCaseStrategy.class)
 public class OfFlowSchema implements Serializable {
     @NonNull

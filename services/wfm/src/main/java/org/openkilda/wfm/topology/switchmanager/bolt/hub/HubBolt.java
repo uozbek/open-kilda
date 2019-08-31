@@ -71,16 +71,9 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     private transient SwitchValidateService validateService;
     private transient SwitchSyncService syncService;
 
-    private long flowMeterMinBurstSizeInKbits;
-    private double flowMeterBurstCoefficient;
-
-    public HubBolt(org.openkilda.wfm.share.hubandspoke.HubBolt.Config hubConfig, PersistenceManager persistenceManager,
-                   long flowMeterMinBurstSizeInKbits, double flowMeterBurstCoefficient,
-                   FlowResourcesConfig flowResourcesConfig) {
+    public HubBolt(Config hubConfig, PersistenceManager persistenceManager, FlowResourcesConfig flowResourcesConfig) {
         super(hubConfig);
         this.persistenceManager = persistenceManager;
-        this.flowMeterMinBurstSizeInKbits = flowMeterMinBurstSizeInKbits;
-        this.flowMeterBurstCoefficient = flowMeterBurstCoefficient;
         this.flowResourcesConfig = flowResourcesConfig;
     }
 
@@ -149,20 +142,10 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
         syncService.handleSwitchSync(key, request, validationResult);
     }
 
-    @Override
-    public long getFlowMeterMinBurstSizeInKbits() {
-        return flowMeterMinBurstSizeInKbits;
-    }
-
-    @Override
-    public double getFlowMeterBurstCoefficient() {
-        return flowMeterBurstCoefficient;
-    }
-
     // -- commands processing --
 
     public void processSwitchSchemaDump(String key, SpeakerSwitchSchema switchSchema) {
-        validateService.handleSwitchSchemaDump(key, switchSchema);
+        validateService.handleSwitchSchema(key, switchSchema);
     }
 
     public void processValidateWorkerError(String key, String errorMessage) {

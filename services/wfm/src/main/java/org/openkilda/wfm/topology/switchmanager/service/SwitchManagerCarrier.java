@@ -30,13 +30,10 @@ public interface SwitchManagerCarrier {
 
     void response(String key, Message message);
 
+    // FIXME
     void cancelTimeoutCallback(String key);
 
     CommandContext getCommandContext();
-
-    long getFlowMeterMinBurstSizeInKbits();
-
-    double getFlowMeterBurstCoefficient();
 
     void runSwitchSync(String key, SwitchValidateRequest request, ValidationResult validationResult);
 

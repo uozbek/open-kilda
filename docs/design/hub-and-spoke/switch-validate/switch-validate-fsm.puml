@@ -5,7 +5,7 @@ title Switch validate FSM
 INIT --> FETCH_SCHEMA
 
 FETCH_SCHEMA --> ERROR : error\ntimeout
-FETCH_SCHEMA --> VALIDATE : complete
+FETCH_SCHEMA --> VALIDATE : switch_schema
 FETCH_SCHEMA : enter / schema-request
 
 VALIDATE --> [*]

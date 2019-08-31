@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -15,18 +16,16 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.floodlight.api.MeterSchema;
-import org.openkilda.model.MeterId;
+import org.openkilda.floodlight.api.OfFlowSchema;
 
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import lombok.Value;
+
+import java.util.List;
 
 @Value
 @Builder
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-public class MeterDefect extends ValidateDefect<MeterSchema> {
-    private final MeterId meterId;
+public class OfFlowMissing {
+    private final OfFlowReference reference;
+    private final List<OfFlowSchema> partialMatches;
 }

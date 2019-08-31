@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class IngressFlowSegmentInstallCommandTest extends AbstractIngressFlowSegmentInstallCommandTest {
+public class IngressFlowSegmentInstallCommandTest extends IngressFlowSegmentInstallTest {
     @Test
     public void happyPathDefaultPort() throws Exception {
         IngressFlowSegmentInstallCommand command = makeCommand(endpointZeroVlan, meterConfig);

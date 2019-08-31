@@ -15,24 +15,19 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Singular;
+import lombok.Value;
 
-@Getter
-@ToString
-@EqualsAndHashCode
-@AllArgsConstructor
-public abstract class ValidateDefect<T> {
-    protected final T actual;
-    protected final T expected;
+import java.util.List;
 
-    public boolean isMissing() {
-        return actual == null;
-    }
+@Value
+@Builder
+public class MeterCollision {
+    @NonNull
+    private final OfMeterReference ref;
 
-    public boolean isInvalid() {
-        return actual != null && expected != null;
-    }
+    @Singular
+    private final List<OfFlowReference> usages;
 }

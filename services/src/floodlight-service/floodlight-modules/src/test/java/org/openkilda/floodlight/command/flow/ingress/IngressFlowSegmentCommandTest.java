@@ -29,7 +29,7 @@ import org.projectfloodlight.openflow.types.TableId;
 
 import java.util.concurrent.CompletableFuture;
 
-abstract class AbstractIngressFlowSegmentCommandTest extends AbstractSpeakerCommandTest {
+abstract class IngressFlowSegmentCommandTest extends AbstractSpeakerCommandTest {
     protected final MessageContext messageContext = new MessageContext();
     protected final FlowEndpoint endpointZeroVlan = new FlowEndpoint(mapSwitchId(dpId), 4, 0, 0);
     protected final FlowEndpoint endpointSingleVlan = new FlowEndpoint(mapSwitchId(dpId), 4, 64, 0);

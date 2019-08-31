@@ -43,17 +43,13 @@ import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
 import java.util.List;
 import java.util.Set;
 
-abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
+abstract class MeterBlankCommand extends MeterCommand<MeterReport> {
     // payload
     protected final MeterConfig meterConfig;
 
-    // operation data
-    private SwitchManagerConfig switchManagerConfig;
-    @Getter(AccessLevel.PROTECTED)
-    private Set<SpeakerSwitchView.Feature> switchFeatures;
-
     MeterBlankCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
-        super(messageContext, switchId);
+        // TODO: get rid from null argument (rework hierarchy/make meter commands "remote")
+        super(messageContext, switchId, null);
         this.meterConfig = meterConfig;
     }
 
@@ -72,6 +68,7 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
     }
 
     List<OFMeterBand> makeMeterBands() {
+        SwitchManagerConfig switchManagerConfig = getSwitchManagerConfig();
         long burstSize = Meter.calculateBurstSize(
                 meterConfig.getBandwidth(), switchManagerConfig.getFlowMeterMinBurstSizeInKbits(),
                 switchManagerConfig.getFlowMeterBurstCoefficient(),
@@ -86,23 +83,5 @@ abstract class MeterBlankCommand extends SpeakerCommand<MeterReport> {
                 .setRate(meterConfig.getBandwidth())
                 .setBurstSize(burstSize)
                 .build());
-    }
-
-    @Override
-    protected void setup(FloodlightModuleContext moduleContext) throws SwitchNotFoundException {
-        super.setup(moduleContext);
-
-        FloodlightModuleConfigurationProvider provider =
-                FloodlightModuleConfigurationProvider.of(moduleContext, SwitchManager.class);
-        switchManagerConfig = provider.getConfiguration(SwitchManagerConfig.class);
-
-        FeatureDetectorService featuresDetector = moduleContext.getServiceImpl(FeatureDetectorService.class);
-        switchFeatures = featuresDetector.detectSwitch(getSw());
-    }
-
-    void ensureSwitchSupportMeters() throws UnsupportedSwitchOperationException {
-        if (!switchFeatures.contains(Feature.METERS)) {
-            throw new UnsupportedSwitchOperationException(getSw().getId(), "Switch doesn't support meters");
-        }
     }
 }

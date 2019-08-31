@@ -28,9 +28,10 @@ import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchVali
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateFsmFactory;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchValidateService;
-import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
+import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +47,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
     private Map<String, SwitchValidateFsm> fsms = new HashMap<>();
 
     @VisibleForTesting
-    ValidationService validationService;
+    ValidateService validationService;
     private SwitchManagerCarrier carrier;
     private SwitchValidateFsmFactory fsmFactory;
 
@@ -54,7 +55,7 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
             SwitchManagerCarrier carrier, FlowResourcesConfig resourcesConfig, PersistenceManager persistenceManager) {
         this.carrier = carrier;
 
-        validationService = new ValidationServiceImpl(resourcesConfig, persistenceManager);
+        validationService = new ValidateServiceImpl(resourcesConfig, persistenceManager);
         fsmFactory = SwitchValidateFsm.factory(carrier, validationService);
     }
 
@@ -132,6 +133,14 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
 
         fsm.fire(SwitchValidateEvent.ERROR, message);
         skipIntermediateStates(fsm);
+    }
+
+    @Override
+    public void handleSwitchSchema(String key, SpeakerSwitchSchema switchSchema) {
+        SwitchValidateContext context = SwitchValidateContext.builder()
+                .switchSchema(switchSchema)
+                .build();
+        feedFsm(key, SwitchValidateEvent.SWITCH_SCHEMA, context);
     }
 
     @Override

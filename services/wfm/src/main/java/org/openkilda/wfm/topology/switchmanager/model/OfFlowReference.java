@@ -18,6 +18,7 @@ package org.openkilda.wfm.topology.switchmanager.model;
 import org.openkilda.floodlight.api.FlowSegmentSchema;
 import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.messaging.info.rule.FlowEntry;
+import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 
 import lombok.AllArgsConstructor;
@@ -27,14 +28,14 @@ import lombok.Value;
 @AllArgsConstructor
 public class OfFlowReference {
     private final int tableId;
-    private final long cookie;
+    private final Cookie cookie;
     private final SwitchId datapath;
 
     public OfFlowReference(FlowSegmentSchema schema, OfFlowSchema entry) {
-        this(entry.getTableId(), entry.getCookie().getValue(), schema.getDatapath());
+        this(entry.getTableId(), entry.getCookie(), schema.getDatapath());
     }
 
-    public OfFlowReference(SwitchId datapath, FlowEntry entry) {
-        this((int) entry.getTableId(), entry.getCookie(), datapath);
+    public OfFlowReference(SwitchId datapath, OfFlowSchema entry) {
+        this(entry.getTableId(), entry.getCookie(), datapath);
     }
 }

@@ -36,13 +36,13 @@ import java.util.List;
 public abstract class MeterSchemaMapper {
     public static final MeterSchemaMapper INSTANCE = Mappers.getMapper(MeterSchemaMapper.class);
 
-    public MeterSchema map(DatapathId datapath, OFMeterConfig meterConfig) {
+    public MeterSchema map(DatapathId datapath, OFMeterConfig meterConfig, boolean isInaccurate) {
         MeterSchema.MeterSchemaBuilder schema = MeterSchema.builder()
                 .datapath(new SwitchId(datapath.getLong()))
                 .meterId(new MeterId(meterConfig.getMeterId()));
 
         fillFlags(schema, meterConfig.getFlags());
-        fillBands(schema, meterConfig.getEntries());
+        fillBands(schema, meterConfig.getEntries(), isInaccurate);
 
         return schema.build();
     }
@@ -67,9 +67,15 @@ public abstract class MeterSchemaMapper {
     }
 
     private void fillBands(MeterSchema.MeterSchemaBuilder schema, List<OFMeterBand> bandsSequence) {
+        fillBands(schema, bandsSequence, false);
+    }
+
+    private void fillBands(
+            MeterSchema.MeterSchemaBuilder schema, List<OFMeterBand> bandsSequence, boolean isInaccurate) {
         for (OFMeterBand rawBand : bandsSequence) {
             MeterSchemaBand.MeterSchemaBandBuilder band = MeterSchemaBand.builder()
-                    .type(rawBand.getType());
+                    .type(rawBand.getType())
+                    .inaccurate(isInaccurate);
             if (rawBand instanceof OFMeterBandDrop) {
                 OFMeterBandDrop actualBand = (OFMeterBandDrop) rawBand;
                 band.rate(actualBand.getRate());

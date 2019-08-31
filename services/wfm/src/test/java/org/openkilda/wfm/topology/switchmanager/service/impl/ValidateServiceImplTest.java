@@ -38,7 +38,7 @@ import org.openkilda.persistence.repositories.FlowPathRepository;
 import org.openkilda.persistence.repositories.RepositoryFactory;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
-import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
+import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -49,7 +49,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public class ValidationServiceImplTest {
+public class ValidateServiceImplTest {
 
     private static final SwitchId SWITCH_ID_A = new SwitchId("00:10");
     private static final SwitchId SWITCH_ID_B = new SwitchId("00:20");
@@ -60,7 +60,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateRulesEmpty() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         ValidateRulesResult response = validationService.validateRules(SWITCH_ID_A, emptyList(), emptyList());
         assertTrue(response.getMissingRules().isEmpty());
         assertTrue(response.getProperRules().isEmpty());
@@ -69,8 +69,8 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateRulesSimpleSegmentCookies() {
-        ValidationService validationService =
-                new ValidationServiceImpl(persistenceManager().withSegmentsCookies(2L, 3L).build());
+        ValidateService validationService =
+                new ValidateServiceImpl(persistenceManager().withSegmentsCookies(2L, 3L).build());
         List<FlowEntry> flowEntries =
                 Lists.newArrayList(FlowEntry.builder().cookie(1L).build(), FlowEntry.builder().cookie(2L).build());
         ValidateRulesResult response = validationService.validateRules(SWITCH_ID_A, flowEntries, emptyList());
@@ -81,8 +81,8 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateRulesSegmentAndIngressCookies() {
-        ValidationService validationService =
-                new ValidationServiceImpl(persistenceManager().withSegmentsCookies(2L).withIngressCookies(1L).build());
+        ValidateService validationService =
+                new ValidateServiceImpl(persistenceManager().withSegmentsCookies(2L).withIngressCookies(1L).build());
         List<FlowEntry> flowEntries =
                 Lists.newArrayList(FlowEntry.builder().cookie(1L).build(), FlowEntry.builder().cookie(2L).build());
         ValidateRulesResult response = validationService.validateRules(SWITCH_ID_A, flowEntries, emptyList());
@@ -93,7 +93,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateDefaultRules() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         List<FlowEntry> flowEntries =
                 Lists.newArrayList(FlowEntry.builder().cookie(0x8000000000000001L).priority(1).byteCount(123).build(),
                         FlowEntry.builder().cookie(0x8000000000000001L).priority(2).build(),
@@ -115,7 +115,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateMetersEmpty() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         ValidateMetersResult response = validationService.validateMeters(SWITCH_ID_A, new ArrayList<>(),
                 MIN_BURST_SIZE_IN_KBITS, BURST_COEFFICIENT);
         assertTrue(response.getMissingMeters().isEmpty());
@@ -126,7 +126,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateMetersProperMeters() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         ValidateMetersResult response = validationService.validateMeters(SWITCH_ID_B,
                 Lists.newArrayList(new MeterEntry(32, 10000, 10500, "OF_13", new String[]{"KBPS", "BURST", "STATS"})),
                 MIN_BURST_SIZE_IN_KBITS, BURST_COEFFICIENT);
@@ -139,7 +139,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateMetersMisconfiguredMeters() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         ValidateMetersResult response = validationService.validateMeters(SWITCH_ID_B,
                 Lists.newArrayList(new MeterEntry(32, 10000, 10498, "OF_13", new String[]{"KBPS", "BURST", "STATS"})),
                 MIN_BURST_SIZE_IN_KBITS, BURST_COEFFICIENT);
@@ -153,7 +153,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateMetersMissingAndExcessMeters() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         ValidateMetersResult response = validationService.validateMeters(SWITCH_ID_B,
                 Lists.newArrayList(new MeterEntry(33, 10000, 10500, "OF_13", new String[]{"KBPS", "BURST", "STATS"})),
                 MIN_BURST_SIZE_IN_KBITS, BURST_COEFFICIENT);
@@ -167,7 +167,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateMetersIgnoreDefaultMeters() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         ValidateMetersResult response = validationService.validateMeters(SWITCH_ID_B,
                 Lists.newArrayList(new MeterEntry(2, 0, 0, null, null), new MeterEntry(3, 0, 0, null, null)),
                 MIN_BURST_SIZE_IN_KBITS, BURST_COEFFICIENT);
@@ -180,7 +180,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateMetersProperMetersESwitch() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         long rateESwitch = FLOW_E_BANDWIDTH + (long) (FLOW_E_BANDWIDTH * 0.01) - 1;
         long burstSize = (long) (FLOW_E_BANDWIDTH * 1.05);
         long burstSizeESwitch = burstSize + (long) (burstSize * 0.01) - 1;
@@ -196,7 +196,7 @@ public class ValidationServiceImplTest {
 
     @Test
     public void validateMetersMisconfiguredMetersESwitch() {
-        ValidationService validationService = new ValidationServiceImpl(persistenceManager().build());
+        ValidateService validationService = new ValidateServiceImpl(persistenceManager().build());
         long rateESwitch = FLOW_E_BANDWIDTH + (long) (FLOW_E_BANDWIDTH * 0.01) + 1;
         long burstSize = (long) (FLOW_E_BANDWIDTH * 1.05);
         long burstSizeESwitch = burstSize + (long) (burstSize * 0.01) + 1;

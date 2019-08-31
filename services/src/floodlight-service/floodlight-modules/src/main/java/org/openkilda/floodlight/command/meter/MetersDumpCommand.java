@@ -23,6 +23,7 @@ import org.openkilda.floodlight.converter.OfMeterConverter;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.info.meter.MeterEntry;
+import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -36,11 +37,12 @@ import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsRequest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-public class MetersDumpCommand extends SpeakerRemoteCommand<MetersDumpReport> {
+public class MetersDumpCommand extends MeterCommand<MetersDumpReport> {
     @JsonCreator
     public MetersDumpCommand(
             @JsonProperty("message_context") MessageContext messageContext,
@@ -60,9 +62,10 @@ public class MetersDumpCommand extends SpeakerRemoteCommand<MetersDumpReport> {
 
     private List<MeterSchema> handleMetersDump(List<OFMeterConfigStatsReply> replyChain) {
         List<MeterSchema> meters = new ArrayList<>();
+        boolean isInaccurate = getSwitchFeatures().contains(Feature.INACCURATE_METER);
         for (OFMeterConfigStatsReply reply : replyChain) {
             for (OFMeterConfig entry : reply.getEntries()) {
-                meters.add(MeterSchemaMapper.INSTANCE.map(getSw().getId(), entry));
+                meters.add(MeterSchemaMapper.INSTANCE.map(getSw().getId(), entry, isInaccurate));
             }
         }
         return meters;

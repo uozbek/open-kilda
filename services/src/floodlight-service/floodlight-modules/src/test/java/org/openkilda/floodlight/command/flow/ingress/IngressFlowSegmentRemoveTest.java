@@ -38,7 +38,7 @@ import org.projectfloodlight.openflow.types.U64;
 
 import java.util.concurrent.CompletableFuture;
 
-abstract class AbstractIngressFlowSegmentRemoveCommandTest extends AbstractIngressFlowSegmentCommandTest {
+abstract class IngressFlowSegmentRemoveTest extends IngressFlowSegmentCommandTest {
     @Test
     public void noMeterRequested() throws Exception {
         switchFeaturesSetup(false);

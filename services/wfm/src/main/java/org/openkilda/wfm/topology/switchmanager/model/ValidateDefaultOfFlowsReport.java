@@ -23,11 +23,9 @@ import java.util.List;
 
 @Value
 @Builder
-public class ValidateDefaultFlowsReport {
+public class ValidateDefaultOfFlowsReport {
     @Singular
-    private final List<OfFlowReference> properFlows;
+    private final List<OfFlowReference> properOfFlows;
     @Singular
-    private final List<OfFlowReference> missingFlows;
-    @Singular
-    private final List<OfFlowReference> invalidFlows;
+    private final List<OfFlowMissing> missingOfFlows;
 }

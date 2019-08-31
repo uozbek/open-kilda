@@ -29,11 +29,12 @@ import org.openkilda.wfm.share.utils.AbstractBaseFsm;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateContext;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState;
+import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
-import org.openkilda.wfm.topology.switchmanager.service.ValidationService;
+import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
 
 import lombok.Builder;
 import lombok.Value;
@@ -50,22 +51,22 @@ public class SwitchValidateFsm
     private static final String ERROR_LOG_MESSAGE = "Key: {}, message: {}";
 
     private final SwitchManagerCarrier carrier;
-    private final ValidationService validationService;
+    private final ValidateService validateService;
     private final SwitchValidateRequest request;
     private final String key;
 
     private ValidateRulesResult validateRulesResult;
     private ValidateMetersResult validateMetersResult;
 
-    public static SwitchValidateFsmFactory factory(SwitchManagerCarrier carrier, ValidationService service) {
+    public static SwitchValidateFsmFactory factory(SwitchManagerCarrier carrier, ValidateService service) {
         return new SwitchValidateFsmFactory(carrier, service);
     }
 
     public SwitchValidateFsm(
-            SwitchManagerCarrier carrier, ValidationService validationService, SwitchValidateRequest request,
+            SwitchManagerCarrier carrier, ValidateService validateService, SwitchValidateRequest request,
             String key) {
         this.carrier = carrier;
-        this.validationService = validationService;
+        this.validateService = validateService;
         this.request = request;
         this.key = key;
 
@@ -83,7 +84,7 @@ public class SwitchValidateFsm
 
         CommandContext commandContext = carrier.getCommandContext().fork("schema");
         SwitchId switchId = request.getSwitchId();
-        List<FlowSegmentBlankGenericResolver> requestBlanks = validationService.prepareFlowSegmentRequests(
+        List<FlowSegmentBlankGenericResolver> requestBlanks = validateService.makeSwitchValidateFlowSegments(
                 commandContext, switchId);
         carrier.speakerFetchSchema(switchId, requestBlanks);
     }
@@ -92,21 +93,10 @@ public class SwitchValidateFsm
             SwitchValidateState from, SwitchValidateState to, SwitchValidateEvent event,
             SwitchValidateContext context) {
         log.info("Key: {}, validate rules", key);
-        // TODO
         try {
-            validateRulesResult = validationService.validateRules(switchId, flowEntries, expectedDefaultFlowEntries);
+            validateService.validateSwitch(context.getSwitchSchema());
         } catch (Exception e) {
-            sendException(e);
-        }
-
-        try {
-            if (processMeters) {
-                log.info("Key: {}, validate meters", key);
-                validateMetersResult = validationService.validateMeters(switchId, presentMeters,
-                                                                        carrier.getFlowMeterMinBurstSizeInKbits(),
-                                                                        carrier.getFlowMeterBurstCoefficient());
-            }
-        } catch (Exception e) {
+            // TODO
             sendException(e);
         }
     }
@@ -174,12 +164,12 @@ public class SwitchValidateFsm
 
     public static class SwitchValidateFsmFactory {
         private final SwitchManagerCarrier carrier;
-        private final ValidationService service;
+        private final ValidateService service;
 
         private final StateMachineBuilder<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent,
                 SwitchValidateContext> builder;
 
-        SwitchValidateFsmFactory(SwitchManagerCarrier carrier, ValidationService service) {
+        SwitchValidateFsmFactory(SwitchManagerCarrier carrier, ValidateService service) {
             this.carrier = carrier;
             this.service = service;
 
@@ -187,7 +177,7 @@ public class SwitchValidateFsm
                     SwitchValidateFsm.class, SwitchValidateState.class, SwitchValidateEvent.class,
                     SwitchValidateContext.class,
                     // extra args
-                    SwitchManagerCarrier.class, ValidationService.class, SwitchValidateRequest.class, String.class);
+                    SwitchManagerCarrier.class, ValidateService.class, SwitchValidateRequest.class, String.class);
 
             // INIT
             builder.transition()
@@ -196,7 +186,7 @@ public class SwitchValidateFsm
             // FETCH_SCHEMA
             builder.transition()
                     .from(SwitchValidateState.FETCH_SCHEMA).to(SwitchValidateState.VALIDATE)
-                    .on(SwitchValidateEvent.COMPLETE);
+                    .on(SwitchValidateEvent.SWITCH_SCHEMA);
             builder.transition()
                     .from(SwitchValidateState.FETCH_SCHEMA).to(SwitchValidateState.ERROR)
                     .on(SwitchValidateEvent.ERROR);
@@ -239,6 +229,7 @@ public class SwitchValidateFsm
     public static class SwitchValidateContext {
         private final String workerError;
         private final SpeakerResponse speakerResponse;
+        private final SpeakerSwitchSchema switchSchema;
     }
 
     public enum SwitchValidateState {
@@ -250,9 +241,8 @@ public class SwitchValidateFsm
     }
 
     public enum SwitchValidateEvent {
-        NEXT, COMPLETE,
-        TIMEOUT,
-        ERROR,
-        WORKER_ERROR
+        NEXT,
+        SWITCH_SCHEMA,
+        TIMEOUT, ERROR, WORKER_ERROR
     }
 }

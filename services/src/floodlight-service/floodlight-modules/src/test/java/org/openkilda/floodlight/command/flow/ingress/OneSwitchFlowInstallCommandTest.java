@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class OneSwitchFlowInstallCommandTest extends AbstractIngressFlowSegmentInstallCommandTest {
+public class OneSwitchFlowInstallCommandTest extends IngressFlowSegmentInstallTest {
     private static final FlowEndpoint defaultEgressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 3, 0, 0);
 
     @Test

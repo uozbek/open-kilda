@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -15,20 +16,21 @@
 
 package org.openkilda.floodlight.feature;
 
-import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 
 import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.SwitchDescription;
 
 import java.util.Optional;
 
-// TODO(surabujin) must be replaces with OFTableFeatures check
-public class NoviFlowCopyFieldFeature extends NoviflowSpecificFeature {
+/**
+ * E-switches can't set exact meter's rate and burst values as passed in MeterMod message. They apply some "rounding"
+ * coefficient to these values. All meter config stats responses will return inaccurate/altered rate and burst values.
+ */
+public class InaccurateMeterFeature extends NoviflowSpecificFeature {
     @Override
-    public Optional<SpeakerSwitchView.Feature> discover(IOFSwitch sw) {
+    public Optional<Feature> discover(IOFSwitch sw) {
         if (is100GbHw(sw)) {
-            return Optional.of(Feature.NOVIFLOW_COPY_FIELD);
+            return Optional.of(Feature.INACCURATE_METER);
         }
         return Optional.empty();
     }

@@ -15,7 +15,6 @@
 
 package org.openkilda.wfm.topology.switchmanager.service;
 
-import org.openkilda.floodlight.api.response.SpeakerErrorResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.messaging.error.ErrorMessage;
@@ -40,7 +39,7 @@ public interface SwitchValidateService {
 
     void handleTaskError(String key, ErrorMessage message);
 
-    void handleSwitchSchemaDump(String key, SpeakerSwitchSchema switchSchema);
+    void handleSwitchSchema(String key, SpeakerSwitchSchema switchSchema);
 
     void handleWorkerError(String key, String errorMessage);
 

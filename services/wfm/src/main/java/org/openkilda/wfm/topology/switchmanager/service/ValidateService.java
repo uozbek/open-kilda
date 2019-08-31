@@ -27,15 +27,9 @@ import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
 
 import java.util.List;
 
-public interface ValidationService {
-    List<FlowSegmentBlankGenericResolver> prepareFlowSegmentRequests(CommandContext context, SwitchId switchId);
+public interface ValidateService {
+    List<FlowSegmentBlankGenericResolver> makeSwitchValidateFlowSegments(CommandContext context, SwitchId switchId);
 
 
     ValidateSwitchReport validateSwitch(SpeakerSwitchSchema switchSchema);
-
-    ValidateRulesResult validateRules(SwitchId switchId, List<FlowEntry> presentRules,
-                                      List<FlowEntry> expectedDefaultRules);
-
-    ValidateMetersResult validateMeters(SwitchId switchId, List<MeterEntry> presentMeters,
-                                        long flowMeterMinBurstSizeInKbits, double flowMeterBurstCoefficient);
 }

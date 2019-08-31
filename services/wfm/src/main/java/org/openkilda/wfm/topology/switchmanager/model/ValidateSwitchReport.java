@@ -15,8 +15,6 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.model.MeterId;
-
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
@@ -29,10 +27,14 @@ public class ValidateSwitchReport {
     @Singular
     private final List<OfFlowReference> cookieCollisions;
     @Singular
-    private final List<MeterId> meterCollisions;
+    private final List<MeterCollision> meterCollisions;
+
+    @Singular
+    private final List<OfFlowReference> excessOfFlows;
+    @Singular
+    private final List<OfMeterReference> excessMeters;
 
     @Singular
     private final List<ValidateFlowSegmentReport> segmentReports;
-
-    private final ValidateDefaultFlowsReport defaultFlowsReport;
+    private final ValidateDefaultOfFlowsReport defaultFlowsReport;
 }

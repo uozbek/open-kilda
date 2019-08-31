@@ -35,7 +35,7 @@ import org.projectfloodlight.openflow.types.U64;
 
 import java.util.UUID;
 
-public class IngressFlowSegmentRemoveCommandTest extends AbstractIngressFlowSegmentRemoveCommandTest {
+public class IngressFlowSegmentRemoveCommandTest extends IngressFlowSegmentRemoveTest {
     @Test
     public void happyPathDefaultPort() throws Exception {
         IngressFlowSegmentRemoveCommand command = makeCommand(endpointZeroVlan, meterConfig);

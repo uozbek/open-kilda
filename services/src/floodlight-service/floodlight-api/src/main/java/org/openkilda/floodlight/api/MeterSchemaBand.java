@@ -18,12 +18,62 @@ package org.openkilda.floodlight.api;
 
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Value
 @Builder
 public class MeterSchemaBand {
+    private static final float INACCURATE_RATE_DEVIATION = 0.01f;
+    private static final float INACCURATE_BURST_DEVIATION = 0.01f;
+
     private final int type;
 
-    private final long rate;       // drop
-    private final long burstSize;  // drop
+    private final long rate;       // type: drop
+    private final long burstSize;  // type: drop
+
+    private final boolean inaccurate;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MeterSchemaBand that = (MeterSchemaBand) o;
+
+        EqualsBuilder equals = new EqualsBuilder()
+                .append(type, that.type);
+
+        if (inaccurate || that.inaccurate) {
+            return equals.append(rate, that.rate)
+                    .append(burstSize, that.burstSize)
+                    .isEquals();
+        } else {
+            return equals.isEquals()
+                    && inaccurateEquals(rate, that.rate, INACCURATE_RATE_DEVIATION)
+                    && inaccurateEquals(burstSize, that.burstSize, INACCURATE_BURST_DEVIATION);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(type)
+                .append(rate)
+                .append(burstSize)
+                .toHashCode();
+    }
+
+    private boolean inaccurateEquals(long left, long right, float deviation) {
+        long diff, max;
+        if (left < right) {
+            max = right;
+            diff = right - left;
+        } else {
+            max = left;
+            diff = left - right;
+        }
+        return diff < max * deviation;
+    }
 }
