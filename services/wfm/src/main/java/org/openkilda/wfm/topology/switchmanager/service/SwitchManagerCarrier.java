@@ -21,6 +21,7 @@ import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.CommandContext;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public interface SwitchManagerCarrier {
 
     CommandContext getCommandContext();
 
-    void runSwitchSync(String key, SwitchValidateRequest request, ValidationResult validationResult);
+    void runSwitchSync(String key, SwitchValidateRequest request, ValidateSwitchReport report);
 
     void speakerFetchSchema(SwitchId switchId, List<FlowSegmentBlankGenericResolver> requestBlanks);
 }

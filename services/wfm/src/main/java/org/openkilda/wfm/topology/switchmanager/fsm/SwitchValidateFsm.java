@@ -32,17 +32,20 @@ import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchVali
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
 import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
 
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.squirrelframework.foundation.fsm.StateMachineBuilder;
 import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 public class SwitchValidateFsm
@@ -52,11 +55,9 @@ public class SwitchValidateFsm
 
     private final SwitchManagerCarrier carrier;
     private final ValidateService validateService;
-    private final SwitchValidateRequest request;
     private final String key;
 
-    private ValidateRulesResult validateRulesResult;
-    private ValidateMetersResult validateMetersResult;
+    private ValidateSwitchReport report;
 
     public static SwitchValidateFsmFactory factory(SwitchManagerCarrier carrier, ValidateService service) {
         return new SwitchValidateFsmFactory(carrier, service);
@@ -67,14 +68,9 @@ public class SwitchValidateFsm
             String key) {
         this.carrier = carrier;
         this.validateService = validateService;
-        this.request = request;
         this.key = key;
 
         log.info("Key: {}, validate FSM initialized", key);
-    }
-
-    public String getKey() {
-        return key;
     }
 
     public void fetchSchemaEnter(
@@ -127,32 +123,6 @@ public class SwitchValidateFsm
     }
 */
 
-    protected void finished(SwitchValidateState from, SwitchValidateState to,
-                            SwitchValidateEvent event, Object context) {
-        if (request.isPerformSync()) {
-            carrier.runSwitchSync(key, request,
-                    new ValidationResult(flowEntries, processMeters, validateRulesResult, validateMetersResult));
-        } else {
-            RulesValidationEntry rulesValidationEntry = new RulesValidationEntry(
-                    validateRulesResult.getMissingRules(), validateRulesResult.getMisconfiguredRules(),
-                    validateRulesResult.getProperRules(), validateRulesResult.getExcessRules());
-
-            MetersValidationEntry metersValidationEntry = null;
-            if (processMeters) {
-                metersValidationEntry = new MetersValidationEntry(
-                        validateMetersResult.getMissingMeters(), validateMetersResult.getMisconfiguredMeters(),
-                        validateMetersResult.getProperMeters(), validateMetersResult.getExcessMeters());
-            }
-
-            SwitchValidationResponse response = new SwitchValidationResponse(
-                    rulesValidationEntry, metersValidationEntry);
-            InfoMessage message = new InfoMessage(response, System.currentTimeMillis(), key);
-
-            carrier.cancelTimeoutCallback(key);
-            carrier.response(key, message);
-        }
-    }
-
 /*
     private void sendException(Exception e) {
         ErrorData errorData = new ErrorData(ErrorType.INTERNAL_ERROR, e.getMessage(),
@@ -161,6 +131,10 @@ public class SwitchValidateFsm
         fire(ERROR, errorMessage);
     }
 */
+
+    public Optional<ValidateSwitchReport> getReport() {
+        return Optional.ofNullable(report);
+    }
 
     public static class SwitchValidateFsmFactory {
         private final SwitchManagerCarrier carrier;

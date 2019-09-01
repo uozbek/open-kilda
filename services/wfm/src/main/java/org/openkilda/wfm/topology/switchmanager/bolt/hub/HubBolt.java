@@ -44,7 +44,7 @@ import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerSwitchSchemaDumpCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchSyncService;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchValidateService;
@@ -138,8 +138,9 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     }
 
     @Override
-    public void runSwitchSync(String key, SwitchValidateRequest request, ValidationResult validationResult) {
-        syncService.handleSwitchSync(key, request, validationResult);
+    public void runSwitchSync(String key, SwitchValidateRequest request, ValidateSwitchReport report) {
+        // TODO
+        syncService.handleSwitchSync(key, request, report);
     }
 
     // -- commands processing --
