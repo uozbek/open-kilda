@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,19 +15,21 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker.command;
 
-import org.openkilda.messaging.command.CommandData;
+import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 
-public class SpeakerProxyRequestCommand extends SpeakerWorkerCommand {
-    private final CommandData payload;
+public class SpeakerSyncRequestCommand extends SpeakerWorkerCommand {
+    private final String hubKey;
+    private final SpeakerRequest request;
 
-    public SpeakerProxyRequestCommand(String key, CommandData payload) {
-        super(key);
-        this.payload = payload;
+    public SpeakerSyncRequestCommand(String workerKey, String hubKey, SpeakerRequest request) {
+        super(workerKey);
+        this.hubKey = hubKey;
+        this.request = request;
     }
 
     @Override
     public void apply(SpeakerWorkerBolt handler) {
-        handler.processProxyRequest(key, payload);
+        handler.processSyncSpeakerRequest(hubKey, request);
     }
 }

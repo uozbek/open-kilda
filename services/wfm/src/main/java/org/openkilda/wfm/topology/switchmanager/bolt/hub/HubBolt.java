@@ -15,8 +15,8 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.hub;
 
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.response.SpeakerResponse;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
@@ -26,25 +26,22 @@ import org.openkilda.messaging.info.InfoData;
 import org.openkilda.messaging.info.InfoMessage;
 import org.openkilda.messaging.info.flow.FlowInstallResponse;
 import org.openkilda.messaging.info.flow.FlowRemoveResponse;
-import org.openkilda.messaging.info.meter.SwitchMeterData;
-import org.openkilda.messaging.info.meter.SwitchMeterEntries;
-import org.openkilda.messaging.info.meter.SwitchMeterUnsupported;
-import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
-import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.messaging.info.switches.DeleteMeterResponse;
 import org.openkilda.model.SwitchId;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
-import org.openkilda.wfm.share.utils.KeyProvider;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerSwitchSchemaDumpCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerSyncMessageCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerSyncRequestCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchSyncService;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchValidateService;
@@ -52,6 +49,8 @@ import org.openkilda.wfm.topology.switchmanager.service.impl.SwitchSyncServiceIm
 import org.openkilda.wfm.topology.switchmanager.service.impl.SwitchValidateServiceImpl;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
 
+import com.fasterxml.uuid.Generators;
+import com.fasterxml.uuid.NoArgGenerator;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -65,6 +64,8 @@ import java.util.Map;
 public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt implements SwitchManagerCarrier {
     public static final String ID = "switch.manager.hub";
     public static final String INCOME_STREAM = "switch.manage.command";
+
+    private transient NoArgGenerator keyChunksGenerator;
 
     private final PersistenceManager persistenceManager;
     private final FlowResourcesConfig flowResourcesConfig;
@@ -81,8 +82,10 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         super.prepare(stormConf, context, collector);
 
+        keyChunksGenerator = Generators.timeBasedGenerator();
+
         validateService = new SwitchValidateServiceImpl(this, flowResourcesConfig, persistenceManager);
-        syncService = new SwitchSyncServiceImpl(this, persistenceManager, flowResourcesConfig);
+        syncService = new SwitchSyncServiceImpl(this);
     }
 
     @Override
@@ -98,16 +101,6 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
         }
     }
 
-    private void handleMetersResponse(String key, SwitchMeterData data) {
-        if (data instanceof SwitchMeterEntries) {
-            validateService.handleMeterEntriesResponse(key, (SwitchMeterEntries) data);
-        } else if (data instanceof SwitchMeterUnsupported) {
-            validateService.handleMetersUnsupportedResponse(key);
-        } else {
-            log.warn("Receive unexpected SwitchMeterData for key {}: {}", key, data);
-        }
-    }
-
     @Override
     protected void onWorkerResponse(Tuple input) throws PipelineException {
         HubCommand command = pullValue(input, MessageTranslator.FIELD_ID_PAYLOAD, HubCommand.class);
@@ -117,7 +110,7 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     @Override
     public void onTimeout(String key, Tuple tuple) {
         log.warn("Receive TaskTimeout for key {}", key);
-        validateService.handleTaskTimeout(key);
+        validateService.handleGlobalTimeout(key);
         syncService.handleTaskTimeout(key);
     }
 
@@ -127,20 +120,13 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     }
 
     @Override
-    public void sendCommandToSpeaker(String key, CommandData command) {
-        emitWithContext(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(),
-                        new Values(KeyProvider.generateChainedKey(key), command));
-    }
-
-    @Override
     public void response(String key, Message message) {
         getOutput().emit(StreamType.TO_NORTHBOUND.toString(), new Values(key, message));
     }
 
     @Override
-    public void runSwitchSync(String key, SwitchValidateRequest request, ValidateSwitchReport report) {
-        // TODO
-        syncService.handleSwitchSync(key, request, report);
+    public void runSwitchSync(String key, SwitchValidateRequest request, SwitchSyncData syncData) {
+        syncService.handleSwitchSync(key, request, syncData);
     }
 
     // -- commands processing --
@@ -153,20 +139,14 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
         validateService.handleWorkerError(key, errorMessage);
     }
 
-    public void processValidateErrorResponse(String key, SpeakerResponse response) {
-        validateService.handleSpeakerErrorResponse(key, response);
+    public void processValidateErrorResponse(String key, String errorResponse) {
+        validateService.handleSpeakerErrorResponse(key, errorResponse);
     }
 
     public void processMessage(String key, Message message) {
         if (message instanceof InfoMessage) {
             InfoData data = ((InfoMessage) message).getData();
-            if (data instanceof SwitchFlowEntries) {
-                validateService.handleFlowEntriesResponse(key, (SwitchFlowEntries) data);
-            } else if (data instanceof SwitchExpectedDefaultFlowEntries) {
-                validateService.handleExpectedDefaultFlowEntriesResponse(key, (SwitchExpectedDefaultFlowEntries) data);
-            } else if (data instanceof SwitchMeterData) {
-                handleMetersResponse(key, (SwitchMeterData) data);
-            } else if (data instanceof FlowInstallResponse) {
+            if (data instanceof FlowInstallResponse) {
                 syncService.handleInstallRulesResponse(key);
             } else if (data instanceof FlowRemoveResponse) {
                 syncService.handleRemoveRulesResponse(key);
@@ -177,7 +157,6 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
             }
         } else if (message instanceof ErrorMessage) {
             log.warn("Receive ErrorMessage for key {}", key);
-            validateService.handleTaskError(key, (ErrorMessage) message);
             syncService.handleTaskError(key, (ErrorMessage) message);
         }
     }
@@ -185,9 +164,25 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     // -- carrier implementation --
 
     @Override
-    public void speakerFetchSchema(SwitchId switchId, List<FlowSegmentBlankGenericResolver> requestBlanks) {
-        String key = getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
-        SpeakerSwitchSchemaDumpCommand command = new SpeakerSwitchSchemaDumpCommand(key, switchId, requestBlanks);
+    public void speakerFetchSchema(SwitchId switchId, List<ValidateFlowSegmentDescriptor> segmentDescriptors) {
+        SpeakerSwitchSchemaDumpCommand command = new SpeakerSwitchSchemaDumpCommand(
+                getKey(), switchId, segmentDescriptors);
+        emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
+    }
+
+    @Override
+    public void syncSpeakerMessageRequest(CommandData payload) {
+        String hubKey = getKey();
+        SpeakerSyncMessageCommand command = new SpeakerSyncMessageCommand(
+                makeWorkerKey(hubKey, payload), hubKey, payload);
+        emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
+    }
+
+    @Override
+    public void syncSpeakerFlowSegmentRequest(FlowSegmentRequest segmentRequest) {
+        String hubKey = getKey();
+        SpeakerSyncRequestCommand command = new SpeakerSyncRequestCommand(
+                makeWorkerKey(hubKey, segmentRequest), hubKey, segmentRequest);
         emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
     }
 
@@ -209,5 +204,19 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
 
         Fields fields = new Fields(MessageTranslator.FIELD_ID_KEY, MessageTranslator.FIELD_ID_PAYLOAD);
         declarer.declareStream(StreamType.TO_NORTHBOUND.toString(), fields);
+    }
+
+    // -- service code --
+
+    private String makeWorkerKey(String hubKey, SpeakerRequest request) {
+        return hubKey + " : " + request.getCommandId();
+    }
+
+    private String makeWorkerKey(String hubKey, CommandData payload) {
+        return hubKey + " : " + keyChunksGenerator.generate();
+    }
+
+    private String getKey() {
+        return getCurrentTuple().getStringByField(MessageTranslator.FIELD_ID_KEY);
     }
 }

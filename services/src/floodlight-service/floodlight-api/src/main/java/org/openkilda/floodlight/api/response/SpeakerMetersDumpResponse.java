@@ -15,9 +15,8 @@
 
 package org.openkilda.floodlight.api.response;
 
-import org.openkilda.floodlight.api.MeterSchema;
+import org.openkilda.model.of.MeterSchema;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.messaging.info.meter.MeterEntry;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api;
+package org.openkilda.model.of;
 
 import lombok.Builder;
 import lombok.Value;

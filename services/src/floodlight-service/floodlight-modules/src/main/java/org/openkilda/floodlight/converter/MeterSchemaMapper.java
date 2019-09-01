@@ -15,8 +15,8 @@
 
 package org.openkilda.floodlight.converter;
 
-import org.openkilda.floodlight.api.MeterSchema;
-import org.openkilda.floodlight.api.MeterSchemaBand;
+import org.openkilda.model.of.MeterSchema;
+import org.openkilda.model.of.MeterSchemaBand;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 

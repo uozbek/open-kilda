@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,21 +14,29 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.model.of;
 
+import org.openkilda.model.Cookie;
+import org.openkilda.model.MeterId;
+
+import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Builder;
 import lombok.NonNull;
-import lombok.Singular;
 import lombok.Value;
 
-import java.util.List;
+import java.io.Serializable;
 
 @Value
-@Builder
-public class MeterCollision {
+@Builder(toBuilder = true)
+@JsonNaming(value = SnakeCaseStrategy.class)
+public class OfFlowSchema implements Serializable {
     @NonNull
-    private final OfMeterReference ref;
+    private final short tableId;
+    @NonNull
+    private final Cookie cookie;
 
-    @Singular
-    private final List<OfFlowReference> usages;
+    private final MeterId meterId;
+
+    private final MeterSchema meterSchema;
 }

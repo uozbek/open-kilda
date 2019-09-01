@@ -15,33 +15,18 @@
 
 package org.openkilda.wfm.topology.switchmanager.service;
 
-import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
-import org.openkilda.messaging.error.ErrorMessage;
-import org.openkilda.messaging.info.meter.SwitchMeterEntries;
-import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
-import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 
 public interface SwitchValidateService {
 
     void handleSwitchValidateRequest(String key, SwitchValidateRequest data);
 
-    void handleFlowEntriesResponse(String key, SwitchFlowEntries data);
-
-    void handleExpectedDefaultFlowEntriesResponse(String key, SwitchExpectedDefaultFlowEntries data);
-
-    void handleMeterEntriesResponse(String key, SwitchMeterEntries data);
-
-    void handleMetersUnsupportedResponse(String key);
-
-    void handleTaskTimeout(String key);
-
-    void handleTaskError(String key, ErrorMessage message);
-
     void handleSwitchSchema(String key, SpeakerSwitchSchema switchSchema);
 
     void handleWorkerError(String key, String errorMessage);
 
-    void handleSpeakerErrorResponse(String key, SpeakerResponse response);
+    void handleSpeakerErrorResponse(String key, String errorMessage);
+
+    void handleGlobalTimeout(String key);
 }

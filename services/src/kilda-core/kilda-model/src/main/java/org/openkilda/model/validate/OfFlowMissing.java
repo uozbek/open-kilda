@@ -14,9 +14,10 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.model.validate;
 
-import org.openkilda.floodlight.api.OfFlowSchema;
+import org.openkilda.model.of.OfFlowSchema;
+import org.openkilda.model.validate.OfFlowReference;
 
 import lombok.Builder;
 import lombok.Value;

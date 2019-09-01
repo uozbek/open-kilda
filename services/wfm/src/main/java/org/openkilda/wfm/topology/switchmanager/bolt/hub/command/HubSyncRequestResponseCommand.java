@@ -13,20 +13,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.messaging.info.rule.FlowEntry;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 
-import lombok.Value;
+public class HubSyncRequestResponseCommand extends HubCommand {
+    private final SpeakerResponse response;
 
-import java.util.List;
+    public HubSyncRequestResponseCommand(String key, SpeakerResponse response) {
+        super(key);
+        this.response = response;
+    }
 
-@Value
-@Deprecated
-public class ValidationResult {
-    List<FlowEntry> flowEntries;
-    boolean processMeters;
-
-    ValidateRulesResult validateRulesResult;
-    ValidateMetersResult validateMetersResult;
+    @Override
+    public void apply(HubBolt handler) {
+        handler.processSyncResponse(response);
+    }
 }

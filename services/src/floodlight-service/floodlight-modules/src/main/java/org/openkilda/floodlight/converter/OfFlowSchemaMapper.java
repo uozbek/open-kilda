@@ -15,9 +15,9 @@
 
 package org.openkilda.floodlight.converter;
 
-import org.openkilda.floodlight.api.MeterSchema;
-import org.openkilda.floodlight.api.OfFlowSchema;
-import org.openkilda.floodlight.api.OfFlowSchema.OfFlowSchemaBuilder;
+import org.openkilda.model.of.MeterSchema;
+import org.openkilda.model.of.OfFlowSchema;
+import org.openkilda.model.of.OfFlowSchema.OfFlowSchemaBuilder;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.MeterId;
 

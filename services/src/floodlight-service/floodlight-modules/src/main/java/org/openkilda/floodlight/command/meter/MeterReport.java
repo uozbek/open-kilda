@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.floodlight.api.MeterSchema;
+import org.openkilda.model.of.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.model.MeterId;
 

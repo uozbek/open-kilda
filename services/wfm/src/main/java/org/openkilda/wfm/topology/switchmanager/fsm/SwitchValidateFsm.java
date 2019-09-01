@@ -15,30 +15,22 @@
 
 package org.openkilda.wfm.topology.switchmanager.fsm;
 
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.response.SpeakerResponse;
-import org.openkilda.messaging.command.switches.SwitchValidateRequest;
-import org.openkilda.messaging.error.ErrorMessage;
-import org.openkilda.messaging.info.InfoMessage;
-import org.openkilda.messaging.info.switches.MetersValidationEntry;
-import org.openkilda.messaging.info.switches.RulesValidationEntry;
-import org.openkilda.messaging.info.switches.SwitchValidationResponse;
+import org.openkilda.messaging.error.ErrorData;
+import org.openkilda.messaging.error.ErrorType;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.share.utils.AbstractBaseFsm;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateContext;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateEvent;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
-import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
 
 import lombok.Builder;
-import lombok.Getter;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.squirrelframework.foundation.fsm.StateMachineBuilder;
@@ -51,23 +43,23 @@ import java.util.Optional;
 public class SwitchValidateFsm
         extends AbstractBaseFsm<SwitchValidateFsm, SwitchValidateState, SwitchValidateEvent, SwitchValidateContext> {
 
-    private static final String ERROR_LOG_MESSAGE = "Key: {}, message: {}";
-
     private final SwitchManagerCarrier carrier;
     private final ValidateService validateService;
+    private final SwitchId switchId;
     private final String key;
 
-    private ValidateSwitchReport report;
+    private SwitchSyncData results;
+    private ErrorData error;
 
     public static SwitchValidateFsmFactory factory(SwitchManagerCarrier carrier, ValidateService service) {
         return new SwitchValidateFsmFactory(carrier, service);
     }
 
     public SwitchValidateFsm(
-            SwitchManagerCarrier carrier, ValidateService validateService, SwitchValidateRequest request,
-            String key) {
+            SwitchManagerCarrier carrier, ValidateService validateService, SwitchId switchId, String key) {
         this.carrier = carrier;
         this.validateService = validateService;
+        this.switchId = switchId;
         this.key = key;
 
         log.info("Key: {}, validate FSM initialized", key);
@@ -79,10 +71,9 @@ public class SwitchValidateFsm
         log.info("Key: {}, sending requests to get switch rules and meters", key);
 
         CommandContext commandContext = carrier.getCommandContext().fork("schema");
-        SwitchId switchId = request.getSwitchId();
-        List<FlowSegmentBlankGenericResolver> requestBlanks = validateService.makeSwitchValidateFlowSegments(
+        List<ValidateFlowSegmentDescriptor> segmentDescriptors = validateService.makeSwitchValidateFlowSegments(
                 commandContext, switchId);
-        carrier.speakerFetchSchema(switchId, requestBlanks);
+        carrier.speakerFetchSchema(switchId, segmentDescriptors);
     }
 
     protected void validateEnter(
@@ -90,50 +81,40 @@ public class SwitchValidateFsm
             SwitchValidateContext context) {
         log.info("Key: {}, validate rules", key);
         try {
-            validateService.validateSwitch(context.getSwitchSchema());
+            results = validateService.validateSwitch(context.getSwitchSchema());
         } catch (Exception e) {
-            // TODO
-            sendException(e);
+            handleException(e);
         }
     }
 
     protected void errorEnter(
             SwitchValidateState from, SwitchValidateState to, SwitchValidateEvent event,
             SwitchValidateContext context) {
-        // TODO
-        ErrorMessage sourceError = (ErrorMessage) context;
-        ErrorMessage message = new ErrorMessage(sourceError.getData(), System.currentTimeMillis(), key);
+        ErrorType code = ErrorType.INTERNAL_ERROR;
+        String message = context.getErrorMessage();
+        if (message == null) {
+            code = ErrorType.OPERATION_TIMED_OUT;
+            message = "Unable fetch speaker schema - TIMEOUT";
+        }
 
-        log.error(ERROR_LOG_MESSAGE, key, message.getData().getErrorMessage());
-
-        carrier.cancelTimeoutCallback(key);
-        carrier.response(key, message);
+        error = new ErrorData(code, String.format("Unable to perform switch %s validation", switchId), message);
     }
 
+    private void handleException(Exception e) {
+        log.error("Exception inside FSM", e);
 
-/*
-    protected void receivingDataFailedByTimeout(SwitchValidateState from, SwitchValidateState to,
-                                                 SwitchValidateEvent event, Object context) {
-        ErrorData errorData = new ErrorData(ErrorType.OPERATION_TIMED_OUT, "Receiving data failed by timeout",
-                "Error when receive switch data");
-        ErrorMessage errorMessage = new ErrorMessage(errorData, System.currentTimeMillis(), key);
-
-        log.warn(ERROR_LOG_MESSAGE, key, errorData.getErrorMessage());
-        carrier.response(key, errorMessage);
+        SwitchValidateContext context = SwitchValidateContext.builder()
+                .errorMessage(e.getMessage())
+                .build();
+        fire(SwitchValidateEvent.ERROR, context);
     }
-*/
 
-/*
-    private void sendException(Exception e) {
-        ErrorData errorData = new ErrorData(ErrorType.INTERNAL_ERROR, e.getMessage(),
-                "Error in SwitchValidateFsm");
-        ErrorMessage errorMessage = new ErrorMessage(errorData, System.currentTimeMillis(), key);
-        fire(ERROR, errorMessage);
+    public Optional<SwitchSyncData> getResults() {
+        return Optional.ofNullable(results);
     }
-*/
 
-    public Optional<ValidateSwitchReport> getReport() {
-        return Optional.ofNullable(report);
+    public Optional<ErrorData> getErrorMessage() {
+        return Optional.ofNullable(error);
     }
 
     public static class SwitchValidateFsmFactory {
@@ -151,7 +132,7 @@ public class SwitchValidateFsm
                     SwitchValidateFsm.class, SwitchValidateState.class, SwitchValidateEvent.class,
                     SwitchValidateContext.class,
                     // extra args
-                    SwitchManagerCarrier.class, ValidateService.class, SwitchValidateRequest.class, String.class);
+                    SwitchManagerCarrier.class, ValidateService.class, SwitchId.class, String.class);
 
             // INIT
             builder.transition()
@@ -191,8 +172,8 @@ public class SwitchValidateFsm
             builder.defineFinalState(SwitchValidateState.EXIT);
         }
 
-        public SwitchValidateFsm produce(SwitchValidateRequest request, String key) {
-            SwitchValidateFsm fsm = builder.newStateMachine(SwitchValidateState.INIT, carrier, service, request, key);
+        public SwitchValidateFsm produce(SwitchId switchId, String key) {
+            SwitchValidateFsm fsm = builder.newStateMachine(SwitchValidateState.INIT, carrier, service, switchId, key);
             fsm.start();
             return fsm;
         }
@@ -201,8 +182,7 @@ public class SwitchValidateFsm
     @Value
     @Builder
     public static class SwitchValidateContext {
-        private final String workerError;
-        private final SpeakerResponse speakerResponse;
+        private final String errorMessage;
         private final SpeakerSwitchSchema switchSchema;
     }
 

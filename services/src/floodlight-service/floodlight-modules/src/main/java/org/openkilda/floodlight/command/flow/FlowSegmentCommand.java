@@ -15,8 +15,8 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.MeterSchema;
+import org.openkilda.model.of.FlowSegmentSchema;
+import org.openkilda.model.of.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerRemoteCommand;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.converter.FlowSegmentSchemaMapper;

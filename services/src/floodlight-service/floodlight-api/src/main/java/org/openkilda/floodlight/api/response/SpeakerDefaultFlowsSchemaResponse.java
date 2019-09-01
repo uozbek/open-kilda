@@ -15,9 +15,8 @@
 
 package org.openkilda.floodlight.api.response;
 
-import org.openkilda.floodlight.api.OfFlowSchema;
+import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

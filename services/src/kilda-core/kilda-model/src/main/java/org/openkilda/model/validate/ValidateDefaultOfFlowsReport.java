@@ -13,20 +13,19 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.service;
+package org.openkilda.model.validate;
 
-import org.openkilda.messaging.command.flow.BaseInstallFlow;
-import org.openkilda.messaging.command.flow.RemoveFlow;
-import org.openkilda.messaging.info.rule.FlowEntry;
-import org.openkilda.model.SwitchId;
+import lombok.Builder;
+import lombok.Singular;
+import lombok.Value;
 
 import java.util.List;
 
-public interface CommandBuilder {
-
-    List<BaseInstallFlow> buildCommandsToSyncMissingRules(SwitchId switchId, List<Long> switchRules);
-
-    List<RemoveFlow> buildCommandsToRemoveExcessRules(SwitchId switchId,
-                                                      List<FlowEntry> flows,
-                                                      List<Long> excessRulesCookies);
+@Value
+@Builder
+public class ValidateDefaultOfFlowsReport {
+    @Singular
+    private final List<OfFlowReference> properOfFlows;
+    @Singular
+    private final List<OfFlowMissing> missingOfFlows;
 }

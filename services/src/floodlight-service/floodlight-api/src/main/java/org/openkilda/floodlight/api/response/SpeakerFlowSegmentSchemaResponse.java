@@ -15,7 +15,7 @@
 
 package org.openkilda.floodlight.api.response;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
+import org.openkilda.model.of.FlowSegmentSchema;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
 

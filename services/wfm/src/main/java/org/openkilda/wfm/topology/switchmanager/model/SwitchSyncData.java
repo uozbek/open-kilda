@@ -15,13 +15,20 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.validate.ValidateSwitchReport;
 
 import lombok.Value;
 
+import java.util.List;
+
 @Value
-public class OfMeterReference {
-    private final MeterId meterId;
-    private final SwitchId datapath;
+public class SwitchSyncData {
+    private final ValidateSwitchReport validateReport;
+
+    private final List<ValidateFlowSegmentDescriptor> corruptedFlowSegments;
+
+    public SwitchId getSwitchId() {
+        return validateReport.getDatapath();
+    }
 }

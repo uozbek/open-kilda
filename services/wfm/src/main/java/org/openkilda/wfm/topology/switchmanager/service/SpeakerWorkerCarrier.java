@@ -18,21 +18,25 @@ package org.openkilda.wfm.topology.switchmanager.service;
 import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
+import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 
 public interface SpeakerWorkerCarrier {
-
-    void sendSpeakerMessage(String key, CommandMessage command);
+    void sendSpeakerCommand(CommandData messagePayload);
 
     void sendSpeakerCommand(SpeakerRequest request);
 
-    void sendHubResponse(String key, Message response);
-
     void sendHubValidationWorkerError(String errorMessage);
 
-    void sendHubValidationError(SpeakerResponse error);
+    void sendHubValidationError(String errorMessage);
+
+    void sendHubSyncError(String hubKey, String errorMessage);
+
+    void sendHubSyncResponse(String hubKey, Message response);
+
+    void sendHubSyncResponse(String hubKey, SpeakerResponse response);
 
     void sendHubSwitchSchema(SpeakerSwitchSchema switchSchema);
 

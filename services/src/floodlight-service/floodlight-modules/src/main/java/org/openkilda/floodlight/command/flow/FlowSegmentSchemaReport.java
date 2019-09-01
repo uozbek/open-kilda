@@ -16,7 +16,7 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
+import org.openkilda.model.of.FlowSegmentSchema;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentSchemaResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 

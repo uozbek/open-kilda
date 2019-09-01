@@ -166,7 +166,7 @@ public class SwitchValidateServiceImplTest {
         request = SwitchValidateRequest.builder().switchId(SWITCH_ID).build();
 
         service.handleSwitchValidateRequest(KEY, request);
-        verify(carrier, times(2)).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier, times(2)).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
         service.handleFlowEntriesResponse(KEY, new SwitchFlowEntries(SWITCH_ID, singletonList(flowEntry)));
         service.handleExpectedDefaultFlowEntriesResponse(KEY,
@@ -249,7 +249,7 @@ public class SwitchValidateServiceImplTest {
     private void handleRequestAndInitDataReceive() {
         service.handleSwitchValidateRequest(KEY, request);
 
-        verify(carrier, times(3)).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier, times(3)).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
         verifyNoMoreInteractions(carrier);
     }
 

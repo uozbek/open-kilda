@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,23 +14,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.model.validate;
 
-import org.openkilda.messaging.info.switches.MeterInfoEntry;
-
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Singular;
 import lombok.Value;
 
 import java.util.List;
 
 @Value
-@Deprecated
-public class ValidateMetersResult {
+@Builder
+public class MeterCollision {
+    @NonNull
+    private final OfMeterReference ref;
 
-    private List<MeterInfoEntry> missingMeters;
-
-    private List<MeterInfoEntry> misconfiguredMeters;
-
-    private List<MeterInfoEntry> properMeters;
-
-    private List<MeterInfoEntry> excessMeters;
+    @Singular
+    private final List<OfFlowReference> usages;
 }

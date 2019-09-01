@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,18 +14,28 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api;
+package org.openkilda.model.of;
 
+import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
+import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 @Value
-public class FlowSegmentSchema implements Serializable {
+@Builder
+public class MeterSchema implements Serializable {
     private final SwitchId datapath;
 
-    private final Collection<OfFlowSchema> entries;
+    private final MeterId meterId;
+
+    @Singular
+    private final Set<String> flags;
+    @Singular
+    private final List<MeterSchemaBand> bands;
 }

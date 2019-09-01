@@ -13,24 +13,34 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.model.validate;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.model.SwitchId;
 
+import lombok.Builder;
 import lombok.NonNull;
+import lombok.Singular;
 import lombok.Value;
 
-import java.util.UUID;
+import java.util.List;
 
 @Value
-public class ValidateFlowSegmentEntry {
+@Builder
+public class ValidateSwitchReport {
     @NonNull
-    private final FlowSegmentBlankGenericResolver requestBlank;
-    @NonNull
-    private final FlowSegmentSchema schema;
+    private final SwitchId datapath;
 
-    public UUID getCommandId() {
-        return requestBlank.getCommandId();
-    }
+    @Singular
+    private final List<OfFlowReference> cookieCollisions;
+    @Singular
+    private final List<MeterCollision> meterCollisions;
+
+    @Singular
+    private final List<OfFlowReference> excessOfFlows;
+    @Singular
+    private final List<OfMeterReference> excessMeters;
+
+    @Singular
+    private final List<ValidateFlowSegmentReport> segmentReports;
+    private final ValidateDefaultOfFlowsReport defaultFlowsReport;
 }

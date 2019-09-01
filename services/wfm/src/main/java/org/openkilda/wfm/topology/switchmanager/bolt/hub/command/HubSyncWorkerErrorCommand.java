@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,24 +14,20 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.model.SwitchId;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 
-import lombok.Builder;
-import lombok.Value;
+public class HubSyncWorkerErrorCommand extends HubCommand {
+    private final String errorMessage;
 
-import java.util.List;
-import java.util.Map;
+    public HubSyncWorkerErrorCommand(String key, String errorMessage) {
+        super(key);
+        this.errorMessage = errorMessage;
+    }
 
-@Value
-@Builder
-public class SpeakerSwitchSchema {
-    private final SwitchId datapath;
-
-    private final SwitchDefaultFlowsSchema defaultFlowsSchema;
-    private final List<ValidateFlowSegmentDescriptor> flowSegments;
-
-    private final SwitchOfMeterDump meters;
-    private final Map<Integer, SwitchOfTableDump> tables;
+    @Override
+    public void apply(HubBolt handler) {
+        handler.processSyncWorkerError(getKey(), errorMessage);
+    }
 }

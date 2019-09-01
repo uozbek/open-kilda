@@ -50,10 +50,6 @@ import org.openkilda.persistence.repositories.FlowRepository;
 import org.openkilda.persistence.repositories.RepositoryFactory;
 import org.openkilda.persistence.repositories.TransitVlanRepository;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
-import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
-import org.openkilda.wfm.topology.switchmanager.service.CommandBuilder;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 
 import org.junit.Before;
@@ -82,9 +78,6 @@ public class SwitchSyncServiceImplTest {
 
     @Mock
     private PersistenceManager persistenceManager;
-
-    @Mock
-    private CommandBuilder commandBuilder;
 
     private SwitchSyncServiceImpl service;
 
@@ -178,7 +171,7 @@ public class SwitchSyncServiceImplTest {
         service.handleSwitchSync(KEY, request, makeValidationResult());
 
         verify(commandBuilder).buildCommandsToSyncMissingRules(eq(SWITCH_ID), eq(missingRules));
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
         service.handleInstallRulesResponse(KEY);
 
@@ -194,7 +187,7 @@ public class SwitchSyncServiceImplTest {
         service.handleSwitchSync(KEY, request, makeValidationResult());
 
         verify(commandBuilder).buildCommandsToSyncMissingRules(eq(SWITCH_ID), eq(missingRules));
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
         service.handleTaskTimeout(KEY);
 
@@ -209,7 +202,7 @@ public class SwitchSyncServiceImplTest {
         service.handleSwitchSync(KEY, request, makeValidationResult());
 
         verify(commandBuilder).buildCommandsToSyncMissingRules(eq(SWITCH_ID), eq(missingRules));
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(InstallFlowForSwitchManagerRequest.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(InstallFlowForSwitchManagerRequest.class));
 
         ErrorMessage errorMessage = getErrorMessage();
         service.handleTaskError(KEY, errorMessage);
@@ -229,7 +222,7 @@ public class SwitchSyncServiceImplTest {
                 new MeterInfoEntry(EXCESS_COOKIE, EXCESS_COOKIE, FLOW_ID, 0L, 0L, new String[]{}, null, null));
 
         service.handleSwitchSync(KEY, request, makeValidationResult());
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
         ErrorMessage errorMessage = getErrorMessage();
         service.handleTaskError(KEY, errorMessage);
@@ -273,14 +266,14 @@ public class SwitchSyncServiceImplTest {
         verify(commandBuilder).buildCommandsToSyncMissingRules(eq(SWITCH_ID), eq(missingRules));
         verify(commandBuilder).buildCommandsToRemoveExcessRules(
                 eq(SWITCH_ID), eq(singletonList(flowEntry)), eq(excessRules));
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(InstallFlowForSwitchManagerRequest.class));
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(RemoveFlowForSwitchManagerRequest.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(InstallFlowForSwitchManagerRequest.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(RemoveFlowForSwitchManagerRequest.class));
 
         service.handleInstallRulesResponse(KEY);
         service.handleRemoveRulesResponse(KEY);
 
         service.handleRemoveMetersResponse(KEY);
-        verify(carrier, times(3)).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier, times(3)).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
         verify(carrier).cancelTimeoutCallback(eq(KEY));
         verify(carrier).response(eq(KEY), any(InfoMessage.class));
@@ -298,7 +291,7 @@ public class SwitchSyncServiceImplTest {
 
         service.handleSwitchSync(KEY, request, makeValidationResult());
 
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
         service.handleRemoveMetersResponse(KEY);
 
         verify(carrier).cancelTimeoutCallback(eq(KEY));
@@ -317,7 +310,7 @@ public class SwitchSyncServiceImplTest {
                 tempResult.getFlowEntries(), false, tempResult.getValidateRulesResult(), null));
 
         verify(commandBuilder).buildCommandsToSyncMissingRules(eq(SWITCH_ID), eq(missingRules));
-        verify(carrier).sendCommandToSpeaker(eq(KEY), any(CommandData.class));
+        verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
         service.handleInstallRulesResponse(KEY);
 

@@ -15,17 +15,17 @@
 
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
-import org.openkilda.floodlight.api.MeterSchema;
-import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
-import org.openkilda.wfm.topology.switchmanager.model.OfFlowReference;
-import org.openkilda.wfm.topology.switchmanager.model.OfMeterReference;
+import org.openkilda.model.of.MeterSchema;
+import org.openkilda.model.of.OfFlowSchema;
+import org.openkilda.model.validate.OfFlowReference;
+import org.openkilda.model.validate.OfMeterReference;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchDefaultFlowsSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfMeterDump;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentEntry;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 
 import lombok.Value;
 
@@ -39,8 +39,11 @@ import java.util.Map;
 public class ValidateContext {
     private final Map<OfFlowReference, List<OfFlowSchema>> actualOfFlows = new HashMap<>();
     private final Map<OfMeterReference, MeterSchema> actualOfMeters = new HashMap<>();
-    private final List<ValidateFlowSegmentEntry> expectedFlowSegments = new ArrayList<>();
+
+    private final List<ValidateFlowSegmentDescriptor> expectedFlowSegments = new ArrayList<>();
     private final Map<OfFlowReference, OfFlowSchema> expectedDefaultOfFlows = new HashMap<>();
+
+    private final List<ValidateFlowSegmentDescriptor> corruptedSegments = new ArrayList<>();
 
     public ValidateContext(SpeakerSwitchSchema switchSchema) {
         this(Collections.singletonList(switchSchema));
@@ -104,6 +107,10 @@ public class ValidateContext {
         return flowSchema.toBuilder()
                 .meterSchema(meterSchema)
                 .build();
+    }
+
+    public void recordCorruptedSegment(ValidateFlowSegmentDescriptor segmentDescriptor) {
+        corruptedSegments.add(segmentDescriptor);
     }
 
     public void removeUsedMeter(OfFlowReference flowRef, MeterId meterId) {

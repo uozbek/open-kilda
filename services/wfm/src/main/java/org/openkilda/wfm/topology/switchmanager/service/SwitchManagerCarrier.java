@@ -15,20 +15,19 @@
 
 package org.openkilda.wfm.topology.switchmanager.service;
 
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.wfm.CommandContext;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
-import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 
 import java.util.List;
 
 public interface SwitchManagerCarrier {
-    void sendCommandToSpeaker(String key, CommandData command);
-
     void response(String key, Message message);
 
     // FIXME
@@ -36,7 +35,11 @@ public interface SwitchManagerCarrier {
 
     CommandContext getCommandContext();
 
-    void runSwitchSync(String key, SwitchValidateRequest request, ValidateSwitchReport report);
+    void runSwitchSync(String key, SwitchValidateRequest request, SwitchSyncData report);
 
-    void speakerFetchSchema(SwitchId switchId, List<FlowSegmentBlankGenericResolver> requestBlanks);
+    void speakerFetchSchema(SwitchId switchId, List<ValidateFlowSegmentDescriptor> segmentDescriptors);
+
+    void syncSpeakerMessageRequest(CommandData command);
+
+    void syncSpeakerFlowSegmentRequest(FlowSegmentRequest segmentRequest);
 }

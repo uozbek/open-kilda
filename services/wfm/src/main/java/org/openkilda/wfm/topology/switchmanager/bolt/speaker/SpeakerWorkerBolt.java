@@ -15,7 +15,6 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
@@ -29,10 +28,14 @@ import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubSwitchSchemaDumpCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubSyncMessageResponseCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubSyncRequestResponseCommand;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubSyncWorkerErrorCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubValidateErrorResponseCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubValidateWorkerErrorCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.command.SpeakerWorkerCommand;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 import org.openkilda.wfm.topology.switchmanager.service.SpeakerWorkerCarrier;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
 
@@ -99,7 +102,8 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
     // -- carrier implementation --
 
     @Override
-    public void sendSpeakerMessage(String key, CommandMessage message) {
+    public void sendSpeakerCommand(CommandData messagePayload) {
+        CommandMessage message = new CommandMessage(messagePayload, System.currentTimeMillis(), getKey());
         try {
             emitSpeaker(encodeSpeakerStreamPayload(message));
         } catch (JsonProcessingException e) {
@@ -117,20 +121,32 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
     }
 
     @Override
-    public void sendHubResponse(String key, Message response) {
-        Values values = new Values(key, response, getCommandContext());
-        emitResponseToHub(getCurrentTuple(), values);
-    }
-
-    @Override
     public void sendHubValidationWorkerError(String errorMessage) {
         HubValidateWorkerErrorCommand command = new HubValidateWorkerErrorCommand(getKey(), errorMessage);
         emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
     }
 
     @Override
-    public void sendHubValidationError(SpeakerResponse error) {
-        HubValidateErrorResponseCommand command = new HubValidateErrorResponseCommand(getKey(), error);
+    public void sendHubValidationError(String errorMessage) {
+        HubValidateErrorResponseCommand command = new HubValidateErrorResponseCommand(getKey(), errorMessage);
+        emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
+    }
+
+    @Override
+    public void sendHubSyncError(String hubKey, String errorMessage) {
+        HubSyncWorkerErrorCommand command = new HubSyncWorkerErrorCommand(hubKey, errorMessage);
+        emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
+    }
+
+    @Override
+    public void sendHubSyncResponse(String hubKey, Message response) {
+        HubSyncMessageResponseCommand command = new HubSyncMessageResponseCommand(hubKey, response);
+        emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
+    }
+
+    @Override
+    public void sendHubSyncResponse(String hubKey, SpeakerResponse response) {
+        HubSyncRequestResponseCommand command = new HubSyncRequestResponseCommand(hubKey, response);
         emitResponseToHub(getCurrentTuple(), makeHubTuple(command));
     }
 
@@ -147,12 +163,17 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
 
     // -- commands processing --
 
-    public void processProxyRequest(String key, CommandData payload) {
-        installHandler(key, new ProxyRequestHandler(this, key, payload));
+    public void processFetchSchema(
+            String key, SwitchId switchId, List<ValidateFlowSegmentDescriptor> segmentDescriptors) {
+        installHandler(key, new SwitchSchemaFetchHandler(this, switchId, segmentDescriptors));
     }
 
-    public void processFetchSchema(String key, SwitchId switchId, List<FlowSegmentBlankGenericResolver> requests) {
-        installHandler(key, new SchemaFetchHandler(this, switchId, requests));
+    public void processSyncMessageRequest(String hubKey, CommandData messagePayload) {
+        installHandler(getKey(), new SyncSpeakerMessageHandler(this, hubKey, messagePayload));
+    }
+
+    public void processSyncSpeakerRequest(String hubKey, SpeakerRequest request) {
+        installHandler(getKey(), new SyncSpeakerRequestHandler(this, hubKey, request));
     }
 
     // -- storm interface --

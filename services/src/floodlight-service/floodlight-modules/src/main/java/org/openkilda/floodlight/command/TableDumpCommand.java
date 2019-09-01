@@ -15,12 +15,10 @@
 
 package org.openkilda.floodlight.command;
 
-import org.openkilda.floodlight.api.OfFlowSchema;
+import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.floodlight.converter.OfFlowSchemaMapper;
-import org.openkilda.floodlight.converter.OfFlowStatsMapper;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
-import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

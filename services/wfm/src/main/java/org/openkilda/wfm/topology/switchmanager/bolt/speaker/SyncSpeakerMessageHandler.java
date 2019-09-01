@@ -17,7 +17,6 @@ package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
-import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.messaging.error.ErrorData;
 import org.openkilda.messaging.error.ErrorMessage;
 import org.openkilda.messaging.error.ErrorType;
@@ -25,18 +24,18 @@ import org.openkilda.wfm.topology.switchmanager.service.SpeakerWorkerCarrier;
 
 import lombok.Getter;
 
-public class ProxyRequestHandler extends WorkerHandler {
+public class SyncSpeakerMessageHandler extends WorkerHandler {
     private final SpeakerWorkerCarrier carrier;
 
     @Getter
     private boolean completed = false;
 
-    private final String key;
+    private final String hubKey;
     private final CommandData requestPayload;
 
-    public ProxyRequestHandler(SpeakerWorkerCarrier carrier, String key, CommandData requestPayload) {
+    public SyncSpeakerMessageHandler(SpeakerWorkerCarrier carrier, String hubKey, CommandData requestPayload) {
         this.carrier = carrier;
-        this.key = key;
+        this.hubKey = hubKey;
         this.requestPayload = requestPayload;
 
         emitRequest();
@@ -47,23 +46,23 @@ public class ProxyRequestHandler extends WorkerHandler {
         completed = true;
 
         log.debug("Got a response from speaker {}", response);
-        carrier.sendHubResponse(key, response);
+        carrier.sendHubSyncResponse(hubKey, response);
     }
 
     @Override
     public void timeout() {
-        log.debug("Send timeout error to hub {}", key);
+        log.debug("Send timeout error to hub {}", hubKey);
 
         ErrorData errorData = new ErrorData(
                 ErrorType.OPERATION_TIMED_OUT, String.format("Timeout for waiting response %s", requestPayload),
                 "Error in SpeakerWorkerService");
-        ErrorMessage errorMessage = new ErrorMessage(errorData, System.currentTimeMillis(), key);
+        ErrorMessage errorMessage = new ErrorMessage(errorData, System.currentTimeMillis(), hubKey);
 
-        carrier.sendHubResponse(key, errorMessage);
+        carrier.sendHubSyncResponse(hubKey, errorMessage);
     }
 
     private void emitRequest() {
         log.debug("Got a request from hub bolt {}", requestPayload);
-        carrier.sendSpeakerMessage(key, new CommandMessage(requestPayload, System.currentTimeMillis(), key));
+        carrier.sendSpeakerCommand(requestPayload);
     }
 }

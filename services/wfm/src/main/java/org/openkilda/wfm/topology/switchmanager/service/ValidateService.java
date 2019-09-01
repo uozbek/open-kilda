@@ -15,21 +15,17 @@
 
 package org.openkilda.wfm.topology.switchmanager.service;
 
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.messaging.info.meter.MeterEntry;
-import org.openkilda.messaging.info.rule.FlowEntry;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateMetersResult;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateRulesResult;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 
 import java.util.List;
 
 public interface ValidateService {
-    List<FlowSegmentBlankGenericResolver> makeSwitchValidateFlowSegments(CommandContext context, SwitchId switchId);
+    List<ValidateFlowSegmentDescriptor> makeSwitchValidateFlowSegments(CommandContext context, SwitchId switchId);
 
-
-    ValidateSwitchReport validateSwitch(SpeakerSwitchSchema switchSchema);
+    SwitchSyncData validateSwitch(SpeakerSwitchSchema switchSchema);
 }

@@ -1,3 +1,4 @@
+
 /* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +16,8 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker;
 
-import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.floodlight.api.request.DefaultFlowsSchemaRequest;
-import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
+import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.request.MetersDumpRequest;
 import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.floodlight.api.request.TableDumpRequest;
@@ -29,11 +29,13 @@ import org.openkilda.floodlight.api.response.SpeakerTableDumpResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.FlowSegmentSchema;
+import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchDefaultFlowsSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfMeterDump;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentEntry;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 import org.openkilda.wfm.topology.switchmanager.service.SpeakerWorkerCarrier;
 
 import com.google.common.collect.ImmutableList;
@@ -47,14 +49,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-public class SchemaFetchHandler extends WorkerHandler {
+public class SwitchSchemaFetchHandler extends WorkerHandler {
     private final SpeakerWorkerCarrier carrier;
     private final MessageContext context;
 
     private final SwitchId switchId;
 
-    private final Map<UUID, FlowSegmentBlankGenericResolver> requestBlanks = new HashMap<>();
-    private final Map<UUID, ValidateFlowSegmentEntry> ofSchema = new HashMap<>();
+    private final Map<UUID, ValidateFlowSegmentDescriptor> segmentDescriptors = new HashMap<>();
+    private final Map<UUID, ValidateFlowSegmentDescriptor> segmentReplies = new HashMap<>();
 
     private final Map<Integer, UUID> tableRequests = new HashMap<>();
     private final Map<Integer, SwitchOfTableDump> tableDumps = new HashMap<>();
@@ -62,17 +64,18 @@ public class SchemaFetchHandler extends WorkerHandler {
     private final Map<RequestType, UUID> otherRequests = new EnumMap<>(RequestType.class);
     private final Map<RequestType, ResponseMapper> otherResponses = new EnumMap<>(RequestType.class);
 
-    public SchemaFetchHandler(
-            SpeakerWorkerCarrier carrier, SwitchId switchId, List<FlowSegmentBlankGenericResolver> schemaRequests) {
+    public SwitchSchemaFetchHandler(
+            SpeakerWorkerCarrier carrier, SwitchId switchId, List<ValidateFlowSegmentDescriptor> segmentDescriptors) {
         this.carrier = carrier;
         this.context = (new MessageContext(carrier.getCommandContext().getCorrelationId()))
                 .fork("schema").fork(switchId.toString());
 
         this.switchId = switchId;
 
-        for (FlowSegmentBlankGenericResolver entry : schemaRequests) {
-            carrier.sendSpeakerCommand(entry.makeSchemaRequest());
-            requestBlanks.put(entry.getCommandId(), entry);
+        for (ValidateFlowSegmentDescriptor descriptor : segmentDescriptors) {
+            FlowSegmentRequest request = descriptor.getRequestBlank().makeSchemaRequest();
+            carrier.sendSpeakerCommand(request);
+            this.segmentDescriptors.put(request.getCommandId(), descriptor);
         }
 
         // force table 0 dump (to get current system/default OF flows)
@@ -105,7 +108,7 @@ public class SchemaFetchHandler extends WorkerHandler {
 
     @Override
     public boolean isCompleted() {
-        if (requestBlanks.size() != ofSchema.size()) {
+        if (segmentDescriptors.size() != segmentReplies.size()) {
             return false;
         }
         if (tableRequests.size() != tableDumps.size()) {
@@ -115,15 +118,15 @@ public class SchemaFetchHandler extends WorkerHandler {
     }
 
     private void handleSpeakerResponse(SpeakerFlowSegmentSchemaResponse schemaResponse) {
-        FlowSegmentBlankGenericResolver blank = requestBlanks.get(schemaResponse.getCommandId());
-        if (blank == null) {
+        ValidateFlowSegmentDescriptor descriptor = segmentDescriptors.get(schemaResponse.getCommandId());
+        if (descriptor == null) {
             log.warn(
                     "Receive unwanted flow segment schema response - sw:{} commandID: {}",
                     switchId, schemaResponse.getCommandId());
             return;
         }
 
-        handleFlowSegmentSchema(blank, schemaResponse.getSchema());
+        handleFlowSegmentSchema(descriptor, schemaResponse.getSchema());
     }
 
     private void handleSpeakerResponse(SpeakerTableDumpResponse response) {
@@ -170,10 +173,14 @@ public class SchemaFetchHandler extends WorkerHandler {
     }
 
     private void handleSpeakerResponse(FlowErrorResponse error) {
-        carrier.sendHubValidationError(error);  // terminate point
+        log.error("Speaker error response - {} (terminate switch schema handler for {})", error, switchId);
+        String errorMessage = String.format(
+                "Error response on flow segment request from %s - %s %s",
+                error.getSwitchId(), error.getErrorCode(), error.getDescription());
+        carrier.sendHubValidationError(errorMessage);  // terminate point
     }
 
-    private void handleFlowSegmentSchema(FlowSegmentBlankGenericResolver blank, org.openkilda.floodlight.api.FlowSegmentSchema schema) {
+    private void handleFlowSegmentSchema(ValidateFlowSegmentDescriptor descriptor, FlowSegmentSchema schema) {
         if (! switchId.equals(schema.getDatapath())) {
             carrier.sendHubValidationWorkerError(String.format(
                     "Receive invalid flow segment - segment address switch %s but handler request switch %s",
@@ -181,7 +188,10 @@ public class SchemaFetchHandler extends WorkerHandler {
             return;
         }
 
-        ofSchema.put(blank.getCommandId(), new ValidateFlowSegmentEntry(blank, schema));
+        ValidateFlowSegmentDescriptor reply = descriptor.toBuilder()
+                .schema(schema)
+                .build();
+        segmentReplies.put(reply.getCommandId(), reply);
 
         for (OfFlowSchema entry : schema.getEntries()) {
             requestOfTableDump((int) entry.getTableId());
@@ -200,7 +210,7 @@ public class SchemaFetchHandler extends WorkerHandler {
 
         SpeakerSwitchSchema.SpeakerSwitchSchemaBuilder schemaBuilder = SpeakerSwitchSchema.builder()
                 .datapath(switchId)
-                .flowSegments(ImmutableList.copyOf(ofSchema.values()))
+                .flowSegments(ImmutableList.copyOf(segmentReplies.values()))
                 .tables(ImmutableMap.copyOf(tableDumps));
         for (ResponseMapper mapper : otherResponses.values()) {
             mapper.apply(schemaBuilder);

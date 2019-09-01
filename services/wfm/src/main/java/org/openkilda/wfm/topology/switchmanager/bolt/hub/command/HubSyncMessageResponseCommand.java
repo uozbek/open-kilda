@@ -13,19 +13,21 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import lombok.Builder;
-import lombok.Singular;
-import lombok.Value;
+import org.openkilda.messaging.Message;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 
-import java.util.List;
+public class HubSyncMessageResponseCommand extends HubCommand {
+    private final Message response;
 
-@Value
-@Builder
-public class ValidateDefaultOfFlowsReport {
-    @Singular
-    private final List<OfFlowReference> properOfFlows;
-    @Singular
-    private final List<OfFlowMissing> missingOfFlows;
+    public HubSyncMessageResponseCommand(String key, Message response) {
+        super(key);
+        this.response = response;
+    }
+
+    @Override
+    public void apply(HubBolt handler) {
+        handler.processSyncResponse(response);
+    }
 }

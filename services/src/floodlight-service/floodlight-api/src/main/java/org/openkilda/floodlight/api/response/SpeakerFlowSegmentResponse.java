@@ -33,9 +33,6 @@ import java.util.UUID;
 @ToString(callSuper = true)
 public class SpeakerFlowSegmentResponse extends SpeakerResponse {
 
-    @JsonProperty("switch_id")
-    private final SwitchId switchId;
-
     @JsonProperty("flowid")
     private final String flowId;
 
@@ -54,10 +51,9 @@ public class SpeakerFlowSegmentResponse extends SpeakerResponse {
             @JsonProperty("flowid") String flowId,
             @JsonProperty("cookie") Cookie cookie,
             @JsonProperty("success") boolean success) {
-        super(messageContext, commandId);
+        super(messageContext, commandId, switchId);
 
         this.flowId = flowId;
-        this.switchId = switchId;
         this.cookie = cookie;
         this.success = success;
     }

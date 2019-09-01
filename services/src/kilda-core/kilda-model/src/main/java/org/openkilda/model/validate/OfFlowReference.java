@@ -13,29 +13,28 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.api;
+package org.openkilda.model.validate;
 
 import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
+import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.FlowSegmentSchema;
+import org.openkilda.model.of.OfFlowSchema;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import lombok.Builder;
-import lombok.NonNull;
+import lombok.AllArgsConstructor;
 import lombok.Value;
 
-import java.io.Serializable;
-
 @Value
-@Builder(toBuilder = true)
-@JsonNaming(value = SnakeCaseStrategy.class)
-public class OfFlowSchema implements Serializable {
-    @NonNull
-    private final short tableId;
-    @NonNull
+@AllArgsConstructor
+public class OfFlowReference {
+    private final int tableId;
     private final Cookie cookie;
+    private final SwitchId datapath;
 
-    private final MeterId meterId;
+    public OfFlowReference(FlowSegmentSchema schema, OfFlowSchema entry) {
+        this(entry.getTableId(), entry.getCookie(), schema.getDatapath());
+    }
 
-    private final MeterSchema meterSchema;
+    public OfFlowReference(SwitchId datapath, OfFlowSchema entry) {
+        this(entry.getTableId(), entry.getCookie(), datapath);
+    }
 }

@@ -13,28 +13,22 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.model.validate;
 
+import org.openkilda.model.PathId;
+import org.openkilda.model.SwitchId;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Singular;
 import lombok.Value;
 
-import java.util.List;
+import java.io.Serializable;
 
 @Value
 @Builder
-public class ValidateSwitchReport {
-    @Singular
-    private final List<OfFlowReference> cookieCollisions;
-    @Singular
-    private final List<MeterCollision> meterCollisions;
-
-    @Singular
-    private final List<OfFlowReference> excessOfFlows;
-    @Singular
-    private final List<OfMeterReference> excessMeters;
-
-    @Singular
-    private final List<ValidateFlowSegmentReport> segmentReports;
-    private final ValidateDefaultOfFlowsReport defaultFlowsReport;
+@AllArgsConstructor
+public class FlowSegmentReference implements Serializable {
+    private final String flowId;
+    private final PathId pathId;
+    private final SwitchId datapath;
 }

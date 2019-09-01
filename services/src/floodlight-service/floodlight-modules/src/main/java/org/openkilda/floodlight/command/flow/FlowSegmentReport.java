@@ -20,6 +20,7 @@ import org.openkilda.floodlight.api.response.SpeakerErrorCode;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
+import org.openkilda.floodlight.command.SpeakerRemoteCommandReport;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
@@ -37,7 +38,7 @@ import org.projectfloodlight.openflow.protocol.OFErrorMsg;
 import org.projectfloodlight.openflow.protocol.errormsg.OFFlowModFailedErrorMsg;
 
 @Slf4j
-public class FlowSegmentReport extends SpeakerCommandReport {
+public class FlowSegmentReport extends SpeakerRemoteCommandReport {
     @Getter(AccessLevel.PROTECTED)
     private final FlowSegmentCommand command;
 
@@ -46,7 +47,7 @@ public class FlowSegmentReport extends SpeakerCommandReport {
     }
 
     protected FlowSegmentReport(FlowSegmentCommand command, Exception error) {
-        super(error);
+        super(command, error);
         this.command = command;
     }
 

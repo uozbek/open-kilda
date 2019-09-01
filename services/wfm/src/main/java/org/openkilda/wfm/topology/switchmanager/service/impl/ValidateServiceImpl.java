@@ -15,8 +15,6 @@
 
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
-import org.openkilda.floodlight.api.FlowSegmentSchema;
-import org.openkilda.floodlight.api.OfFlowSchema;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.Flow;
@@ -24,6 +22,17 @@ import org.openkilda.model.FlowPath;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.PathId;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.FlowSegmentSchema;
+import org.openkilda.model.of.OfFlowSchema;
+import org.openkilda.model.validate.FlowSegmentReference;
+import org.openkilda.model.validate.MeterCollision;
+import org.openkilda.model.validate.OfFlowMissing;
+import org.openkilda.model.validate.OfFlowReference;
+import org.openkilda.model.validate.OfMeterReference;
+import org.openkilda.model.validate.ValidateDefaultOfFlowsReport;
+import org.openkilda.model.validate.ValidateDefaultOfFlowsReport.ValidateDefaultOfFlowsReportBuilder;
+import org.openkilda.model.validate.ValidateFlowSegmentReport;
+import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FlowPathRepository;
 import org.openkilda.persistence.repositories.FlowRepository;
@@ -32,19 +41,12 @@ import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.share.service.SpeakerFlowSegmentRequestBuilder;
-import org.openkilda.wfm.topology.switchmanager.model.MeterCollision;
-import org.openkilda.wfm.topology.switchmanager.model.OfFlowMissing;
-import org.openkilda.wfm.topology.switchmanager.model.OfFlowReference;
-import org.openkilda.wfm.topology.switchmanager.model.OfMeterReference;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.SwitchDefaultFlowsSchema;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateDefaultOfFlowsReport;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateDefaultOfFlowsReport.ValidateDefaultOfFlowsReportBuilder;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentEntry;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentReport;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
 
+import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,7 +58,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -75,7 +76,8 @@ public class ValidateServiceImpl implements ValidateService {
     }
 
     @Override
-    public List<FlowSegmentBlankGenericResolver> makeSwitchValidateFlowSegments(CommandContext context, SwitchId switchId) {
+    public List<ValidateFlowSegmentDescriptor> makeSwitchValidateFlowSegments(
+            CommandContext context, SwitchId switchId) {
         final Map<PathId, FlowPath> affectedPath = new HashMap<>();
 
         Set<PathId> avoidIngressRequest = new HashSet<>();
@@ -103,7 +105,7 @@ public class ValidateServiceImpl implements ValidateService {
         SpeakerFlowSegmentRequestBuilder requestBuilder = new SpeakerFlowSegmentRequestBuilder(
                 resourceManager, switchId);
 
-        List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
+        List<ValidateFlowSegmentDescriptor> descriptors = new ArrayList<>();
         Set<PathId> processedPath = new HashSet<>();
         for (Map.Entry<PathId, FlowPath> pathEntry : affectedPath.entrySet()) {
             PathId pathId = pathEntry.getKey();
@@ -126,21 +128,24 @@ public class ValidateServiceImpl implements ValidateService {
             processedPath.add(pathId);
             processedPath.add(oppositePath.getPathId());
 
+            List<FlowSegmentBlankGenericResolver> blanks;
             if (avoidIngressRequest.contains(pathId)) {
-                requests.addAll(requestBuilder.buildAllExceptIngress(context, flow, path, oppositePath));
+                blanks = requestBuilder.buildAllExceptIngress(context, flow, path, oppositePath);
             } else {
-                requests.addAll(requestBuilder.buildAll(context, flow, path, oppositePath));
+                blanks = requestBuilder.buildAll(context, flow, path, oppositePath);
             }
+            descriptors.addAll(makeFlowSegmentDescriptor(flow, path, blanks));
         }
 
-        return requests;
+        return descriptors;
     }
 
     @Override
-    public ValidateSwitchReport validateSwitch(SpeakerSwitchSchema switchSchema) {
+    public SwitchSyncData validateSwitch(SpeakerSwitchSchema switchSchema) {
         log.debug("Validating rules on switch {}", switchSchema.getDatapath());
 
-        ValidateSwitchReport.ValidateSwitchReportBuilder switchReport = ValidateSwitchReport.builder();
+        ValidateSwitchReport.ValidateSwitchReportBuilder switchReport = ValidateSwitchReport.builder()
+                .datapath(switchSchema.getDatapath());
         ValidateContext context = new ValidateContext(switchSchema);
 
         switchReport.cookieCollisions(verifyCookieCollisions(context));
@@ -152,7 +157,23 @@ public class ValidateServiceImpl implements ValidateService {
         switchReport.excessOfFlows(verifyExcessOfFlows(context));
         switchReport.excessMeters(verifyExcessMeters(context));
 
-        return switchReport.build();
+        return new SwitchSyncData(switchReport.build(), ImmutableList.copyOf(context.getCorruptedSegments()));
+    }
+
+    private List<ValidateFlowSegmentDescriptor> makeFlowSegmentDescriptor(
+            Flow flow, FlowPath path, List<FlowSegmentBlankGenericResolver> blanks) {
+        return blanks.stream()
+                .map(entry -> makeFlowSegmentDescriptor(flow, path, entry))
+                .collect(Collectors.toList());
+    }
+
+    private ValidateFlowSegmentDescriptor makeFlowSegmentDescriptor(
+            Flow flow, FlowPath path, FlowSegmentBlankGenericResolver blank) {
+        FlowSegmentReference ref = new FlowSegmentReference(flow.getFlowId(), path.getPathId(), blank.getSwitchId());
+        return ValidateFlowSegmentDescriptor.builder()
+                .ref(ref)
+                .requestBlank(blank)
+                .build();
     }
 
     private List<OfFlowReference> verifyCookieCollisions(ValidateContext context) {
@@ -196,18 +217,23 @@ public class ValidateServiceImpl implements ValidateService {
 
     private List<ValidateFlowSegmentReport> verifyFlowSegments(ValidateContext context) {
         List<ValidateFlowSegmentReport> reports = new ArrayList<>();
-        for (ValidateFlowSegmentEntry segment : context.getExpectedFlowSegments()) {
+        for (ValidateFlowSegmentDescriptor segmentDescriptor : context.getExpectedFlowSegments()) {
             ValidateFlowSegmentReport.ValidateFlowSegmentReportBuilder segmentReport = ValidateFlowSegmentReport
                     .builder()
-                    .requestBlank(segment.getRequestBlank());
+                    .segmentRef(segmentDescriptor.getRef());
 
             FlowSegmentReportAdapter reportAdapter = new FlowSegmentReportAdapter(segmentReport);
-            FlowSegmentSchema segmentSchema = segment.getSchema();
+            FlowSegmentSchema segmentSchema = segmentDescriptor.getSchema();
             for (OfFlowSchema ofFlowSchema : segmentSchema.getEntries()) {
                 OfFlowReference ref = new OfFlowReference(segmentSchema, ofFlowSchema);
                 verifyOfFlow(context, reportAdapter, ref, ofFlowSchema);
             }
-            reports.add(segmentReport.build());
+
+            ValidateFlowSegmentReport report = segmentReport.build();
+            if (! report.isValid()) {
+                context.recordCorruptedSegment(segmentDescriptor);
+            }
+            reports.add(report);
         }
 
         return reports;

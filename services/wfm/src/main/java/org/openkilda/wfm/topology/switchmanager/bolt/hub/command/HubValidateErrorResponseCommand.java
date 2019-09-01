@@ -15,19 +15,18 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 
 public class HubValidateErrorResponseCommand extends HubCommand {
-    private final SpeakerResponse response;
+    private final String errorMessage;
 
-    public HubValidateErrorResponseCommand(String key, SpeakerResponse response) {
+    public HubValidateErrorResponseCommand(String key, String errorMessage) {
         super(key);
-        this.response = response;
+        this.errorMessage = errorMessage;
     }
 
     @Override
     public void apply(HubBolt handler) {
-        handler.processValidateErrorResponse(key, response);
+        handler.processValidateErrorResponse(key, errorMessage);
     }
 }

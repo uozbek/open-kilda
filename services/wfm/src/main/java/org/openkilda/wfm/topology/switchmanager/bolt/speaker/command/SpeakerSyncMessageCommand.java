@@ -15,26 +15,21 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.speaker.command;
 
-import org.openkilda.model.SwitchId;
+import org.openkilda.messaging.command.CommandData;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 
-import java.util.List;
+public class SpeakerSyncMessageCommand extends SpeakerWorkerCommand {
+    private final String hubKey;
+    private final CommandData requestPayload;
 
-public class SpeakerSwitchSchemaDumpCommand extends SpeakerWorkerCommand {
-    private final SwitchId switchId;
-
-    private final List<ValidateFlowSegmentDescriptor> segmentDescriptors;
-
-    public SpeakerSwitchSchemaDumpCommand(
-            String key, SwitchId switchId, List<ValidateFlowSegmentDescriptor> segmentDescriptors) {
-        super(key);
-        this.switchId = switchId;
-        this.segmentDescriptors = segmentDescriptors;
+    public SpeakerSyncMessageCommand(String workerKey, String hubKey, CommandData requestPayload) {
+        super(workerKey);
+        this.hubKey = hubKey;
+        this.requestPayload = requestPayload;
     }
 
     @Override
     public void apply(SpeakerWorkerBolt handler) {
-        handler.processFetchSchema(key, switchId, segmentDescriptors);
+        handler.processSyncMessageRequest(hubKey, requestPayload);
     }
 }

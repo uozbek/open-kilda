@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,21 +14,27 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.model;
+package org.openkilda.model.validate;
 
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Singular;
 import lombok.Value;
 
 import java.util.List;
 
 @Value
-@Deprecated
-public class ValidateRulesResult {
+@Builder
+public class ValidateFlowSegmentReport {
+    @NonNull
+    private final FlowSegmentReference segmentRef;
 
-    private List<Long> missingRules;
+    @Singular
+    private final List<OfFlowReference> properOfFlows;
+    @Singular
+    private final List<OfFlowMissing> missingOfFlows;
 
-    private List<Long> properRules;
-
-    private List<Long> excessRules;
-
-    private List<Long> misconfiguredRules;
+    public boolean isValid() {
+        return missingOfFlows.isEmpty();
+    }
 }

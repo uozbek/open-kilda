@@ -16,26 +16,39 @@
 package org.openkilda.messaging.info.switches;
 
 import org.openkilda.messaging.info.InfoData;
+import org.openkilda.model.validate.ValidateSwitchReport;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
 @Builder
+@EqualsAndHashCode(callSuper = false)
 public class SwitchSyncResponse extends InfoData {
+    @JsonProperty("validate_report")
+    private final ValidateSwitchReport validateReport;
 
-    @JsonProperty("rules")
-    RulesSyncEntry rules;
+    @JsonProperty("success")
+    private final boolean success;
 
-    @JsonProperty("meters")
-    MetersSyncEntry meters;
+    @JsonProperty("remove_excess_rules")
+    private final boolean removeExcessRules;
+
+    @JsonProperty("remove_excess_meters")
+    private final boolean removeExcessMeters;
 
     @JsonCreator
-    public SwitchSyncResponse(@JsonProperty("rules") RulesSyncEntry rules,
-                              @JsonProperty("meters") MetersSyncEntry meters) {
-        this.rules = rules;
-        this.meters = meters;
+    public SwitchSyncResponse(
+            @JsonProperty("validate_report") ValidateSwitchReport validateReport,
+            @JsonProperty("success") boolean success,
+            @JsonProperty("remove_excess_rules") boolean removeExcessRules,
+            @JsonProperty("remove_excess_meters") boolean removeExcessMeters) {
+        this.validateReport = validateReport;
+        this.success = success;
+        this.removeExcessRules = removeExcessRules;
+        this.removeExcessMeters = removeExcessMeters;
     }
 }

@@ -15,8 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.floodlight.api.MeterSchema;
-import org.openkilda.messaging.info.meter.MeterEntry;
+import org.openkilda.model.of.MeterSchema;
 import org.openkilda.model.SwitchId;
 
 import lombok.Value;

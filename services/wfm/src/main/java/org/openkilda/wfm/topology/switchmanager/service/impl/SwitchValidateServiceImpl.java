@@ -15,15 +15,11 @@
 
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
-import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
+import org.openkilda.messaging.error.ErrorData;
 import org.openkilda.messaging.error.ErrorMessage;
+import org.openkilda.messaging.error.ErrorType;
 import org.openkilda.messaging.info.InfoMessage;
-import org.openkilda.messaging.info.meter.SwitchMeterEntries;
-import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
-import org.openkilda.messaging.info.rule.SwitchFlowEntries;
-import org.openkilda.messaging.info.switches.MetersValidationEntry;
-import org.openkilda.messaging.info.switches.RulesValidationEntry;
 import org.openkilda.messaging.info.switches.SwitchValidationResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
@@ -33,8 +29,7 @@ import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchVali
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateFsmFactory;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateState;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateSwitchReport;
-import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchValidateService;
 import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
@@ -43,15 +38,12 @@ import com.google.common.annotations.VisibleForTesting;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
 public class SwitchValidateServiceImpl implements SwitchValidateService {
-
     private Map<String, RequestContext> requestsInWork = new HashMap<>();
 
     @VisibleForTesting
@@ -69,78 +61,11 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
 
     @Override
     public void handleSwitchValidateRequest(String key, SwitchValidateRequest request) {
-        SwitchValidateFsm fsm = fsmFactory.produce(request, key);
-        skipIntermediateStates(fsm, context);
-    }
+        SwitchValidateFsm fsm = fsmFactory.produce(request.getSwitchId(), key);
+        requestsInWork.put(key, new RequestContext(request, fsm));
 
-    @Override
-    public void handleFlowEntriesResponse(String key, SwitchFlowEntries data) {
-        SwitchValidateFsm fsm = fsms.get(key);
-        if (fsm == null) {
-            logFsmNotFound(key);
-            return;
-        }
-
-        fsm.fire(SwitchValidateEvent.RULES_RECEIVED, data.getFlowEntries());
-        skipIntermediateStates(fsm, context);
-    }
-
-    @Override
-    public void handleExpectedDefaultFlowEntriesResponse(String key, SwitchExpectedDefaultFlowEntries data) {
-        SwitchValidateFsm fsm = fsms.get(key);
-        if (fsm == null) {
-            logFsmNotFound(key);
-            return;
-        }
-
-        fsm.fire(SwitchValidateEvent.EXPECTED_DEFAULT_RULES_RECEIVED, data.getFlowEntries());
-        skipIntermediateStates(fsm, context);
-    }
-
-    @Override
-    public void handleMeterEntriesResponse(String key, SwitchMeterEntries data) {
-        SwitchValidateFsm fsm = fsms.get(key);
-        if (fsm == null) {
-            logFsmNotFound(key);
-            return;
-        }
-
-        fsm.fire(SwitchValidateEvent.METERS_RECEIVED, data.getMeterEntries());
-        skipIntermediateStates(fsm, context);
-    }
-
-    @Override
-    public void handleMetersUnsupportedResponse(String key) {
-        SwitchValidateFsm fsm = fsms.get(key);
-        if (fsm == null) {
-            logFsmNotFound(key);
-            return;
-        }
-
-        fsm.fire(SwitchValidateEvent.METERS_UNSUPPORTED);
-        skipIntermediateStates(fsm, context);
-    }
-
-    @Override
-    public void handleTaskTimeout(String key) {
-        SwitchValidateFsm fsm = fsms.get(key);
-        if (fsm == null) {
-            return;
-        }
-
-        fsm.fire(SwitchValidateEvent.TIMEOUT);
-        skipIntermediateStates(fsm, context);
-    }
-
-    @Override
-    public void handleTaskError(String key, ErrorMessage message) {
-        SwitchValidateFsm fsm = fsms.get(key);
-        if (fsm == null) {
-            return;
-        }
-
-        fsm.fire(SwitchValidateEvent.ERROR, message);
-        skipIntermediateStates(fsm, context);
+        SwitchValidateContext context = SwitchValidateContext.builder().build();
+        feedFsm(key, SwitchValidateEvent.NEXT, context);
     }
 
     @Override
@@ -154,18 +79,24 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
     @Override
     public void handleWorkerError(String key, String errorMessage) {
         SwitchValidateContext context = SwitchValidateContext.builder()
-                .workerError(errorMessage)
+                .errorMessage(errorMessage)
                 .build();
         feedFsm(key, SwitchValidateEvent.WORKER_ERROR, context);
     }
 
     @Override
-    public void handleSpeakerErrorResponse(String key, SpeakerResponse response) {
+    public void handleSpeakerErrorResponse(String key, String errorMessage) {
         SwitchValidateContext context = SwitchValidateContext.builder()
-                .speakerResponse(response)
+                .errorMessage(errorMessage)
                 .build();
-        SwitchValidateEvent event = response == null ? SwitchValidateEvent.TIMEOUT : SwitchValidateEvent.ERROR;
+        SwitchValidateEvent event = errorMessage == null ? SwitchValidateEvent.TIMEOUT : SwitchValidateEvent.ERROR;
         feedFsm(key, event, context);
+    }
+
+    @Override
+    public void handleGlobalTimeout(String key) {
+        SwitchValidateContext context = SwitchValidateContext.builder().build();
+        feedFsm(key, SwitchValidateEvent.TIMEOUT, context);
     }
 
     private void feedFsm(String key, SwitchValidateEvent event, SwitchValidateContext context) {
@@ -178,56 +109,41 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
         SwitchValidateFsm fsm = requestContext.getFsm();
         fsm.fire(event, context);
         if (skipIntermediateStates(fsm, context)) {
-            onComplete(requestContext);
+            onComplete(requestContext, key);
             requestsInWork.remove(key);
         }
-    }
-
-    private void logFsmNotFound(String key) {
-        log.warn("Switch validate FSM with key {} not found", key);
     }
 
     private void onComplete(RequestContext requestContext, String key) {
         carrier.cancelTimeoutCallback(key);
 
         SwitchValidateFsm fsm = requestContext.getFsm();
-        Optional<ValidateSwitchReport> report = fsm.getReport();
+        Optional<SwitchSyncData> results = fsm.getResults();
         SwitchValidateRequest request = requestContext.getRequest();
-        if (report.isPresent()) {
-            onSuccessComplete(request, key, report.get());
+        if (results.isPresent()) {
+            onSuccessComplete(request, key, results.get());
         } else {
-            onErrorComplete(request, key);
+            ErrorData error = fsm.getErrorMessage()
+                    .orElse(new ErrorData(ErrorType.INTERNAL_ERROR, "internal error",
+                                          "no error description (FSM died without error description)"));
+            onErrorComplete(key, error);
         }
     }
 
-    private void onSuccessComplete(SwitchValidateRequest request, String key, ValidateSwitchReport report) {
+    private void onSuccessComplete(SwitchValidateRequest request, String key, SwitchSyncData syncData) {
         if (request.isPerformSync()) {
-            carrier.runSwitchSync(key, request, report);
+            carrier.runSwitchSync(key, request, syncData);
         } else {
-
+            SwitchValidationResponse response = new SwitchValidationResponse(syncData.getValidateReport());
+            InfoMessage message = new InfoMessage(response, System.currentTimeMillis(), key);
+            carrier.response(key, message);
         }
         // TODO
     }
 
-    private void onErrorComplete(SwitchValidateRequest request, String key) {
-        RulesValidationEntry rulesValidationEntry = new RulesValidationEntry(
-                validateRulesResult.getMissingRules(), validateRulesResult.getMisconfiguredRules(),
-                validateRulesResult.getProperRules(), validateRulesResult.getExcessRules());
-
-        MetersValidationEntry metersValidationEntry = null;
-        if (processMeters) {
-            metersValidationEntry = new MetersValidationEntry(
-                    validateMetersResult.getMissingMeters(), validateMetersResult.getMisconfiguredMeters(),
-                    validateMetersResult.getProperMeters(), validateMetersResult.getExcessMeters());
-        }
-
-        SwitchValidationResponse response = new SwitchValidationResponse(
-                rulesValidationEntry, metersValidationEntry);
-        InfoMessage message = new InfoMessage(response, System.currentTimeMillis(), key);
-
+    private void onErrorComplete(String key, ErrorData error) {
+        ErrorMessage message = new ErrorMessage(error, System.currentTimeMillis(), key);
         carrier.response(key, message);
-
-        // TODO
     }
 
     private boolean skipIntermediateStates(SwitchValidateFsm fsm, SwitchValidateContext context) {
