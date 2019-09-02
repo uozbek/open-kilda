@@ -22,4 +22,8 @@ import lombok.Value;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
-public class ValidateOfMeterDefect extends Defect<MeterSchema, OfMeterReference> { }
+public class ValidateOfMeterDefect extends Defect<MeterSchema, OfMeterReference> {
+    public ValidateOfMeterDefect(OfMeterReference reference, MeterSchema expected, MeterSchema actual) {
+        super(reference, expected, actual);
+    }
+}

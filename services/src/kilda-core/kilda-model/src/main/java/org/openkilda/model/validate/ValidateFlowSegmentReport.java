@@ -15,7 +15,10 @@
 
 package org.openkilda.model.validate;
 
+import org.openkilda.model.of.MeterSchema;
+
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
@@ -23,13 +26,19 @@ import lombok.Value;
 import java.util.List;
 
 @Value
-@Builder
-public class ValidateFlowSegmentReport {
+@EqualsAndHashCode(callSuper = true)
+public class ValidateFlowSegmentReport extends ValidateBatchReport {
     @NonNull
     private final FlowSegmentReference segmentRef;
 
-    @Singular
-    private final List<ValidateDefect> defects;
+    @Builder
+    public ValidateFlowSegmentReport(
+            FlowSegmentReference segmentRef,
+            @Singular List<OfFlowReference> properOfFlows, @Singular List<MeterSchema> properMeters,
+            @Singular List<ValidateDefect> defects) {
+        super(properOfFlows, properMeters, defects);
+        this.segmentRef = segmentRef;
+    }
 
     public boolean isValid() {
         return defects.isEmpty();

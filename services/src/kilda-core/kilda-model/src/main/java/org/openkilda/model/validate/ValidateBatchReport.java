@@ -15,29 +15,22 @@
 
 package org.openkilda.model.validate;
 
-import org.openkilda.model.SwitchId;
 import org.openkilda.model.of.MeterSchema;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
-import lombok.Singular;
-import lombok.Value;
+import lombok.Getter;
 
+import java.io.Serializable;
 import java.util.List;
 
-@Value
-@EqualsAndHashCode(callSuper = true)
-public class ValidateDefaultOfFlowsReport extends ValidateBatchReport {
-    @NonNull
-    private final SwitchId datapath;
+@Getter
+@EqualsAndHashCode
+@AllArgsConstructor
+class ValidateBatchReport implements Serializable {
+    protected final List<OfFlowReference> properOfFlows;
 
-    @Builder
-    public ValidateDefaultOfFlowsReport(
-            SwitchId datapath,
-            @Singular List<OfFlowReference> properOfFlows, @Singular List<MeterSchema> properMeters,
-            @Singular List<ValidateDefect> defects) {
-        super(properOfFlows, properMeters, defects);
-        this.datapath = datapath;
-    }
+    protected final List<MeterSchema> properMeters;
+
+    protected final List<ValidateDefect> defects;
 }

@@ -30,8 +30,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -58,6 +60,37 @@ public class ValidateContext {
             unpackExpectedFlowSegments(schema);
             unpackExpectedDefaultOfFlows(schema.getDefaultFlowsSchema());
         }
+    }
+
+    public Optional<OfFlowSchema> lookupAndExtractActualOfFlowSchema(OfFlowReference ref, OfFlowSchema match) {
+        List<OfFlowSchema> matchCandidates = actualOfFlows.getOrDefault(ref, Collections.emptyList());
+        Iterator<OfFlowSchema> iter = matchCandidates.iterator();
+
+        OfFlowSchema actual = null;
+        boolean isFound = false;
+        while (iter.hasNext()) {
+            actual = iter.next();
+            if (! match.equals(actual)) {
+                continue;
+            }
+
+            // full match
+            isFound = true;
+            iter.remove();
+        }
+
+        if (isFound) {
+            return Optional.of(actual);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<MeterSchema> lookupExpectedMeterSchema(OfMeterReference ref) {
+        return Optional.ofNullable(expectedOfMeters.get(ref));
+    }
+
+    public Optional<MeterSchema> lookupActualMeterSchema(OfMeterReference ref) {
+        return Optional.ofNullable(actualOfMeters.get(ref));
     }
 
     private void unpackOfFlows(SpeakerSwitchSchema switchSchema) {

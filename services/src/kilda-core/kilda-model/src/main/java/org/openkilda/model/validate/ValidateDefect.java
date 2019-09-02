@@ -18,9 +18,18 @@ package org.openkilda.model.validate;
 import lombok.Value;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 @Value
 public class ValidateDefect implements Serializable {
     private final ValidateOfFlowDefect flow;
     private final ValidateOfMeterDefect meter;
+
+    public Optional<ValidateOfFlowDefect> getFlow() {
+        return Optional.ofNullable(flow);
+    }
+
+    public Optional<ValidateOfMeterDefect> getMeter() {
+        return Optional.ofNullable(meter);
+    }
 }

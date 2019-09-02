@@ -17,6 +17,7 @@ package org.openkilda.model.validate;
 
 import org.openkilda.model.of.OfFlowSchema;
 
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
@@ -25,5 +26,7 @@ import java.util.List;
 @Value
 @EqualsAndHashCode(callSuper = true)
 public class ValidateOfFlowDefect extends Defect<OfFlowSchema, OfFlowReference> {
-    private final List<OfFlowSchema> collisions;
+    public ValidateOfFlowDefect(OfFlowReference reference, OfFlowSchema expected, OfFlowSchema actual) {
+        super(reference, expected, actual);
+    }
 }

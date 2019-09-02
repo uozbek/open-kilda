@@ -26,7 +26,11 @@ import org.openkilda.messaging.info.switches.SwitchValidationResponse;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.validate.OfFlowMissing;
 import org.openkilda.model.validate.OfFlowReference;
+import org.openkilda.model.validate.OfMeterReference;
+import org.openkilda.model.validate.ValidateDefaultOfFlowsReport;
+import org.openkilda.model.validate.ValidateDefect;
 import org.openkilda.model.validate.ValidateFlowSegmentReport;
+import org.openkilda.model.validate.ValidateOfFlowDefect;
 import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.northbound.dto.v1.switches.MeterInfoDto;
 import org.openkilda.northbound.dto.v1.switches.MeterMisconfiguredInfoDto;
@@ -40,6 +44,7 @@ import org.openkilda.northbound.dto.v1.switches.SwitchDto;
 import org.openkilda.northbound.dto.v1.switches.SwitchSyncResult;
 import org.openkilda.northbound.dto.v1.switches.SwitchValidationResult;
 
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -102,23 +107,31 @@ public abstract class SwitchMapper {
     }
 
     public RulesValidationDto toRulesValidationDto(ValidateSwitchReport report) {
-        List<Long> proper = new ArrayList<>();
-        List<Long> missing = new ArrayList<>();
-        Set<Long> partialMatch = new HashSet<>();
-        for (ValidateFlowSegmentReport segmentReport : report.getSegmentReports()) {
-            proper.addAll(lookupTableZeroCookies(segmentReport.getProperOfFlows()));
-            missing.addAll(lookupTableZeroMissingCookies(segmentReport.getMissingOfFlows()));
-            partialMatch.addAll(
-                    lookupTableZeroPartialMatchCookies(report.getDatapath(), segmentReport.getMissingOfFlows()));
-        }
-        Set<Long> excess = new HashSet<>(lookupTableZeroCookies(report.getExcessOfFlows()));
-        excess.removeAll(partialMatch);
+        ArrayList<Long> excess = new ArrayList<>(lookupTableZeroCookies(report.getExcessOfFlows()));
+        RulesValidationDto result = new RulesValidationDto(
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), excess);
 
-        return new RulesValidationDto(
-                missing, new ArrayList<>(partialMatch), proper, new ArrayList<>(excess));
+        for (ValidateFlowSegmentReport segmentReport : report.getSegmentReports()) {
+            result.getProper().addAll(lookupTableZeroCookies(segmentReport.getProperOfFlows()));
+            for (ValidateDefect defect : segmentReport.getDefects()) {
+                collectOfFlowDefects(result, defect);
+            }
+        }
+
+        ValidateDefaultOfFlowsReport defaultOfFlowReport = report.getDefaultFlowsReport();
+        result.getProper().addAll(lookupTableZeroCookies(defaultOfFlowReport.getProperOfFlows()));
+        for (ValidateDefect defect : defaultOfFlowReport.getDefects()) {
+            collectOfFlowDefects(result, defect);
+        }
+
+        return result;
     }
 
-    public abstract MetersValidationDto toMetersValidationDto(MetersValidationEntry data);
+    public MetersValidationDto toMetersValidationDto(ValidateSwitchReport report) {
+        List<OfMeterReference> excess = report.getExcessMeters();
+        MetersValidationDto result = new MetersValidationDto(
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(excess));
+    }
 
     public abstract MeterInfoDto toMeterInfoDto(MeterInfoEntry data);
 
@@ -128,18 +141,25 @@ public abstract class SwitchMapper {
         return switchId.toString();
     }
 
-    private List<Long> lookupTableZeroMissingCookies(List<OfFlowMissing> missings) {
-        return lookupTableZeroCookies(
-                missings.stream()
-                        .map(OfFlowMissing::getReference));
-    }
+    private void collectOfFlowDefects(RulesValidationDto result, ValidateDefect defect) {
+        if (! defect.getFlow().isPresent()) {
+            return;
+        }
+        ValidateOfFlowDefect flowDefect = defect.getFlow().get();
+        if (flowDefect.getReference().getTableId() != 0) {
+            return;
+        }
 
-    private List<Long> lookupTableZeroPartialMatchCookies(SwitchId switchId, List<OfFlowMissing> missings) {
-        return lookupTableZeroCookies(
-                missings.stream()
-                        .map(OfFlowMissing::getPartialMatches)
-                        .flatMap(entry -> entry.stream())
-                        .map(entry -> new OfFlowReference(switchId, entry)));
+        long cookie = flowDefect.getReference().getCookie().getValue();
+        if (flowDefect.isMissing()) {
+            result.getMissing().add(cookie);
+        } else if (flowDefect.isExcess()) {
+            result.getExcess().add(cookie);
+        } else if (flowDefect.isMismatch()) {
+            result.getMissing().add(cookie);
+        } else {
+            throw new IllegalArgumentException(String.format("Unsupported defect kind: %s", flowDefect));
+        }
     }
 
     private List<Long> lookupTableZeroCookies(List<OfFlowReference> references) {

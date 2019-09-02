@@ -22,15 +22,18 @@ import org.openkilda.model.MeterId;
 import org.openkilda.model.PathId;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.of.FlowSegmentSchema;
+import org.openkilda.model.of.MeterSchema;
 import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.model.validate.FlowSegmentReference;
 import org.openkilda.model.validate.MeterCollision;
-import org.openkilda.model.validate.OfFlowMissing;
 import org.openkilda.model.validate.OfFlowReference;
 import org.openkilda.model.validate.OfMeterReference;
 import org.openkilda.model.validate.ValidateDefaultOfFlowsReport;
 import org.openkilda.model.validate.ValidateDefaultOfFlowsReport.ValidateDefaultOfFlowsReportBuilder;
+import org.openkilda.model.validate.ValidateDefect;
 import org.openkilda.model.validate.ValidateFlowSegmentReport;
+import org.openkilda.model.validate.ValidateOfFlowDefect;
+import org.openkilda.model.validate.ValidateOfMeterDefect;
 import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FlowPathRepository;
@@ -51,12 +54,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -221,11 +223,20 @@ public class ValidateServiceImpl implements ValidateService {
                     .builder()
                     .segmentRef(segmentDescriptor.getRef());
 
-            FlowSegmentReportAdapter reportAdapter = new FlowSegmentReportAdapter(segmentReport);
             FlowSegmentSchema segmentSchema = segmentDescriptor.getSchema();
             for (OfFlowSchema ofFlowSchema : segmentSchema.getEntries()) {
                 OfFlowReference ref = new OfFlowReference(segmentSchema, ofFlowSchema);
-                verifyOfFlow(context, reportAdapter, ref, ofFlowSchema);
+                // TODO(surabujin): resolve copy & paste
+                Optional<ValidateDefect> defect = verifyOfFlow(context, ref, ofFlowSchema);
+                if (defect.isPresent()) {
+                    segmentReport.defect(defect.get());
+                } else {
+                    OfMeterReference meterRef = new OfMeterReference(ofFlowSchema.getMeterId(), ref.getDatapath());
+                    segmentReport.properMeter(
+                            context.lookupExpectedMeterSchema(meterRef)
+                                    .orElseThrow(() -> makeMissingExpectedMeterException(meterRef)));
+                    segmentReport.properOfFlow(ref);
+                }
             }
 
             ValidateFlowSegmentReport report = segmentReport.build();
@@ -243,11 +254,21 @@ public class ValidateServiceImpl implements ValidateService {
 
         for (Map.Entry<OfFlowReference, OfFlowSchema> entry : context.getExpectedDefaultOfFlows().entrySet()) {
             OfFlowReference ref = entry.getKey();
-            ValidateDefaultOfFlowsReportBuilder reportCurrent = reportBuilders.computeIfAbsent(
+            ValidateDefaultOfFlowsReportBuilder report = reportBuilders.computeIfAbsent(
                     ref.getDatapath(), ignore -> ValidateDefaultOfFlowsReport.builder());
 
-            DefaultOfFlowsReportAdapter reportAdapter = new DefaultOfFlowsReportAdapter(reportCurrent);
-            verifyOfFlow(context, reportAdapter, ref, entry.getValue());
+            OfFlowSchema flowSchema = entry.getValue();
+            // TODO(surabujin): resolve copy & paste
+            Optional<ValidateDefect> defect = verifyOfFlow(context, ref, flowSchema);
+            if (defect.isPresent()) {
+                report.defect(defect.get());
+            } else {
+                OfMeterReference meterRef = new OfMeterReference(flowSchema.getMeterId(), ref.getDatapath());
+                report.properMeter(
+                        context.lookupExpectedMeterSchema(meterRef)
+                                .orElseThrow(() -> makeMissingExpectedMeterException(meterRef)));
+                report.properOfFlow(ref);
+            }
         }
 
         Map<SwitchId, ValidateDefaultOfFlowsReport> reportsAll = new HashMap<>();
@@ -270,38 +291,48 @@ public class ValidateServiceImpl implements ValidateService {
     }
 
     private Collection<OfMeterReference> verifyExcessMeters(ValidateContext context) {
-        return context.getActualOfMeters().keySet();
+        Set<OfMeterReference> meters = new HashSet<>(context.getActualOfMeters().keySet());
+        meters.removeAll(context.getSeenMeters());
+        return meters;
     }
 
-    private void verifyOfFlow(
-            ValidateContext context, OfFlowsReportAdapter report, OfFlowReference ref, OfFlowSchema expected) {
-        List<OfFlowSchema> matchCandidates = context.getActualOfFlows().getOrDefault(ref, Collections.emptyList());
-        Iterator<OfFlowSchema> iter = matchCandidates.iterator();
-        boolean isProper = false;
-        while (iter.hasNext()) {
-            if (! expected.equals(iter.next())) {
-                continue;
-            }
-
-            // full match
-            isProper = true;
-            iter.remove();
-
-            report.addProperEntry(ref);
-            if (expected.getMeterId() != null) {
-                context.removeUsedMeter(ref, expected.getMeterId());
-            }
-            break;
+    private Optional<ValidateDefect> verifyOfFlow(ValidateContext context, OfFlowReference ref, OfFlowSchema expected) {
+        ValidateOfFlowDefect flowDefect = null;
+        Optional<OfFlowSchema> actual = context.lookupAndExtractActualOfFlowSchema(ref, expected);
+        if (!actual.isPresent()) {
+            flowDefect = new ValidateOfFlowDefect(ref, expected, null);
         }
 
-        if (! isProper) {
-            // partial matches inserted as mutable list, they will lost element on future lookups on full match with
-            // another OF flow
-            OfFlowMissing missing = OfFlowMissing.builder()
-                    .reference(ref)
-                    .partialMatches(matchCandidates)
-                    .build();
-            report.addMissingEntry(missing);
+        ValidateOfMeterDefect meterDefect = null;
+        if (expected.getMeterId() != null) {
+            OfMeterReference meterRef = new OfMeterReference(expected.getMeterId(), ref.getDatapath());
+            meterDefect = verifyOfMeter(context, meterRef);
         }
+
+        if (flowDefect != null || meterDefect != null) {
+            return Optional.of(new ValidateDefect(flowDefect, meterDefect));
+        }
+        return Optional.empty();
+    }
+
+    private ValidateOfMeterDefect verifyOfMeter(ValidateContext context, OfMeterReference ref) {
+        MeterSchema expected = context.lookupExpectedMeterSchema(ref)
+                .orElseThrow(() -> makeMissingExpectedMeterException(ref));
+        Optional<MeterSchema> actual = context.lookupActualMeterSchema(ref);
+
+        context.recordSeenMeter(ref);
+
+        ValidateOfMeterDefect defect = null;
+        if (! actual.isPresent()) {
+            defect = new ValidateOfMeterDefect(ref, expected, null);
+        } else if (! expected.equals(actual.get())) {
+            defect = new ValidateOfMeterDefect(ref, expected, actual.get());
+        }
+        return defect;
+    }
+
+    private RuntimeException makeMissingExpectedMeterException(OfMeterReference ref) {
+        return new IllegalStateException(String.format(
+                "Inconsistent validate expected data - missing meter schema for %s", ref));
     }
 }
