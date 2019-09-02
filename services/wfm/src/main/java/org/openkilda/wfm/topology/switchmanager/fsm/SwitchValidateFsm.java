@@ -18,7 +18,6 @@ package org.openkilda.wfm.topology.switchmanager.fsm;
 import org.openkilda.messaging.error.ErrorData;
 import org.openkilda.messaging.error.ErrorType;
 import org.openkilda.model.SwitchId;
-import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.share.utils.AbstractBaseFsm;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchValidateFsm.SwitchValidateContext;

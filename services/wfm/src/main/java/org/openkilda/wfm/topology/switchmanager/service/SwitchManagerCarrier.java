@@ -20,7 +20,6 @@ import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.model.SwitchId;
-import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
@@ -30,16 +29,15 @@ import java.util.List;
 public interface SwitchManagerCarrier {
     void response(String key, Message message);
 
-    // FIXME
     void cancelTimeoutCallback(String key);
-
-    CommandContext getCommandContext();
-
-    void runSwitchSync(String key, SwitchValidateRequest request, SwitchSyncData report);
 
     void speakerFetchSchema(SwitchId switchId, List<ValidateFlowSegmentDescriptor> segmentDescriptors);
 
     void syncSpeakerMessageRequest(CommandData command);
 
     void syncSpeakerFlowSegmentRequest(FlowSegmentRequest segmentRequest);
+
+    void runSwitchSync(String key, SwitchValidateRequest request, SwitchSyncData report);
+
+    CommandContext getCommandContext();
 }

@@ -171,7 +171,7 @@ public class SwitchSyncFsm extends AbstractBaseFsm<SwitchSyncFsm, SwitchSyncStat
 
     protected void computeRemoveMeters(SwitchSyncState from, SwitchSyncState to,
                                        SwitchSyncEvent event, Object context) {
-        if (! request.isRemoveExcess()) {
+        if (! request.isRemoveExcess() || ! request.isProcessMeters()) {
             return;
         }
 
@@ -302,17 +302,17 @@ public class SwitchSyncFsm extends AbstractBaseFsm<SwitchSyncFsm, SwitchSyncStat
     // -- service code --
 
     private void handleSegmentResponses() {
-        int errorCount = 0;
+        int errorsCount = 0;
         for (SpeakerFlowSegmentResponse response : flowSegmentResponses) {
             if (response instanceof FlowErrorResponse) {
-                errorCount += 1;
+                errorsCount += 1;
                 handleSegmentErrorResponse((FlowErrorResponse) response);
             } else {
                 handleSegmentSuccessResponse(response);
             }
         }
-        if (0 < errorCount) {
-            routeInternalError(String.format("Unable to sync %d flow segments", errorCount));
+        if (0 < errorsCount) {
+            routeInternalError(String.format("Unable to sync %d flow segments", errorsCount));
         }
     }
 

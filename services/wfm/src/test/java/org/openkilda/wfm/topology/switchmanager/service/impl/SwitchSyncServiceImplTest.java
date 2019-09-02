@@ -160,7 +160,7 @@ public class SwitchSyncServiceImplTest {
 
     @Test
     public void doNothingWhenFsmNotFound() {
-        service.handleInstallRulesResponse(KEY);
+        service.handleSegmentInstallResponse(KEY);
 
         verifyZeroInteractions(carrier);
         verifyZeroInteractions(commandBuilder);
@@ -173,7 +173,7 @@ public class SwitchSyncServiceImplTest {
         verify(commandBuilder).buildCommandsToSyncMissingRules(eq(SWITCH_ID), eq(missingRules));
         verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
-        service.handleInstallRulesResponse(KEY);
+        service.handleSegmentInstallResponse(KEY);
 
         verify(carrier).cancelTimeoutCallback(eq(KEY));
         verify(carrier).response(eq(KEY), any(InfoMessage.class));
@@ -269,7 +269,7 @@ public class SwitchSyncServiceImplTest {
         verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(InstallFlowForSwitchManagerRequest.class));
         verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(RemoveFlowForSwitchManagerRequest.class));
 
-        service.handleInstallRulesResponse(KEY);
+        service.handleSegmentInstallResponse(KEY);
         service.handleRemoveRulesResponse(KEY);
 
         service.handleRemoveMetersResponse(KEY);
@@ -312,7 +312,7 @@ public class SwitchSyncServiceImplTest {
         verify(commandBuilder).buildCommandsToSyncMissingRules(eq(SWITCH_ID), eq(missingRules));
         verify(carrier).syncSpeakerMessageRequest(eq(KEY), any(CommandData.class));
 
-        service.handleInstallRulesResponse(KEY);
+        service.handleSegmentInstallResponse(KEY);
 
         verify(carrier).cancelTimeoutCallback(eq(KEY));
         ArgumentCaptor<InfoMessage> responseCaptor = ArgumentCaptor.forClass(InfoMessage.class);

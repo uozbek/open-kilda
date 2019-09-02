@@ -17,6 +17,7 @@ package org.openkilda.wfm.topology.switchmanager.bolt.hub;
 
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.floodlight.api.request.SpeakerRequest;
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
@@ -24,7 +25,6 @@ import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.messaging.error.ErrorMessage;
 import org.openkilda.messaging.info.InfoData;
 import org.openkilda.messaging.info.InfoMessage;
-import org.openkilda.messaging.info.flow.FlowInstallResponse;
 import org.openkilda.messaging.info.flow.FlowRemoveResponse;
 import org.openkilda.messaging.info.switches.DeleteMeterResponse;
 import org.openkilda.model.SwitchId;
@@ -124,11 +124,6 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
         getOutput().emit(StreamType.TO_NORTHBOUND.toString(), new Values(key, message));
     }
 
-    @Override
-    public void runSwitchSync(String key, SwitchValidateRequest request, SwitchSyncData syncData) {
-        syncService.handleSwitchSync(key, request, syncData);
-    }
-
     // -- commands processing --
 
     public void processSwitchSchemaDump(String key, SpeakerSwitchSchema switchSchema) {
@@ -143,12 +138,11 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
         validateService.handleSpeakerErrorResponse(key, errorResponse);
     }
 
-    public void processMessage(String key, Message message) {
+    public void processSyncResponse(Message message) {
+        String key = getKey();
         if (message instanceof InfoMessage) {
             InfoData data = ((InfoMessage) message).getData();
-            if (data instanceof FlowInstallResponse) {
-                syncService.handleInstallRulesResponse(key);
-            } else if (data instanceof FlowRemoveResponse) {
+            if (data instanceof FlowRemoveResponse) {
                 syncService.handleRemoveRulesResponse(key);
             } else if (data instanceof DeleteMeterResponse) {
                 syncService.handleRemoveMetersResponse(key);
@@ -159,6 +153,10 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
             log.warn("Receive ErrorMessage for key {}", key);
             syncService.handleTaskError(key, (ErrorMessage) message);
         }
+    }
+
+    public void processSyncResponse(SpeakerResponse response) {
+        syncService.handleSegmentInstallResponse(getKey(), response);
     }
 
     // -- carrier implementation --
@@ -184,6 +182,11 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
         SpeakerSyncRequestCommand command = new SpeakerSyncRequestCommand(
                 makeWorkerKey(hubKey, segmentRequest), hubKey, segmentRequest);
         emit(SpeakerWorkerBolt.INCOME_STREAM, getCurrentTuple(), makeSpeakerWorkerTuple(command));
+    }
+
+    @Override
+    public void runSwitchSync(String key, SwitchValidateRequest request, SwitchSyncData syncData) {
+        syncService.handleSwitchSync(key, request, syncData);
     }
 
     @Override

@@ -138,7 +138,6 @@ public class SwitchValidateServiceImpl implements SwitchValidateService {
             InfoMessage message = new InfoMessage(response, System.currentTimeMillis(), key);
             carrier.response(key, message);
         }
-        // TODO
     }
 
     private void onErrorComplete(String key, ErrorData error) {
