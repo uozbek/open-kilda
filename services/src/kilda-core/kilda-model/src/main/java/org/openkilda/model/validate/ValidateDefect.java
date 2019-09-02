@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,17 +15,12 @@
 
 package org.openkilda.model.validate;
 
-import org.openkilda.model.of.OfFlowSchema;
-import org.openkilda.model.validate.OfFlowReference;
-
-import lombok.Builder;
 import lombok.Value;
 
-import java.util.List;
+import java.io.Serializable;
 
 @Value
-@Builder
-public class OfFlowMissing {
-    private final OfFlowReference reference;
-    private final List<OfFlowSchema> partialMatches;
+public class ValidateDefect implements Serializable {
+    private final ValidateOfFlowDefect flow;
+    private final ValidateOfMeterDefect meter;
 }

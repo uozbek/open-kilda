@@ -15,7 +15,10 @@
 
 package org.openkilda.model.validate;
 
+import org.openkilda.model.SwitchId;
+
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
 
@@ -24,8 +27,9 @@ import java.util.List;
 @Value
 @Builder
 public class ValidateDefaultOfFlowsReport {
+    @NonNull
+    private final SwitchId datapath;
+
     @Singular
-    private final List<OfFlowReference> properOfFlows;
-    @Singular
-    private final List<OfFlowMissing> missingOfFlows;
+    private final List<ValidateDefect> defects;
 }

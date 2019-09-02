@@ -16,7 +16,6 @@
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.model.Cookie;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.MeterId;
@@ -43,11 +42,11 @@ import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.share.service.SpeakerFlowSegmentRequestBuilder;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
+import org.openkilda.wfm.topology.switchmanager.model.ValidateContext;
 import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 import org.openkilda.wfm.topology.switchmanager.service.ValidateService;
 
 import com.google.common.collect.ImmutableList;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -303,46 +302,6 @@ public class ValidateServiceImpl implements ValidateService {
                     .partialMatches(matchCandidates)
                     .build();
             report.addMissingEntry(missing);
-        }
-    }
-
-    // FIXME
-    private static String cookiesIntoLogRepresentation(Collection<Long> rules) {
-        return rules.stream().map(Cookie::toString).collect(Collectors.joining(", ", "[", "]"));
-    }
-
-    private static abstract class OfFlowsReportAdapter {
-        abstract void addProperEntry(OfFlowReference ref);
-        abstract void addMissingEntry(OfFlowMissing missing);
-    }
-
-    @AllArgsConstructor
-    private static class FlowSegmentReportAdapter extends OfFlowsReportAdapter {
-        private final ValidateFlowSegmentReport.ValidateFlowSegmentReportBuilder segmentReport;
-
-        @Override
-        void addProperEntry(OfFlowReference ref) {
-            segmentReport.properOfFlow(ref);
-        }
-
-        @Override
-        void addMissingEntry(OfFlowMissing missing) {
-            segmentReport.missingOfFlow(missing);
-        }
-    }
-
-    @AllArgsConstructor
-    private static class DefaultOfFlowsReportAdapter extends OfFlowsReportAdapter {
-        private final ValidateDefaultOfFlowsReport.ValidateDefaultOfFlowsReportBuilder defaultFlowsReport;
-
-        @Override
-        void addProperEntry(OfFlowReference ref) {
-            defaultFlowsReport.properOfFlow(ref);
-        }
-
-        @Override
-        void addMissingEntry(OfFlowMissing missing) {
-            defaultFlowsReport.missingOfFlow(missing);
         }
     }
 }

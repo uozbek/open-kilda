@@ -220,7 +220,6 @@ public class SwitchServiceImpl implements SwitchService {
     public CompletableFuture<RulesValidationResult> validateRules(SwitchId switchId) {
         logger.info("Validate rules request for switch {}", switchId);
 
-        1 / 0; // TODO
         return performValidate(
                 SwitchValidateRequest.builder().switchId(switchId).build())
                 .thenApply(switchMapper::toRulesValidationResult);

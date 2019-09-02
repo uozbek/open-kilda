@@ -13,35 +13,37 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.switchmanager.service.impl;
+package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.FlowSegmentSchema;
 import org.openkilda.model.of.MeterSchema;
 import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.model.validate.OfFlowReference;
 import org.openkilda.model.validate.OfMeterReference;
-import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
-import org.openkilda.wfm.topology.switchmanager.model.SwitchDefaultFlowsSchema;
-import org.openkilda.wfm.topology.switchmanager.model.SwitchOfMeterDump;
-import org.openkilda.wfm.topology.switchmanager.model.SwitchOfTableDump;
-import org.openkilda.wfm.topology.switchmanager.model.ValidateFlowSegmentDescriptor;
 
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+@Slf4j
 @Value
 public class ValidateContext {
     private final Map<OfFlowReference, List<OfFlowSchema>> actualOfFlows = new HashMap<>();
     private final Map<OfMeterReference, MeterSchema> actualOfMeters = new HashMap<>();
+    private final Set<OfMeterReference> seenMeters = new HashSet<>();
 
     private final List<ValidateFlowSegmentDescriptor> expectedFlowSegments = new ArrayList<>();
     private final Map<OfFlowReference, OfFlowSchema> expectedDefaultOfFlows = new HashMap<>();
+    private final Map<OfMeterReference, MeterSchema> expectedOfMeters = new HashMap<>();
 
     private final List<ValidateFlowSegmentDescriptor> corruptedSegments = new ArrayList<>();
 
@@ -52,20 +54,22 @@ public class ValidateContext {
     public ValidateContext(List<SpeakerSwitchSchema> validateData) {
         for (SpeakerSwitchSchema schema : validateData) {
             unpackOfFlows(schema);
-            expectedFlowSegments.addAll(schema.getFlowSegments());
+            unpackMeters(schema);
+            unpackExpectedFlowSegments(schema);
             unpackExpectedDefaultOfFlows(schema.getDefaultFlowsSchema());
         }
     }
 
     private void unpackOfFlows(SpeakerSwitchSchema switchSchema) {
-        unpackMeters(switchSchema);
-
         for (SwitchOfTableDump tableDump : switchSchema.getTables().values()) {
             SwitchId datapath = tableDump.getDatapath();
             int tableId = tableDump.getTableId();
 
             for (OfFlowSchema entry : tableDump.getEntries()) {
-                entry = mergeMeterSchema(entry, datapath);
+                if (entry.getMeterSchema() != null) {
+                    log.error("Got table dump from speaker with filled .meterSchema property: {}", entry);
+                    entry = extractMeterSchema(entry);
+                }
                 OfFlowReference key = new OfFlowReference(tableId, entry.getCookie(), datapath);
                 actualOfFlows.computeIfAbsent(key, ignore -> new ArrayList<>())
                         .add(entry);
@@ -81,6 +85,14 @@ public class ValidateContext {
         }
     }
 
+    private void unpackExpectedFlowSegments(SpeakerSwitchSchema switchSchema) {
+        for (ValidateFlowSegmentDescriptor entry : switchSchema.getFlowSegments()) {
+            FlowSegmentSchema segmentSchema = entry.getSchema();
+            unpackExpectedMeter(segmentSchema.getDatapath(), segmentSchema.getEntries());
+            expectedFlowSegments.add(patchExpectedFlowSegment(entry));
+        }
+    }
+
     private void unpackExpectedDefaultOfFlows(SwitchDefaultFlowsSchema defaultFlowsSchema) {
         if (defaultFlowsSchema == null) {
             return;
@@ -93,19 +105,40 @@ public class ValidateContext {
         }
     }
 
-    private OfFlowSchema mergeMeterSchema(OfFlowSchema flowSchema, SwitchId datapath) {
-        if (flowSchema.getMeterSchema() != null) {
-            return flowSchema;
+    private void unpackExpectedMeter(SwitchId datapath, Collection<OfFlowSchema> expectedEntries) {
+        for (OfFlowSchema entry : expectedEntries) {
+            MeterSchema meterSchema = entry.getMeterSchema();
+            if (meterSchema != null) {
+                OfMeterReference ref = new OfMeterReference(meterSchema.getMeterId(), datapath);
+                expectedOfMeters.put(ref, meterSchema);
+            }
+        }
+    }
+
+    private ValidateFlowSegmentDescriptor patchExpectedFlowSegment(ValidateFlowSegmentDescriptor segmentDescriptor) {
+        FlowSegmentSchema schema = segmentDescriptor.getSchema();
+        List<OfFlowSchema> patchedFlows = new ArrayList<>(schema.getEntries().size());
+        boolean needPatch = false;
+        for (OfFlowSchema entry : schema.getEntries()) {
+            OfFlowSchema replace = extractMeterSchema(entry);
+            needPatch |= entry != replace;
+            patchedFlows.add(replace);
         }
 
-        MeterId meterId = flowSchema.getMeterId();
-        if (meterId == null) {
+        if (! needPatch) {
+            return segmentDescriptor;
+        }
+        return segmentDescriptor.toBuilder()
+                .schema(new FlowSegmentSchema(schema.getDatapath(), patchedFlows))
+                .build();
+    }
+
+    private OfFlowSchema extractMeterSchema(OfFlowSchema flowSchema) {
+        if (flowSchema.getMeterSchema() == null) {
             return flowSchema;
         }
-
-        MeterSchema meterSchema = actualOfMeters.get(new OfMeterReference(meterId, datapath));
         return flowSchema.toBuilder()
-                .meterSchema(meterSchema)
+                .meterSchema(null)
                 .build();
     }
 
@@ -113,8 +146,7 @@ public class ValidateContext {
         corruptedSegments.add(segmentDescriptor);
     }
 
-    public void removeUsedMeter(OfFlowReference flowRef, MeterId meterId) {
-        OfMeterReference meterRef = new OfMeterReference(meterId, flowRef.getDatapath());
-        actualOfMeters.remove(meterRef);
+    public void recordSeenMeter(OfMeterReference ref) {
+        seenMeters.add(ref);
     }
 }

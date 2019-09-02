@@ -15,15 +15,17 @@
 
 package org.openkilda.model.validate;
 
-import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
 import lombok.Value;
 
 import java.io.Serializable;
 
 @Value
-public class OfMeterReference implements Serializable {
-    private final MeterId meterId;
-    private final SwitchId datapath;
+public class OfMeterDiscrepancy implements Serializable {
+    private final OfMeterReference meterReference;
+    private final OfFlowReference flowReference;
+
+    private final MeterSchema expected;
+    private final MeterSchema actual;
 }

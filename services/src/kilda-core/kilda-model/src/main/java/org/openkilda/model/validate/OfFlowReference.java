@@ -23,9 +23,11 @@ import org.openkilda.model.of.OfFlowSchema;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
+import java.io.Serializable;
+
 @Value
 @AllArgsConstructor
-public class OfFlowReference {
+public class OfFlowReference implements Serializable {
     private final int tableId;
     private final Cookie cookie;
     private final SwitchId datapath;

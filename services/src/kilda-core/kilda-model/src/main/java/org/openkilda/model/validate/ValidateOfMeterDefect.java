@@ -15,15 +15,11 @@
 
 package org.openkilda.model.validate;
 
-import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-import java.io.Serializable;
-
 @Value
-public class OfMeterReference implements Serializable {
-    private final MeterId meterId;
-    private final SwitchId datapath;
-}
+@EqualsAndHashCode(callSuper = true)
+public class ValidateOfMeterDefect extends Defect<MeterSchema, OfMeterReference> { }

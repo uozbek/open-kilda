@@ -15,15 +15,15 @@
 
 package org.openkilda.model.validate;
 
-import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.OfFlowSchema;
 
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-import java.io.Serializable;
+import java.util.List;
 
 @Value
-public class OfMeterReference implements Serializable {
-    private final MeterId meterId;
-    private final SwitchId datapath;
+@EqualsAndHashCode(callSuper = true)
+public class ValidateOfFlowDefect extends Defect<OfFlowSchema, OfFlowReference> {
+    private final List<OfFlowSchema> collisions;
 }
