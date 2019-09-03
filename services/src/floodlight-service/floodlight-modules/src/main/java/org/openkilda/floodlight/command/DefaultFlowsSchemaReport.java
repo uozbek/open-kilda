@@ -16,9 +16,9 @@
 package org.openkilda.floodlight.command;
 
 import org.openkilda.floodlight.KafkaChannel;
-import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.floodlight.api.response.SpeakerDefaultFlowsSchemaResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
+import org.openkilda.model.of.OfFlowSchema;
 
 import java.util.List;
 

@@ -15,27 +15,29 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
+import org.openkilda.floodlight.converter.MeterSchemaMapper;
 import org.openkilda.floodlight.error.SwitchIncorrectMeterException;
 import org.openkilda.floodlight.error.SwitchMissingMeterException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.messaging.model.SpeakerSwitchView;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
 import org.projectfloodlight.openflow.protocol.OFMeterConfig;
 import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsReply;
 import org.projectfloodlight.openflow.protocol.OFMeterConfigStatsRequest;
-import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
-import org.projectfloodlight.openflow.protocol.meterband.OFMeterBandDrop;
+import org.projectfloodlight.openflow.types.DatapathId;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public class MeterVerifyCommand extends MeterBlankCommand {
+public class MeterVerifyCommand extends MeterInstallCommand {
     public MeterVerifyCommand(
             MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
         super(messageContext, switchId, meterConfig);
@@ -45,10 +47,11 @@ public class MeterVerifyCommand extends MeterBlankCommand {
     protected CompletableFuture<MeterReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor)
             throws UnsupportedSwitchOperationException {
         ensureSwitchSupportMeters();
+
         return new CompletableFutureAdapter<>(
                  messageContext, getSw().writeStatsRequest(makeMeterReadCommand()))
-                .thenAccept(this::handleMeterStats)
-                .thenApply(ignore -> makeSuccessReport());
+                .thenApply(this::handleMeterStats)
+                .thenApply(this::makeSuccessReport);
     }
 
     private OFMeterConfigStatsRequest makeMeterReadCommand() {
@@ -57,7 +60,7 @@ public class MeterVerifyCommand extends MeterBlankCommand {
                 .build();
     }
 
-    private void handleMeterStats(List<OFMeterConfigStatsReply> meterStatResponses) {
+    private MeterSchema handleMeterStats(List<OFMeterConfigStatsReply> meterStatResponses) {
         Optional<OFMeterConfig> target = Optional.empty();
         for (OFMeterConfigStatsReply meterConfigReply : meterStatResponses) {
             target = findMeter(meterConfigReply);
@@ -69,7 +72,12 @@ public class MeterVerifyCommand extends MeterBlankCommand {
         if (! target.isPresent()) {
             throw maskCallbackException(new SwitchMissingMeterException(getSw().getId(), meterConfig.getId()));
         }
-        validateMeterConfig(target.get());
+
+        boolean isInaccurate = getSwitchFeatures().contains(SpeakerSwitchView.Feature.INACCURATE_METER);
+        MeterSchema schema = MeterSchemaMapper.INSTANCE.map(getSw().getId(), target.get(), isInaccurate);
+        validateMeterConfig(schema);
+
+        return schema;
     }
 
     private Optional<OFMeterConfig> findMeter(OFMeterConfigStatsReply meterConfigReply) {
@@ -82,44 +90,11 @@ public class MeterVerifyCommand extends MeterBlankCommand {
         return Optional.empty();
     }
 
-    private void validateMeterConfig(OFMeterConfig meterConfig) {
-        validateMeterConfigFlags(meterConfig);
-        validateMeterConfigBands(meterConfig);
-    }
-
-    private void validateMeterConfigFlags(OFMeterConfig config) {
-        if (! makeMeterFlags().equals(config.getFlags())) {
-            throw maskCallbackException(new SwitchIncorrectMeterException(getSw().getId(), meterConfig, config));
-        }
-    }
-
-    private void validateMeterConfigBands(OFMeterConfig config) {
-        List<OFMeterBand> expectBands = makeMeterBands(0);  // to ignore burst value comparison
-        List<OFMeterBand> actualBands = config.getEntries();
-
-        if (expectBands.size() != actualBands.size()) {
-            throw maskCallbackException(new SwitchIncorrectMeterException(getSw().getId(), meterConfig, config));
-        }
-
-        boolean mismatch = false;
-        for (int i = 0; i < expectBands.size(); i++) {
-            OFMeterBand expect = expectBands.get(i);
-            OFMeterBand actual = actualBands.get(i);
-
-            if (actual instanceof OFMeterBandDrop) {
-                actual = ((OFMeterBandDrop) actual).createBuilder()
-                        .setBurstSize(0)  // to ignore burst value comparison
-                        .build();
-            }
-
-            mismatch = !expect.equals(actual);
-            if (mismatch) {
-                break;
-            }
-        }
-
-        if (mismatch) {
-            throw maskCallbackException(new SwitchIncorrectMeterException(getSw().getId(), meterConfig, config));
+    private void validateMeterConfig(MeterSchema actualSchema) {
+        DatapathId datapath = getSw().getId();
+        MeterSchema expectedSchema = MeterSchemaMapper.INSTANCE.map(datapath, makeMeterAddMessage());
+        if (! expectedSchema.equals(actualSchema)) {
+            throw maskCallbackException(new SwitchIncorrectMeterException(datapath, meterConfig, actualSchema));
         }
     }
 }

@@ -19,7 +19,6 @@ import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 
 import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.SwitchDescription;
 
 import java.util.Optional;
 

@@ -20,13 +20,13 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.service.session.SessionService;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
@@ -158,7 +158,7 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
         if (error == null) {
             report = new MeterReport(meterConfig.getId());
         } else {
-            report = new MeterReport(error);
+            report = new MeterReport(meterConfig.getId(), error);
         }
         expectMeter(report);
     }

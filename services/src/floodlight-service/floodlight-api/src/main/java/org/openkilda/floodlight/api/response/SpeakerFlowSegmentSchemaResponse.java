@@ -15,9 +15,9 @@
 
 package org.openkilda.floodlight.api.response;
 
-import org.openkilda.model.of.FlowSegmentSchema;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.FlowSegmentSchema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

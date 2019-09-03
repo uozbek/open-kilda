@@ -30,6 +30,8 @@ import lombok.ToString;
 
 import java.util.UUID;
 
+// TODO(surabujin) - drop id
+@Deprecated
 @Getter
 @ToString(callSuper = true)
 public class GetInstalledRule extends FlowSegmentRequest {

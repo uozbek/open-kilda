@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,9 +15,9 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.model.of.FlowSegmentSchema;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentSchemaResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
+import org.openkilda.model.of.FlowSegmentSchema;
 
 public class FlowSegmentSchemaReport extends FlowSegmentReport {
     private final FlowSegmentSchema schema;
@@ -32,6 +31,7 @@ public class FlowSegmentSchemaReport extends FlowSegmentReport {
     @Override
     protected SpeakerResponse makeSuccessReply() {
         FlowSegmentCommand command = getCommand();
-        return new SpeakerFlowSegmentSchemaResponse(command.getMessageContext(), command.getCommandId(), schema);
+        return new SpeakerFlowSegmentSchemaResponse(
+                command.getMessageContext(), command.getCommandId(), command.getSwitchId(), schema);
     }
 }

@@ -57,6 +57,9 @@ public class OfFlowPresenceVerifier {
                 .whenComplete((ignore, error) -> handleComplete(error));
     }
 
+    /**
+     * Expose "missing" OF flows.
+     */
     public List<OFFlowMod> getMissing() {
         return expected.values().stream()
                 .flatMap(Collection::stream)
@@ -163,7 +166,7 @@ public class OfFlowPresenceVerifier {
         TableId tableId;
         U64 cookie;
 
-        private FlowLookupKey(TableId tableId, U64 cookie) {
+        FlowLookupKey(TableId tableId, U64 cookie) {
             this.tableId = tableId != null ? tableId : TableId.of(0);
             this.cookie = cookie != null ? cookie : U64.ZERO;
         }

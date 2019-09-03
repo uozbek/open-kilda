@@ -17,11 +17,8 @@ package org.openkilda.model.validate;
 
 import org.openkilda.model.of.OfFlowSchema;
 
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-
-import java.util.List;
 
 @Value
 @EqualsAndHashCode(callSuper = true)

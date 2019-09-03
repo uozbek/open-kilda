@@ -15,10 +15,10 @@
 
 package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowTransitEncapsulation;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;

@@ -15,13 +15,13 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.model.of.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.converter.MeterSchemaMapper;
 import org.openkilda.floodlight.utils.CompletableFutureAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

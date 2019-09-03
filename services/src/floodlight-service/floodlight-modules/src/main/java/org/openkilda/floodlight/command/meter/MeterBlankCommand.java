@@ -15,13 +15,13 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.model.of.MeterSchema;
 import org.openkilda.floodlight.converter.MeterSchemaMapper;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.switchmanager.SwitchManagerConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Meter;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -44,11 +44,14 @@ abstract class MeterBlankCommand extends MeterCommand<MeterReport> {
 
     @Override
     protected MeterReport makeReport(Exception error) {
-        return new MeterReport(error);
+        return new MeterReport(meterConfig.getId(), error);
     }
 
     protected MeterReport makeSuccessReport(OFMeterMod meterMod) {
-        MeterSchema schema = MeterSchemaMapper.INSTANCE.map(getSw().getId(), meterMod);
+        return makeSuccessReport(MeterSchemaMapper.INSTANCE.map(getSw().getId(), meterMod));
+    }
+
+    protected MeterReport makeSuccessReport(MeterSchema schema) {
         return new MeterReport(schema);
     }
 

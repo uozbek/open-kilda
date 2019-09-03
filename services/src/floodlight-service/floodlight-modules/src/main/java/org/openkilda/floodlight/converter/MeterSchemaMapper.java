@@ -15,10 +15,10 @@
 
 package org.openkilda.floodlight.converter;
 
-import org.openkilda.model.of.MeterSchema;
-import org.openkilda.model.of.MeterSchemaBand;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
+import org.openkilda.model.of.MeterSchemaBand;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -36,6 +36,9 @@ import java.util.List;
 public abstract class MeterSchemaMapper {
     public static final MeterSchemaMapper INSTANCE = Mappers.getMapper(MeterSchemaMapper.class);
 
+    /**
+     * Produce {@code MeterSchema} from {@code OFMeterConfig}.
+     */
     public MeterSchema map(DatapathId datapath, OFMeterConfig meterConfig, boolean isInaccurate) {
         MeterSchema.MeterSchemaBuilder schema = MeterSchema.builder()
                 .datapath(new SwitchId(datapath.getLong()))
@@ -47,6 +50,9 @@ public abstract class MeterSchemaMapper {
         return schema.build();
     }
 
+    /**
+     * Produce {@code MeterSchema} from {@code OFMeterMod}.
+     */
     public MeterSchema map(DatapathId datapath, OFMeterMod meterMod) {
         MeterSchema.MeterSchemaBuilder schema = MeterSchema.builder()
                 .datapath(new SwitchId(datapath.getLong()))
@@ -56,6 +62,9 @@ public abstract class MeterSchemaMapper {
         return schema.build();
     }
 
+    /**
+     * Produce string representation of {@code OFMeterFlags}.
+     */
     public String mapFlag(OFMeterFlags value) {
         return value.name();
     }

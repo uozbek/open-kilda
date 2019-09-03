@@ -15,10 +15,10 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
@@ -29,7 +29,6 @@ import org.projectfloodlight.openflow.protocol.OFMeterModCommand;
 import java.util.concurrent.CompletableFuture;
 
 public class MeterRemoveCommand extends MeterBlankCommand {
-
     public MeterRemoveCommand(MessageContext messageContext, SwitchId switchId, MeterConfig meterConfig) {
         super(messageContext, switchId, meterConfig);
     }

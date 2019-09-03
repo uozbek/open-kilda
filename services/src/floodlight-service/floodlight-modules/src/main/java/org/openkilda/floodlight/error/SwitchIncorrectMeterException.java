@@ -16,19 +16,19 @@
 package org.openkilda.floodlight.error;
 
 import org.openkilda.model.MeterConfig;
+import org.openkilda.model.of.MeterSchema;
 
 import lombok.Getter;
-import org.projectfloodlight.openflow.protocol.OFMeterConfig;
 import org.projectfloodlight.openflow.types.DatapathId;
 
 @Getter
 public class SwitchIncorrectMeterException extends SwitchOperationException {
     private final MeterConfig expectedMeterConfig;
-    private final transient OFMeterConfig actualMeterConfig;
+    private final MeterSchema actualSchema;
 
-    public SwitchIncorrectMeterException(DatapathId dpId, MeterConfig meterConfig, OFMeterConfig actualMeterConfig) {
+    public SwitchIncorrectMeterException(DatapathId dpId, MeterConfig meterConfig, MeterSchema actualSchema) {
         super(dpId, String.format("Meter %d on %s have incorrect config", meterConfig.getId().getValue(), dpId));
         this.expectedMeterConfig = meterConfig;
-        this.actualMeterConfig = actualMeterConfig;
+        this.actualSchema = actualSchema;
     }
 }

@@ -15,11 +15,11 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.error.NotImplementedEncapsulationException;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.model.SwitchId;
 
 import lombok.Getter;

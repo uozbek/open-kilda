@@ -15,13 +15,13 @@
 
 package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandJsonTest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.model.SwitchId;
 
 import org.junit.Assert;

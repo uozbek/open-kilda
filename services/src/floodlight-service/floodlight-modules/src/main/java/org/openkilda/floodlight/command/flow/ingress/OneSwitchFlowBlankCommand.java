@@ -15,11 +15,11 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.MeterConfig;
 
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;

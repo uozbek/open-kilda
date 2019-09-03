@@ -17,11 +17,11 @@ package org.openkilda.floodlight.command.flow.ingress;
 
 import static org.easymock.EasyMock.expect;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.MeterConfig;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;

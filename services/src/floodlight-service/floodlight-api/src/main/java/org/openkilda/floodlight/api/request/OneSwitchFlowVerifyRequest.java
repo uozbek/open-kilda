@@ -15,10 +15,10 @@
 
 package org.openkilda.floodlight.api.request;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.MeterConfig;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

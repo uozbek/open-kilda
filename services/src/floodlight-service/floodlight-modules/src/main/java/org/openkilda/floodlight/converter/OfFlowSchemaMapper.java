@@ -15,11 +15,11 @@
 
 package org.openkilda.floodlight.converter;
 
+import org.openkilda.model.Cookie;
+import org.openkilda.model.MeterId;
 import org.openkilda.model.of.MeterSchema;
 import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.model.of.OfFlowSchema.OfFlowSchemaBuilder;
-import org.openkilda.model.Cookie;
-import org.openkilda.model.MeterId;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -45,6 +45,9 @@ public abstract class OfFlowSchemaMapper {
         return map(Collections.emptyMap(), ofRequest);
     }
 
+    /**
+     * Produce {@code OfFlowSchema} from {@code OFFlowMod}.
+     */
     public OfFlowSchema map(Map<MeterId, MeterSchema> meters, OFFlowMod ofRequest) {
         OfFlowSchema.OfFlowSchemaBuilder schema = OfFlowSchema.builder();
 
@@ -61,6 +64,9 @@ public abstract class OfFlowSchemaMapper {
         return schema.build();
     }
 
+    /**
+     * Produce {@code OfFlowSchema} from {@code OFFlowStatsEntry}.
+     */
     public OfFlowSchema map(OFFlowStatsEntry ofFlow) {
         OfFlowSchema.OfFlowSchemaBuilder schema = OfFlowSchema.builder();
 

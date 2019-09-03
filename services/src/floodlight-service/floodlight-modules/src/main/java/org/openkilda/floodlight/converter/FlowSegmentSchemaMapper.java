@@ -15,11 +15,11 @@
 
 package org.openkilda.floodlight.converter;
 
+import org.openkilda.model.MeterId;
+import org.openkilda.model.SwitchId;
 import org.openkilda.model.of.FlowSegmentSchema;
 import org.openkilda.model.of.MeterSchema;
 import org.openkilda.model.of.OfFlowSchema;
-import org.openkilda.model.MeterId;
-import org.openkilda.model.SwitchId;
 
 import com.google.common.collect.ImmutableList;
 import net.floodlightcontroller.core.IOFSwitch;
@@ -32,10 +32,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Mapper(uses = OfFlowSchemaMapper.class)
+@Mapper(uses = {OfFlowSchemaMapper.class, KildaPrimitiveMapper.class})
 public abstract class FlowSegmentSchemaMapper {
     public static final FlowSegmentSchemaMapper INSTANCE = Mappers.getMapper(FlowSegmentSchemaMapper.class);
 
+    /**
+     * Produce {@code FlowSegmentSchema} from set of {@code OFFlowMod}.
+     */
     public FlowSegmentSchema toFlowSegmentSchema(IOFSwitch sw, List<MeterSchema> meters, List<OFFlowMod> ofRequests) {
         Map<MeterId, MeterSchema> metersMap = new HashMap<>();
         for (MeterSchema entry : meters) {

@@ -15,15 +15,15 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.FlowTransitEncapsulation;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest.BlankResolver;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandJsonTest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 

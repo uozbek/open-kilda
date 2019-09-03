@@ -15,12 +15,12 @@
 
 package org.openkilda.floodlight.command.flow.transit;
 
-import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowTransitEncapsulation;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;

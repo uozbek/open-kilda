@@ -19,7 +19,6 @@ import org.openkilda.floodlight.KafkaChannel;
 import org.openkilda.floodlight.api.response.SpeakerErrorCode;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
-import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.command.SpeakerRemoteCommandReport;
 import org.openkilda.floodlight.error.SessionErrorResponseException;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;
@@ -28,8 +27,6 @@ import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.ErrorCode;
 import org.openkilda.floodlight.flow.response.FlowErrorResponse.FlowErrorResponseBuilder;
-import org.openkilda.floodlight.service.kafka.IKafkaProducerService;
-import org.openkilda.messaging.AbstractMessage;
 
 import lombok.AccessLevel;
 import lombok.Getter;

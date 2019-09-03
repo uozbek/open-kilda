@@ -29,9 +29,9 @@ import java.io.Serializable;
 abstract class NetworkEndpoint implements Serializable {
     @JsonProperty("datapath")
     @NonNull
-    private final SwitchId datapath;
+    protected final SwitchId datapath;
 
     @JsonProperty("port_number")
     @NonNull
-    private final Integer portNumber;
+    protected final Integer portNumber;
 }

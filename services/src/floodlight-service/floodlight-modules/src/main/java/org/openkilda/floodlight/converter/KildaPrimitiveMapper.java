@@ -13,28 +13,24 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.command;
+package org.openkilda.floodlight.converter;
 
-import lombok.ToString;
+import org.openkilda.model.Cookie;
 
-@ToString
-public abstract class SpeakerCommandReport {
-    private final Exception error;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+import org.projectfloodlight.openflow.types.TableId;
+import org.projectfloodlight.openflow.types.U64;
 
-    public SpeakerCommandReport() {
-        this(null);
+@Mapper
+public abstract class KildaPrimitiveMapper {
+    public static final KildaPrimitiveMapper INSTANCE = Mappers.getMapper(KildaPrimitiveMapper.class);
+
+    public Cookie packCookie(U64 raw) {
+        return new Cookie(raw.getValue());
     }
 
-    public SpeakerCommandReport(Exception error) {
-        this.error = error;
-    }
-
-    /**
-     * Throw error if command ends with error.
-     */
-    public void raiseError() throws Exception {
-        if (error != null) {
-            throw error;
-        }
+    public short unpackTableId(TableId id) {
+        return id.getValue();
     }
 }

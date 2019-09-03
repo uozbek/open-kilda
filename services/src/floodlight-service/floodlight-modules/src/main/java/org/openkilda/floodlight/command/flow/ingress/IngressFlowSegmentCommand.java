@@ -15,13 +15,11 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.floodlight.command.meter.MeterInstallDryRunCommand;
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.command.flow.FlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterInstallCommand;
+import org.openkilda.floodlight.command.meter.MeterInstallDryRunCommand;
 import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.command.meter.MeterVerifyCommand;
@@ -37,6 +35,8 @@ import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.model.SpeakerSwitchView;
 import org.openkilda.messaging.model.SpeakerSwitchView.Feature;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 

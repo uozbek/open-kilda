@@ -15,14 +15,14 @@
 
 package org.openkilda.floodlight.command.flow.ingress;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.FlowTransitEncapsulation;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.model.SwitchDescriptor;
 import org.openkilda.floodlight.utils.MetadataAdapter;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
+import org.openkilda.model.MeterConfig;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFFlowAdd;

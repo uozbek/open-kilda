@@ -15,8 +15,6 @@
 
 package org.openkilda.floodlight.command.flow;
 
-import org.openkilda.model.of.FlowSegmentSchema;
-import org.openkilda.model.of.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerRemoteCommand;
 import org.openkilda.floodlight.command.meter.MeterReport;
 import org.openkilda.floodlight.converter.FlowSegmentSchemaMapper;
@@ -26,8 +24,9 @@ import org.openkilda.floodlight.utils.OfFlowPresenceVerifier;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.FlowSegmentSchema;
+import org.openkilda.model.of.MeterSchema;
 
-import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -36,13 +35,14 @@ import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.types.U64;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
 public abstract class FlowSegmentCommand extends SpeakerRemoteCommand<FlowSegmentReport> {
-    protected static final long FLOW_COOKIE_MASK = 0x7FFFFFFFFFFFFFFFL;
     public static final int FLOW_PRIORITY = FlowModUtils.PRIORITY_HIGH;
 
     // payload
@@ -68,7 +68,10 @@ public abstract class FlowSegmentCommand extends SpeakerRemoteCommand<FlowSegmen
     }
 
     protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(MeterReport meterReport, List<OFFlowMod> requests) {
-        List<MeterSchema> meters = meterReport != null ? ImmutableList.of(meterReport.getSchema()) : null;
+        List<MeterSchema> meters = Optional.ofNullable(meterReport)
+                .flatMap(MeterReport::getSchema)
+                .map(Collections::singletonList)
+                .orElse(Collections.emptyList());
         FlowSegmentSchema schema = FlowSegmentSchemaMapper.INSTANCE.toFlowSegmentSchema(getSw(), meters, requests);
         return CompletableFuture.completedFuture(new FlowSegmentSchemaReport(this, schema));
     }

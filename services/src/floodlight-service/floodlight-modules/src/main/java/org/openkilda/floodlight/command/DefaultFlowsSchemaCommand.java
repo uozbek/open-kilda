@@ -15,13 +15,13 @@
 
 package org.openkilda.floodlight.command;
 
-import org.openkilda.model.of.OfFlowSchema;
 import org.openkilda.floodlight.converter.OfFlowSchemaMapper;
 import org.openkilda.floodlight.error.SwitchNotFoundException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.switchmanager.ISwitchManager;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.OfFlowSchema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

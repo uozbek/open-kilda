@@ -18,12 +18,12 @@ package org.openkilda.floodlight.command.meter;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.AbstractSpeakerCommandTest;
 import org.openkilda.floodlight.error.SwitchIncorrectMeterException;
 import org.openkilda.floodlight.error.SwitchMissingMeterException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
 
 import com.google.common.collect.ImmutableList;

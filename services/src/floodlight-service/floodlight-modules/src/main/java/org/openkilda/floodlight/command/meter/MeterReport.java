@@ -15,34 +15,49 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.model.of.MeterSchema;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.model.MeterId;
+import org.openkilda.model.of.MeterSchema;
 
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 
+import java.util.Optional;
+
 @Value
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class MeterReport extends SpeakerCommandReport {
+    private final MeterId meterId;
     private MeterSchema schema;
 
+    public MeterReport(MeterId meterId) {
+        this(meterId, null, null);
+    }
+
     public MeterReport(MeterSchema schema) {
-        this(schema, null);
+        this(null, schema, null);
     }
 
-    public MeterReport(Exception error) {
-        this(null, error);
+    public MeterReport(MeterId meterId, Exception error) {
+        this(meterId, null, error);
     }
 
-    private MeterReport(MeterSchema schema, Exception error) {
+    private MeterReport(MeterId meterId, MeterSchema schema, Exception error) {
         super(error);
+        if (meterId == null && schema == null) {
+            throw new IllegalArgumentException("%s can't be defined when `id` and `schema` both undefined");
+        }
+        if (meterId == null) {
+            meterId = schema.getMeterId();
+        }
+
+        this.meterId = meterId;
         this.schema = schema;
     }
 
-    public MeterId getMeterId() {
-        return schema.getMeterId();
+    public Optional<MeterSchema> getSchema() {
+        return Optional.ofNullable(schema);
     }
 }

@@ -17,7 +17,6 @@ package org.openkilda.floodlight.command.meter;
 
 import static org.projectfloodlight.openflow.protocol.OFVersion.OF_13;
 
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.command.IOfErrorResponseHandler;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
 import org.openkilda.floodlight.error.InvalidMeterIdException;
@@ -28,6 +27,7 @@ import org.openkilda.floodlight.error.SwitchMissingMeterException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
@@ -57,9 +57,12 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
             throws UnsupportedSwitchOperationException, InvalidMeterIdException {
         this.commandProcessor = commandProcessor;
 
+        ensureSwitchSupportMeters();
+        ensureMeterIdValid();
+
         OFMeterMod meterMod = makeMeterAddMessage();
         return writeSwitchRequest(meterMod)
-                .thenApply(ignore -> new MeterReport(meterConfig.getId()));
+                .thenApply(ignore -> makeSuccessReport(meterMod));
     }
 
     protected CompletableFuture<Optional<OFMessage>> writeSwitchRequest(OFMeterMod request) {
@@ -85,10 +88,7 @@ public class MeterInstallCommand extends MeterBlankCommand implements IOfErrorRe
         return future;
     }
 
-    private OFMeterMod makeMeterAddMessage() throws UnsupportedSwitchOperationException, InvalidMeterIdException {
-        ensureSwitchSupportMeters();
-        ensureMeterIdValid();
-
+    protected OFMeterMod makeMeterAddMessage() {
         final OFFactory ofFactory = getSw().getOFFactory();
 
         OFMeterMod.Builder meterModBuilder = ofFactory.buildMeterMod()

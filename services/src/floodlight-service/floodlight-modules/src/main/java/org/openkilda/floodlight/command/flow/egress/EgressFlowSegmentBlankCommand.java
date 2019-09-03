@@ -15,14 +15,14 @@
 
 package org.openkilda.floodlight.command.flow.egress;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
-import org.openkilda.floodlight.command.flow.NotIngressFlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
+import org.openkilda.floodlight.command.flow.NotIngressFlowSegmentCommand;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.FlowTransitEncapsulation;
 
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFFactory;

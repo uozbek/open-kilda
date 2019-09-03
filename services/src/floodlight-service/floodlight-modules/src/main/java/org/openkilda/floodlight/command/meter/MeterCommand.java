@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,7 +15,6 @@
 
 package org.openkilda.floodlight.command.meter;
 
-import org.openkilda.floodlight.command.SpeakerCommand;
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.command.SpeakerRemoteCommand;
 import org.openkilda.floodlight.config.provider.FloodlightModuleConfigurationProvider;

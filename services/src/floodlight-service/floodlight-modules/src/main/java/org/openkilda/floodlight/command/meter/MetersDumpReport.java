@@ -16,10 +16,10 @@
 package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.KafkaChannel;
-import org.openkilda.model.of.MeterSchema;
 import org.openkilda.floodlight.api.response.SpeakerMetersDumpResponse;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.floodlight.command.SpeakerRemoteCommandReport;
+import org.openkilda.model.of.MeterSchema;
 
 import java.util.List;
 
