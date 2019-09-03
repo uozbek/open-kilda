@@ -16,21 +16,21 @@
 package org.openkilda.northbound.converter;
 
 import org.openkilda.messaging.info.event.SwitchInfoData;
-import org.openkilda.messaging.info.switches.MeterInfoEntry;
-import org.openkilda.messaging.info.switches.MeterMisconfiguredInfoEntry;
 import org.openkilda.messaging.info.switches.MetersSyncEntry;
-import org.openkilda.messaging.info.switches.MetersValidationEntry;
 import org.openkilda.messaging.info.switches.RulesSyncEntry;
 import org.openkilda.messaging.info.switches.SwitchSyncResponse;
 import org.openkilda.messaging.info.switches.SwitchValidationResponse;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
+import org.openkilda.model.of.MeterSchemaBand;
+import org.openkilda.model.validate.FlowSegmentReference;
 import org.openkilda.model.validate.OfFlowMissing;
 import org.openkilda.model.validate.OfFlowReference;
-import org.openkilda.model.validate.OfMeterReference;
 import org.openkilda.model.validate.ValidateDefaultOfFlowsReport;
 import org.openkilda.model.validate.ValidateDefect;
 import org.openkilda.model.validate.ValidateFlowSegmentReport;
 import org.openkilda.model.validate.ValidateOfFlowDefect;
+import org.openkilda.model.validate.ValidateOfMeterDefect;
 import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.northbound.dto.v1.switches.MeterInfoDto;
 import org.openkilda.northbound.dto.v1.switches.MeterMisconfiguredInfoDto;
@@ -44,14 +44,11 @@ import org.openkilda.northbound.dto.v1.switches.SwitchDto;
 import org.openkilda.northbound.dto.v1.switches.SwitchSyncResult;
 import org.openkilda.northbound.dto.v1.switches.SwitchValidationResult;
 
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -128,14 +125,53 @@ public abstract class SwitchMapper {
     }
 
     public MetersValidationDto toMetersValidationDto(ValidateSwitchReport report) {
-        List<OfMeterReference> excess = report.getExcessMeters();
+        List<MeterInfoDto> excess = report.getExcessMeters().stream()
+                .map(entry -> toMeterInfoDto(null, entry))
+                .collect(Collectors.toList());
         MetersValidationDto result = new MetersValidationDto(
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(excess));
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), excess);
+
+        for (ValidateFlowSegmentReport segment : report.getSegmentReports()) {
+
+        }
+
+        // TODO
+        return result;
     }
 
-    public abstract MeterInfoDto toMeterInfoDto(MeterInfoEntry data);
+    public MeterInfoDto toMeterInfoDto(MeterSchema expected, MeterSchema actual) {
+        MeterSchema schema = actual;
+        if (schema == null) {
+            schema = expected;
+        }
+        if (schema == null) {
+            throw new IllegalArgumentException(String.format(
+                    "Can't make %s because both actual and expected arguments are null", MeterInfoDto.class.getName()));
+        }
 
-    public abstract MeterMisconfiguredInfoDto toMeterMisconfiguredInfoDto(MeterMisconfiguredInfoEntry data);
+        MeterInfoDto result = new MeterInfoDto();
+        result.setMeterId(schema.getMeterId().getValue());
+        result.setRate(getMeterSchemaRate(schema));
+        result.setBurstSize(getMeterSchemaBurstSize(schema));
+        result.setFlags(schema.getFlags().toArray(new String[0]));
+
+        if (expected != null) {
+            result.setExpected(toMeterMisconfiguredInfoDto(expected));
+        }
+        if (actual != null) {
+            result.setActual(toMeterMisconfiguredInfoDto(actual));
+        }
+
+        return result;
+    }
+
+    public MeterMisconfiguredInfoDto toMeterMisconfiguredInfoDto(MeterSchema schema) {
+        MeterMisconfiguredInfoDto result = new MeterMisconfiguredInfoDto();
+        result.setRate(getMeterSchemaRate(schema));
+        result.setBurstSize(getMeterSchemaBurstSize(schema));
+        result.setFlags(schema.getFlags().toArray(new String[0]));
+        return result;
+    }
 
     public String toSwitchId(SwitchId switchId) {
         return switchId.toString();
@@ -158,8 +194,58 @@ public abstract class SwitchMapper {
         } else if (flowDefect.isMismatch()) {
             result.getMissing().add(cookie);
         } else {
-            throw new IllegalArgumentException(String.format("Unsupported defect kind: %s", flowDefect));
+            throw makeUnsupportedDefectException(flowDefect);
         }
+    }
+
+    private void collectOfMeterDefects(
+            MetersValidationDto result, FlowSegmentReference segmentRef, ValidateDefect defect) {
+        if (! defect.getMeter().isPresent()) {
+            return;
+        }
+
+        ValidateOfMeterDefect meterDefect = defect.getMeter().get();
+        MeterInfoDto meterInfo = null;
+        if (meterDefect.isMissing()) {
+            meterInfo = toMeterInfoDto(meterDefect.getExpected(), null);
+            result.getMissing().add(extendMeterInfoWithSegmentReference(segmentRef, meterInfo));
+        } else if (meterDefect.isExcess()) {
+            meterInfo = toMeterInfoDto(null, meterDefect.getActual());
+            result.getExcess().add(meterInfo);
+        } else if (meterDefect.isMismatch()) {
+            meterInfo = toMeterInfoDto(meterDefect.getExpected(), meterDefect.getActual());
+            result.getMisconfigured().add(extendMeterInfoWithSegmentReference(segmentRef, meterInfo));
+        } else {
+            throw makeUnsupportedDefectException(meterDefect);
+        }
+    }
+
+    private MeterInfoDto extendMeterInfoWithSegmentReference(FlowSegmentReference ref, MeterInfoDto meterInfo) {
+        meterInfo.setFlowId(ref.getFlowId());
+        meterInfo.setCookie(ref.getCookie().getValue());
+        return meterInfo;
+    }
+
+    private Long getMeterSchemaRate(MeterSchema schema) {
+        Long value = null;
+        for (MeterSchemaBand band : schema.getBands()) {
+            value = band.getRate();
+            if (value != null) {
+                break;
+            }
+        }
+        return value;
+    }
+
+    private Long getMeterSchemaBurstSize(MeterSchema schema) {
+        Long value = null;
+        for (MeterSchemaBand band : schema.getBands()) {
+            value = band.getBurstSize();
+            if (value != null) {
+                break;
+            }
+        }
+        return value;
     }
 
     private List<Long> lookupTableZeroCookies(List<OfFlowReference> references) {
@@ -170,5 +256,9 @@ public abstract class SwitchMapper {
         return references.filter(entry -> entry.getTableId() == 0)
                 .map(entry -> entry.getCookie().getValue())
                 .collect(Collectors.toList());
+    }
+
+    private IllegalArgumentException makeUnsupportedDefectException(Object defect) {
+        return new IllegalArgumentException(String.format("Unsupported defect kind: %s", defect));
     }
 }

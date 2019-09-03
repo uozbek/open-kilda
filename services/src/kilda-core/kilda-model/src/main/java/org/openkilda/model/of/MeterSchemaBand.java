@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -29,16 +28,20 @@ public class MeterSchemaBand {
 
     private final int type;
 
-    private final long rate;       // type: drop
-    private final long burstSize;  // type: drop
+    private final Long rate;       // type: drop
+    private final Long burstSize;  // type: drop
 
     private final boolean inaccurate;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
 
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         MeterSchemaBand that = (MeterSchemaBand) o;
 
@@ -66,7 +69,8 @@ public class MeterSchemaBand {
     }
 
     private boolean inaccurateEquals(long left, long right, float deviation) {
-        long diff, max;
+        long diff;
+        long max;
         if (left < right) {
             max = right;
             diff = right - left;

@@ -170,7 +170,8 @@ public class ValidateServiceImpl implements ValidateService {
 
     private ValidateFlowSegmentDescriptor makeFlowSegmentDescriptor(
             Flow flow, FlowPath path, FlowSegmentBlankGenericResolver blank) {
-        FlowSegmentReference ref = new FlowSegmentReference(flow.getFlowId(), path.getPathId(), blank.getSwitchId());
+        FlowSegmentReference ref = new FlowSegmentReference(
+                flow.getFlowId(), path.getPathId(), blank.getSwitchId(), path.getCookie());
         return ValidateFlowSegmentDescriptor.builder()
                 .ref(ref)
                 .requestBlank(blank)
@@ -290,10 +291,15 @@ public class ValidateServiceImpl implements ValidateService {
         return excess;
     }
 
-    private Collection<OfMeterReference> verifyExcessMeters(ValidateContext context) {
-        Set<OfMeterReference> meters = new HashSet<>(context.getActualOfMeters().keySet());
-        meters.removeAll(context.getSeenMeters());
-        return meters;
+    private List<MeterSchema> verifyExcessMeters(ValidateContext context) {
+        List<MeterSchema> excess = new ArrayList<>();
+        Set<OfMeterReference> seenMeters = context.getSeenMeters();
+        for (Map.Entry<OfMeterReference, MeterSchema> entry : context.getActualOfMeters().entrySet()) {
+            if (! seenMeters.contains(entry.getKey())) {
+                excess.add(entry.getValue());
+            }
+        }
+        return excess;
     }
 
     private Optional<ValidateDefect> verifyOfFlow(ValidateContext context, OfFlowReference ref, OfFlowSchema expected) {

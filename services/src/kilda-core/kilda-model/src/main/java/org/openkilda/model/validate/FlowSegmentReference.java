@@ -15,6 +15,7 @@
 
 package org.openkilda.model.validate;
 
+import org.openkilda.model.Cookie;
 import org.openkilda.model.PathId;
 import org.openkilda.model.SwitchId;
 
@@ -31,4 +32,5 @@ public class FlowSegmentReference implements Serializable {
     private final String flowId;
     private final PathId pathId;
     private final SwitchId datapath;
+    private final Cookie cookie;
 }

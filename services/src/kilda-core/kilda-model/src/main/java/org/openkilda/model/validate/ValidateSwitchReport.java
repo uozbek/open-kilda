@@ -16,6 +16,7 @@
 package org.openkilda.model.validate;
 
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -35,10 +36,11 @@ public class ValidateSwitchReport {
     @Singular
     private final List<MeterCollision> meterCollisions;
 
+    // TODO(surabujin): replace excess* properties with `List<ValidateDefect> defects` property
     @Singular
     private final List<OfFlowReference> excessOfFlows;
     @Singular
-    private final List<OfMeterReference> excessMeters;
+    private final List<MeterSchema> excessMeters;
 
     @Singular
     private final List<ValidateFlowSegmentReport> segmentReports;
