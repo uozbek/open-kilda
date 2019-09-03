@@ -16,15 +16,12 @@
 package org.openkilda.northbound.converter;
 
 import org.openkilda.messaging.info.event.SwitchInfoData;
-import org.openkilda.messaging.info.switches.MetersSyncEntry;
-import org.openkilda.messaging.info.switches.RulesSyncEntry;
 import org.openkilda.messaging.info.switches.SwitchSyncResponse;
 import org.openkilda.messaging.info.switches.SwitchValidationResponse;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.of.MeterSchema;
 import org.openkilda.model.of.MeterSchemaBand;
 import org.openkilda.model.validate.FlowSegmentReference;
-import org.openkilda.model.validate.OfFlowMissing;
 import org.openkilda.model.validate.OfFlowReference;
 import org.openkilda.model.validate.ValidateDefaultOfFlowsReport;
 import org.openkilda.model.validate.ValidateDefect;
@@ -48,6 +45,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,18 +82,37 @@ public abstract class SwitchMapper {
         return dto;
     }
 
-    @Mapping(source = "rules.excess", target = "excessRules")
-    @Mapping(source = "rules.missing", target = "missingRules")
-    @Mapping(source = "rules.proper", target = "properRules")
-    @Mapping(source = "rules.installed", target = "installedRules")
-    public abstract RulesSyncResult toRulesSyncResult(SwitchSyncResponse response);
+    public RulesSyncResult toRulesSyncResult(SwitchSyncResponse response) {
+        RulesValidationDto rules = toRulesValidationDto(response.getValidateReport());
 
-    public abstract SwitchSyncResult toSwitchSyncResult(SwitchSyncResponse response);
+        // sync switch action can't produce partial success response (at least now)
+        return new RulesSyncResult(
+                rules.getMissing(), rules.getProper(), rules.getExcess(),
+                response.isSuccess() ? rules.getMissing() : Collections.emptyList());
+    }
 
-    public abstract RulesSyncDto toRulesSyncDto(RulesSyncEntry data);
+    public SwitchSyncResult toSwitchSyncResult(SwitchSyncResponse response) {
+        return new SwitchSyncResult(toRulesSyncDto(response), toMetersSyncDto(response));
+    }
 
-    public abstract MetersSyncDto toMetersSyncDto(MetersSyncEntry data);
+    public RulesSyncDto toRulesSyncDto(SwitchSyncResponse response) {
+        RulesValidationDto rules = toRulesValidationDto(response.getValidateReport());
+        return new RulesSyncDto(
+                rules.getMissing(), rules.getProper(), rules.getExcess(),
+                response.isSuccess() ? rules.getMissing() : Collections.emptyList(),
+                response.isSuccess() ? rules.getExcess() : Collections.emptyList());
+    }
 
+    public MetersSyncDto toMetersSyncDto(SwitchSyncResponse response) {
+        MetersValidationDto meters = toMetersValidationDto(response.getValidateReport());
+        return new MetersSyncDto(
+                meters.getMissing(), meters.getMisconfigured(), meters.getProper(), meters.getExcess(),
+                response.isSuccess() ? meters.getMissing() : Collections.emptyList(),
+                response.isSuccess() ? meters.getExcess() : Collections.emptyList());
+    }
+
+    @Mapping(source = "report", target = "rules")
+    @Mapping(source = "report", target = "meters")
     public abstract SwitchValidationResult toSwitchValidationResult(SwitchValidationResponse response);
 
     public RulesValidationResult toRulesValidationResult(SwitchValidationResponse response) {
@@ -132,10 +149,23 @@ public abstract class SwitchMapper {
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), excess);
 
         for (ValidateFlowSegmentReport segment : report.getSegmentReports()) {
-
+            result.getProper().addAll(
+                    segment.getProperMeters().stream()
+                    .map(entry -> toMeterInfoDto(entry, entry))
+                    .collect(Collectors.toList()));
+            for (ValidateDefect defect : segment.getDefects()) {
+                collectOfMeterDefects(result, segment.getSegmentRef(), defect);
+            }
         }
 
-        // TODO
+        ValidateDefaultOfFlowsReport defaultFlowsReport = report.getDefaultFlowsReport();
+        result.getProper().addAll(
+                defaultFlowsReport.getProperMeters().stream()
+                        .map(entry -> toMeterInfoDto(entry, entry))
+                        .collect(Collectors.toList()));
+        for (ValidateDefect defect : defaultFlowsReport.getDefects()) {
+            collectOfMeterDefects(result, null, defect);
+        }
         return result;
     }
 
@@ -221,8 +251,10 @@ public abstract class SwitchMapper {
     }
 
     private MeterInfoDto extendMeterInfoWithSegmentReference(FlowSegmentReference ref, MeterInfoDto meterInfo) {
-        meterInfo.setFlowId(ref.getFlowId());
-        meterInfo.setCookie(ref.getCookie().getValue());
+        if (ref != null) {
+            meterInfo.setFlowId(ref.getFlowId());
+            meterInfo.setCookie(ref.getCookie().getValue());
+        }
         return meterInfo;
     }
 

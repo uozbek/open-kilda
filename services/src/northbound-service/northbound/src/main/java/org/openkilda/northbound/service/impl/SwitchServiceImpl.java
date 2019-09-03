@@ -229,7 +229,6 @@ public class SwitchServiceImpl implements SwitchService {
     public CompletableFuture<SwitchValidationResult> validateSwitch(SwitchId switchId) {
         logger.info("Validate request for switch {}", switchId);
 
-        1 / 0; // TODO
         return performValidate(
                 SwitchValidateRequest.builder().switchId(switchId).processMeters(true).build())
                 .thenApply(switchMapper::toSwitchValidationResult);
@@ -248,7 +247,6 @@ public class SwitchServiceImpl implements SwitchService {
     public CompletableFuture<RulesSyncResult> syncRules(SwitchId switchId) {
         logger.info("Sync rules request for switch {}", switchId);
 
-        1 / 0; // TODO
         return performSync(
                 SwitchValidateRequest.builder().switchId(switchId).performSync(true).build())
                 .thenApply(switchMapper::toRulesSyncResult);
@@ -258,7 +256,6 @@ public class SwitchServiceImpl implements SwitchService {
     public CompletableFuture<SwitchSyncResult> syncSwitch(SwitchId switchId, boolean removeExcess) {
         logger.info("Sync request for switch {}. Remove excess {}", switchId, removeExcess);
 
-        1 / 0; // TODO
         return performSync(
                 SwitchValidateRequest.builder().switchId(switchId).processMeters(true).performSync(true)
                         .removeExcess(removeExcess).build())
