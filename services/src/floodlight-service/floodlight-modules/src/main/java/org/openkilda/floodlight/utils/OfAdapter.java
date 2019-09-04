@@ -21,12 +21,14 @@ import static org.projectfloodlight.openflow.protocol.OFVersion.OF_15;
 import org.openkilda.model.MeterId;
 
 import org.projectfloodlight.openflow.protocol.OFFactory;
+import org.projectfloodlight.openflow.protocol.OFMeterMod;
 import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.action.OFActions;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.protocol.meterband.OFMeterBand;
 import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 
@@ -113,6 +115,16 @@ public final class OfAdapter {
                                      .setMeterId(effectiveMeterId.getValue())
                                      .build());
         }
+    }
+
+    /**
+     * Encapsulate difference in meter bands access.
+     */
+    public List<OFMeterBand> getMeterBands(OFMeterMod meterMod) {
+        if (meterMod.getVersion().compareTo(OFVersion.OF_14) < 0) {
+            return meterMod.getMeters();
+        }
+        return meterMod.getBands();
     }
 
     private OfAdapter() { }

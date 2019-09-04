@@ -15,12 +15,14 @@
 
 package org.openkilda.model.validate;
 
+import lombok.Builder;
 import lombok.Value;
 
 import java.io.Serializable;
 import java.util.Optional;
 
 @Value
+@Builder
 public class ValidateDefect implements Serializable {
     private final ValidateOfFlowDefect flow;
     private final ValidateOfMeterDefect meter;

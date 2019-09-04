@@ -30,7 +30,7 @@ import java.util.Optional;
 @EqualsAndHashCode(callSuper = true)
 public class MeterReport extends SpeakerCommandReport {
     private final MeterId meterId;
-    private MeterSchema schema;
+    private final MeterSchema schema;
 
     public MeterReport(MeterId meterId) {
         this(meterId, null, null);
@@ -40,16 +40,13 @@ public class MeterReport extends SpeakerCommandReport {
         this(null, schema, null);
     }
 
-    public MeterReport(MeterId meterId, Exception error) {
-        this(meterId, null, error);
+    public MeterReport(Exception error) {
+        this(null, null, error);
     }
 
     private MeterReport(MeterId meterId, MeterSchema schema, Exception error) {
         super(error);
-        if (meterId == null && schema == null) {
-            throw new IllegalArgumentException("%s can't be defined when `id` and `schema` both undefined");
-        }
-        if (meterId == null) {
+        if (meterId == null && schema != null) {
             meterId = schema.getMeterId();
         }
 

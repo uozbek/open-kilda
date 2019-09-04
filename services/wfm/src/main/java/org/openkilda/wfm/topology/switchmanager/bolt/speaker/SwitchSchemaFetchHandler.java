@@ -1,4 +1,3 @@
-
 /* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");

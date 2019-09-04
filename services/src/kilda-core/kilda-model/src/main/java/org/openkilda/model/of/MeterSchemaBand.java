@@ -49,13 +49,13 @@ public class MeterSchemaBand {
                 .append(type, that.type);
 
         if (inaccurate || that.inaccurate) {
-            return equals.append(rate, that.rate)
-                    .append(burstSize, that.burstSize)
-                    .isEquals();
-        } else {
             return equals.isEquals()
                     && inaccurateEquals(rate, that.rate, INACCURATE_RATE_DEVIATION)
                     && inaccurateEquals(burstSize, that.burstSize, INACCURATE_BURST_DEVIATION);
+        } else {
+            return equals.append(rate, that.rate)
+                    .append(burstSize, that.burstSize)
+                    .isEquals();
         }
     }
 

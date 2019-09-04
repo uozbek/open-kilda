@@ -49,7 +49,7 @@ public class MeterVerifyCommand extends MeterInstallCommand {
         ensureSwitchSupportMeters();
 
         return new CompletableFutureAdapter<>(
-                 messageContext, getSw().writeStatsRequest(makeMeterReadCommand()))
+                messageContext, getSw().writeStatsRequest(makeMeterReadCommand()))
                 .thenApply(this::handleMeterStats)
                 .thenApply(this::makeSuccessReport);
     }

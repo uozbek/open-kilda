@@ -62,6 +62,10 @@ public class ValidateContext {
         }
     }
 
+    /**
+     * Lookup thought actual OF flows return first match and remove it from the list of actual OF flows.
+     * Remove it required to be able to validate setup with 2 exact OF flows.
+     */
     public Optional<OfFlowSchema> lookupAndExtractActualOfFlowSchema(OfFlowReference ref, OfFlowSchema match) {
         List<OfFlowSchema> matchCandidates = actualOfFlows.getOrDefault(ref, Collections.emptyList());
         Iterator<OfFlowSchema> iter = matchCandidates.iterator();

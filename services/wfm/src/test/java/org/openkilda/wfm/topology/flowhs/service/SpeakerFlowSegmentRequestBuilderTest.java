@@ -19,14 +19,15 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.FlowPath;
+import org.openkilda.model.FlowTransitEncapsulation;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.PathId;
 import org.openkilda.model.PathSegment;
@@ -78,12 +79,15 @@ public class SpeakerFlowSegmentRequestBuilderTest extends Neo4jBasedTest {
         flow.setReversePath(reverse);
         setSegmentsWithoutTransitSwitches(forward, reverse);
 
-        List<FlowSegmentRequest> commands = target.buildAllExceptIngress(COMMAND_CONTEXT, flow);
+        List<FlowSegmentBlankGenericResolver> commands = target.buildAllExceptIngress(
+                COMMAND_CONTEXT, flow);
         assertEquals(2, commands.size());
-        FlowSegmentRequest command = commands.get(0);
-        assertThat("Should be command for egress rule", command, instanceOf(EgressFlowSegmentInstallRequest.class));
+        FlowSegmentRequest rawEgressRequest = commands.get(0).makeInstallRequest();
+        assertThat(
+                "Should be command for egress rule",
+                rawEgressRequest, instanceOf(EgressFlowSegmentInstallRequest.class));
 
-        EgressFlowSegmentInstallRequest egressRequest = (EgressFlowSegmentInstallRequest) command;
+        EgressFlowSegmentInstallRequest egressRequest = (EgressFlowSegmentInstallRequest) rawEgressRequest;
         assertEquals(flow.getFlowId(), egressRequest.getFlowId());
         assertEquals(destSwitch.getSwitchId(), egressRequest.getSwitchId());
         assertEquals(flow.getForwardPath().getCookie(), egressRequest.getCookie());
@@ -99,7 +103,7 @@ public class SpeakerFlowSegmentRequestBuilderTest extends Neo4jBasedTest {
         assertEquals(flow.getDestVlan(), endpoint.getOuterVlanId());
     }
 
-    // TODO(surabujin) - review - drop/fix
+    // TODO(surabujin) - restore - drop/fix
     /*
     @Test
     public void shouldCreateNonIngressCommandsWithPushAndPopOutputType() {

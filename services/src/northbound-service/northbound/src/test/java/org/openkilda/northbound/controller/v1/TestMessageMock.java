@@ -79,9 +79,8 @@ public class TestMessageMock implements MessagingChannel {
     static final String TEST_SWITCH_ID = "ff:01";
     static final long TEST_SWITCH_RULE_COOKIE = 1L;
     static final FlowEndpointPayload flowEndpoint = new FlowEndpointPayload(SWITCH_ID, 1, 1);
-    static final FlowEndpointPayload secondFlowEndpoint = new FlowEndpointPayload(SECOND_SWITCH_ID, 2, 2);
-    static final FlowEndpointV2 flowPayloadEndpoint = new FlowEndpointV2(SWITCH_ID, 1, 1);
-    static final FlowEndpointV2 secondFlowPayloadEndpoint = new FlowEndpointV2(SECOND_SWITCH_ID, 2, 2);
+    static final FlowEndpointV2 flowPayloadEndpoint = new FlowEndpointV2(SWITCH_ID, 1, 1, 0);
+    static final FlowEndpointV2 secondFlowPayloadEndpoint = new FlowEndpointV2(SECOND_SWITCH_ID, 2, 2, 0);
     public static final FlowPayload flow = FlowPayload.builder()
             .id(FLOW_ID)
             .source(flowEndpoint)

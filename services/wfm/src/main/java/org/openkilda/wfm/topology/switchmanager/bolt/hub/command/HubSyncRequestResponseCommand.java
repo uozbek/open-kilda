@@ -16,7 +16,7 @@
 package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
 import org.openkilda.floodlight.api.response.SpeakerResponse;
-import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
 
 public class HubSyncRequestResponseCommand extends HubCommand {
     private final SpeakerResponse response;
@@ -27,7 +27,7 @@ public class HubSyncRequestResponseCommand extends HubCommand {
     }
 
     @Override
-    public void apply(HubBolt handler) {
+    public void apply(SwitchManagerHubBolt handler) {
         handler.processSyncResponse(response);
     }
 }

@@ -17,13 +17,16 @@ package org.openkilda.model.validate;
 
 import org.openkilda.model.of.OfFlowSchema;
 
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import lombok.Value;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
 public class ValidateOfFlowDefect extends Defect<OfFlowSchema, OfFlowReference> {
-    public ValidateOfFlowDefect(OfFlowReference reference, OfFlowSchema expected, OfFlowSchema actual) {
+    @Builder
+    public ValidateOfFlowDefect(@NonNull OfFlowReference reference, OfFlowSchema expected, OfFlowSchema actual) {
         super(reference, expected, actual);
     }
 }

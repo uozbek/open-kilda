@@ -15,8 +15,8 @@
 
 package org.openkilda.wfm.topology.switchmanager.model;
 
-import org.openkilda.model.of.MeterSchema;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
 import lombok.Value;
 

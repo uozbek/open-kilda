@@ -16,11 +16,11 @@
 package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
 import org.openkilda.wfm.share.ICommand;
-import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
 
 import lombok.Getter;
 
-public abstract class HubCommand implements ICommand<HubBolt> {
+public abstract class HubCommand implements ICommand<SwitchManagerHubBolt> {
     @Getter
     protected final String key;
 

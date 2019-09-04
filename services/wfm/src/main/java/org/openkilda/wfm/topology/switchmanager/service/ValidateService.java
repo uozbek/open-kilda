@@ -16,7 +16,6 @@
 package org.openkilda.wfm.topology.switchmanager.service;
 
 import org.openkilda.model.SwitchId;
-import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;

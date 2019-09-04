@@ -39,6 +39,8 @@ import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.AllocateProtectedRe
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.CancelPendingCommandsAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.CompleteFlowPathInstallationAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.CompleteFlowPathRemovalAction;
+import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ConsiderIngressRulesValidationResultAction;
+import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ConsiderNonIngressRulesValidationResultAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.DeallocateResourcesAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.EmitIngressRulesVerifyRequestsAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.EmitNonIngressRulesVerifyRequestsAction;
@@ -60,8 +62,6 @@ import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.RevertResourceAlloc
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.SwapFlowPathsAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.UpdateFlowStatusAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ValidateFlowAction;
-import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ConsiderIngressRulesValidationResultAction;
-import org.openkilda.wfm.topology.flowhs.fsm.reroute.actions.ConsiderNonIngressRulesValidationResultAction;
 import org.openkilda.wfm.topology.flowhs.service.FlowRerouteHubCarrier;
 
 import lombok.Getter;
@@ -77,7 +77,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 
 @Getter
 @Setter

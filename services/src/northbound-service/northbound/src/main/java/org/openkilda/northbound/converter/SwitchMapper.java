@@ -82,6 +82,9 @@ public abstract class SwitchMapper {
         return dto;
     }
 
+    /**
+     * Decode {@code SwitchSyncResponse} into {@code RulesSyncResult}.
+     */
     public RulesSyncResult toRulesSyncResult(SwitchSyncResponse response) {
         RulesValidationDto rules = toRulesValidationDto(response.getValidateReport());
 
@@ -95,6 +98,9 @@ public abstract class SwitchMapper {
         return new SwitchSyncResult(toRulesSyncDto(response), toMetersSyncDto(response));
     }
 
+    /**
+     * Decode {@code SwitchSyncResponse} into {@code RulesSyncDto}.
+     */
     public RulesSyncDto toRulesSyncDto(SwitchSyncResponse response) {
         RulesValidationDto rules = toRulesValidationDto(response.getValidateReport());
         return new RulesSyncDto(
@@ -103,6 +109,9 @@ public abstract class SwitchMapper {
                 response.isSuccess() ? rules.getExcess() : Collections.emptyList());
     }
 
+    /**
+     * Decode {@code SwitchSyncResponse} into {@code MetersSyncDto}.
+     */
     public MetersSyncDto toMetersSyncDto(SwitchSyncResponse response) {
         MetersValidationDto meters = toMetersValidationDto(response.getValidateReport());
         return new MetersSyncDto(
@@ -120,6 +129,9 @@ public abstract class SwitchMapper {
         return new RulesValidationResult(rules.getMissing(), rules.getProper(), rules.getExcess());
     }
 
+    /**
+     * Decode {@code ValidateSwitchReport} into {@code RulesValidationDto}.
+     */
     public RulesValidationDto toRulesValidationDto(ValidateSwitchReport report) {
         ArrayList<Long> excess = new ArrayList<>(lookupTableZeroCookies(report.getExcessOfFlows()));
         RulesValidationDto result = new RulesValidationDto(
@@ -141,6 +153,9 @@ public abstract class SwitchMapper {
         return result;
     }
 
+    /**
+     * Decode {@code ValidateSwitchReport} into {@code MetersValidationDto}.
+     */
     public MetersValidationDto toMetersValidationDto(ValidateSwitchReport report) {
         List<MeterInfoDto> excess = report.getExcessMeters().stream()
                 .map(entry -> toMeterInfoDto(null, entry))
@@ -169,6 +184,9 @@ public abstract class SwitchMapper {
         return result;
     }
 
+    /**
+     * Decode {@code MeterSchema} into {@code MeterInfoDto}.
+     */
     public MeterInfoDto toMeterInfoDto(MeterSchema expected, MeterSchema actual) {
         MeterSchema schema = actual;
         if (schema == null) {
@@ -195,6 +213,9 @@ public abstract class SwitchMapper {
         return result;
     }
 
+    /**
+     * Decode {@code MeterSchema} into {@code MeterMisconfiguredInfoDto}.
+     */
     public MeterMisconfiguredInfoDto toMeterMisconfiguredInfoDto(MeterSchema schema) {
         MeterMisconfiguredInfoDto result = new MeterMisconfiguredInfoDto();
         result.setRate(getMeterSchemaRate(schema));

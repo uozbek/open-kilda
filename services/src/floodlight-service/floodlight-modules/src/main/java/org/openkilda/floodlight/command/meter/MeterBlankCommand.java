@@ -44,7 +44,7 @@ abstract class MeterBlankCommand extends MeterCommand<MeterReport> {
 
     @Override
     protected MeterReport makeReport(Exception error) {
-        return new MeterReport(meterConfig.getId(), error);
+        return new MeterReport(error);
     }
 
     protected MeterReport makeSuccessReport(OFMeterMod meterMod) {

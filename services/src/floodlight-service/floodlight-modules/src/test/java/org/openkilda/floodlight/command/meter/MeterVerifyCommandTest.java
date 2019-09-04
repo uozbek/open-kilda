@@ -75,7 +75,7 @@ public class MeterVerifyCommandTest extends AbstractSpeakerCommandTest {
     }
 
     @Test
-    public void invalidBands0() throws Exception {
+    public void invalidBands0() {
         switchFeaturesSetup(true);
         SettableFuture<List<OFMeterConfigStatsReply>> statsReplyProxy = setupMeterConfigStatsReply();
         setupMeterConfigStatsReply();  // for command2

@@ -17,7 +17,7 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.wfm.share.history.model.FlowHistoryData;
 import org.openkilda.wfm.share.history.model.FlowHistoryHolder;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
@@ -49,21 +49,17 @@ public abstract class RuleProcessingAction
                                     FlowRerouteContext context, FlowRerouteFsm stateMachine);
 
     protected long getCookieForCommand(FlowRerouteFsm stateMachine, UUID commandId) {
-        long cookie;
-        FlowSegmentRequest request;
+        FlowSegmentBlankGenericResolver request;
         if (stateMachine.getNonIngressCommands().containsKey(commandId)) {
             request = stateMachine.getNonIngressCommands().get(commandId);
-            cookie = request.getCookie().getValue();
         } else if (stateMachine.getIngressCommands().containsKey(commandId)) {
             request = stateMachine.getIngressCommands().get(commandId);
-            cookie = request.getCookie().getValue();
         } else if (stateMachine.getRemoveCommands().containsKey(commandId)) {
             request = stateMachine.getRemoveCommands().get(commandId);
-            cookie = request.getCookie().getValue();
         } else {
             throw new IllegalStateException(format("Failed to find install/remove rule command with id %s", commandId));
         }
-        return cookie;
+        return request.makeInstallRequest().getCookie().getValue();
     }
 
     protected void sendHistoryUpdate(FlowRerouteFsm stateMachine, String action, String description) {

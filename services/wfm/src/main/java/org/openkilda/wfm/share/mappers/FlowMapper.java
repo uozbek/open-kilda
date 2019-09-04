@@ -315,12 +315,18 @@ public abstract class FlowMapper {
                 .build();
     }
 
+    /**
+     * Build source endpoint.
+     */
     public FlowEndpoint buildSourceEndpoint(Flow flow) {
         return new FlowEndpoint(
                 flow.getSrcSwitch().getSwitchId(), flow.getSrcPort(),
                 flow.getSrcVlan(), flow.getSrcInnerVlan());
     }
 
+    /**
+     * Build destination endpoint.
+     */
     public FlowEndpoint buildDestinationEndpoint(Flow flow) {
         return new FlowEndpoint(
                 flow.getDestSwitch().getSwitchId(), flow.getDestPort(),

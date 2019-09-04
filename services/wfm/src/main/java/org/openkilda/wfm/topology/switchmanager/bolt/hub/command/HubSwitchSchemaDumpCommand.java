@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 
 public class HubSwitchSchemaDumpCommand extends HubCommand {
@@ -27,7 +27,7 @@ public class HubSwitchSchemaDumpCommand extends HubCommand {
     }
 
     @Override
-    public void apply(HubBolt handler) {
+    public void apply(SwitchManagerHubBolt handler) {
         handler.processSwitchSchemaDump(getKey(), switchSchema);
     }
 }

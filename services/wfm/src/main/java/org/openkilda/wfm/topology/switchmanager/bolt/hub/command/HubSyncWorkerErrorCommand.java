@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,7 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
 
 public class HubSyncWorkerErrorCommand extends HubCommand {
     private final String errorMessage;
@@ -27,7 +26,7 @@ public class HubSyncWorkerErrorCommand extends HubCommand {
     }
 
     @Override
-    public void apply(HubBolt handler) {
+    public void apply(SwitchManagerHubBolt handler) {
         handler.processSyncWorkerError(getKey(), errorMessage);
     }
 }

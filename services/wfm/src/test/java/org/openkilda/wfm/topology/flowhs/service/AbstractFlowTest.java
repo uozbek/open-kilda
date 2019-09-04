@@ -17,11 +17,21 @@ package org.openkilda.wfm.topology.flowhs.service;
 
 import static org.mockito.Mockito.when;
 
+import org.openkilda.floodlight.api.request.EgressFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentRemoveRequest;
+import org.openkilda.floodlight.api.request.EgressFlowSegmentVerifyRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentRequest;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentRemoveRequest;
+import org.openkilda.floodlight.api.request.IngressFlowSegmentVerifyRequest;
+import org.openkilda.floodlight.api.request.OneSwitchFlowInstallRequest;
+import org.openkilda.floodlight.api.request.OneSwitchFlowRemoveRequest;
+import org.openkilda.floodlight.api.request.OneSwitchFlowVerifyRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentInstallRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentRemoveRequest;
+import org.openkilda.floodlight.api.request.TransitFlowSegmentVerifyRequest;
 import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
-import org.openkilda.floodlight.flow.request.GetInstalledRule;
-import org.openkilda.floodlight.flow.request.InstallFlowRule;
-import org.openkilda.floodlight.flow.response.FlowRuleResponse;
+import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
 import org.openkilda.pce.PathComputer;
@@ -42,9 +52,10 @@ import org.mockito.stubbing.Answer;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
+import java.util.stream.Stream;
 
 public abstract class AbstractFlowTest {
     @Mock
@@ -59,7 +70,9 @@ public abstract class AbstractFlowTest {
     FlowResourcesManager flowResourcesManager;
 
     final Queue<FlowSegmentRequest> requests = new ArrayDeque<>();
-    final Map<SwitchId, Map<Cookie, InstallFlowRule>> installedRules = new HashMap<>();
+    final Map<SwitchId, Map<Cookie, FlowSegmentRequest>> installedSegments = new HashMap<>();
+
+    private static final Iterator<Integer> idGenerator = Stream.iterate(0, current -> current + 1).iterator();
 
     @Before
     public void before() {
@@ -95,46 +108,48 @@ public abstract class AbstractFlowTest {
             FlowSegmentRequest request = invocation.getArgument(0);
             requests.offer(request);
 
-            if (request instanceof InstallFlowRule) {
-                Map<Cookie, InstallFlowRule> switchRules =
-                        installedRules.getOrDefault(request.getSwitchId(), new HashMap<>());
-                switchRules.put(((InstallFlowRule) request).getCookie(), ((InstallFlowRule) request));
-                installedRules.put(request.getSwitchId(), switchRules);
+            if (isFlowSegmentInstallRequest(request)) {
+                installedSegments.computeIfAbsent(request.getSwitchId(), ignore -> new HashMap<>())
+                        .put(request.getCookie(), request);
             }
+
             return request;
         };
     }
 
-    SpeakerFlowSegmentResponse buildResponseOnGetInstalled(GetInstalledRule request) {
-        Cookie cookie = request.getCookie();
-
-        InstallFlowRule rule = Optional.ofNullable(installedRules.get(request.getSwitchId()))
-                .map(switchRules -> switchRules.get(cookie))
-                .orElse(null);
-
-        FlowRuleResponse.FlowRuleResponseBuilder builder = FlowRuleResponse.flowRuleResponseBuilder()
+    SpeakerFlowSegmentResponse buildResponseOnVerifyRequest(FlowSegmentRequest request) {
+        return SpeakerFlowSegmentResponse.builder()
                 .commandId(request.getCommandId())
                 .flowId(request.getFlowId())
+                .cookie(request.getCookie())
+                .messageContext(request.getMessageContext())
                 .switchId(request.getSwitchId())
-                .cookie(rule.getCookie());
-        // TODO(surabujin): - review - drop/fix
-        /*
-                .inPort(rule.getInputPort())
-                .outPort(rule.getOutputPort());
-        if (rule instanceof EgressFlowSegmentInstallRequest) {
-            builder.inVlan(((EgressFlowSegmentInstallRequest) rule).getTransitEncapsulationId());
-            builder.outVlan(((EgressFlowSegmentInstallRequest) rule).getOutputVlanId());
-        } else if (rule instanceof TransitFlowSegmentInstallRequest) {
-            builder.inVlan(((TransitFlowSegmentInstallRequest) rule).getTransitEncapsulationId());
-            builder.outVlan(((TransitFlowSegmentInstallRequest) rule).getTransitEncapsulationId());
-        } else if (rule instanceof SpeakerIngressActModRequest) {
-            SpeakerIngressActModRequest ingressRule = (SpeakerIngressActModRequest) rule;
-            builder.inVlan(ingressRule.getInputOuterVlanId())
-                    .meterId(ingressRule.getMeterId());
-        }
-        */
-
-        return builder.build();
+                .success(true)
+                .build();
     }
 
+    protected boolean isFlowSegmentInstallRequest(FlowSegmentRequest request) {
+        return request instanceof TransitFlowSegmentInstallRequest
+                || request instanceof IngressFlowSegmentInstallRequest
+                || request instanceof OneSwitchFlowInstallRequest
+                || request instanceof EgressFlowSegmentInstallRequest;
+    }
+
+    protected boolean isFlowSegmentVerifyRequest(FlowSegmentRequest request) {
+        return request instanceof TransitFlowSegmentVerifyRequest
+                || request instanceof IngressFlowSegmentVerifyRequest
+                || request instanceof OneSwitchFlowVerifyRequest
+                || request instanceof EgressFlowSegmentVerifyRequest;
+    }
+
+    protected boolean isFlowSegmentRemoveRequest(FlowSegmentRequest request) {
+        return request instanceof TransitFlowSegmentRemoveRequest
+                || request instanceof IngressFlowSegmentRemoveRequest
+                || request instanceof OneSwitchFlowRemoveRequest
+                || request instanceof EgressFlowSegmentRemoveRequest;
+    }
+
+    protected MessageContext makeMessageContext() {
+        return new MessageContext(String.format(getClass().getCanonicalName() + "-unit-test--%d", idGenerator.next()));
+    }
 }

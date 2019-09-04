@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
-import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
 
 public class HubValidateWorkerErrorCommand extends HubCommand {
     private final String errorMessage;
@@ -26,7 +26,7 @@ public class HubValidateWorkerErrorCommand extends HubCommand {
     }
 
     @Override
-    public void apply(HubBolt handler) {
+    public void apply(SwitchManagerHubBolt handler) {
         handler.processValidateWorkerError(getKey(), errorMessage);
     }
 }

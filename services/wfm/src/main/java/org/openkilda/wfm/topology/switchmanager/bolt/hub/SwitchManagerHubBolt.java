@@ -22,7 +22,9 @@ import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
 import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
+import org.openkilda.messaging.error.ErrorData;
 import org.openkilda.messaging.error.ErrorMessage;
+import org.openkilda.messaging.error.ErrorType;
 import org.openkilda.messaging.info.InfoData;
 import org.openkilda.messaging.info.InfoMessage;
 import org.openkilda.messaging.info.flow.FlowRemoveResponse;
@@ -32,6 +34,7 @@ import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
+import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.topology.switchmanager.StreamType;
 import org.openkilda.wfm.topology.switchmanager.bolt.hub.command.HubCommand;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
@@ -61,7 +64,7 @@ import org.apache.storm.tuple.Values;
 import java.util.List;
 import java.util.Map;
 
-public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt implements SwitchManagerCarrier {
+public class SwitchManagerHubBolt extends HubBolt implements SwitchManagerCarrier {
     public static final String ID = "switch.manager.hub";
     public static final String INCOME_STREAM = "switch.manage.command";
 
@@ -72,7 +75,8 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
     private transient SwitchValidateService validateService;
     private transient SwitchSyncService syncService;
 
-    public HubBolt(Config hubConfig, PersistenceManager persistenceManager, FlowResourcesConfig flowResourcesConfig) {
+    public SwitchManagerHubBolt(
+            Config hubConfig, PersistenceManager persistenceManager, FlowResourcesConfig flowResourcesConfig) {
         super(hubConfig);
         this.persistenceManager = persistenceManager;
         this.flowResourcesConfig = flowResourcesConfig;
@@ -138,6 +142,9 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
         validateService.handleSpeakerErrorResponse(key, errorResponse);
     }
 
+    /**
+     * Route worker response on sync command.
+     */
     public void processSyncResponse(Message message) {
         String key = getKey();
         if (message instanceof InfoMessage) {
@@ -157,6 +164,15 @@ public class HubBolt extends org.openkilda.wfm.share.hubandspoke.HubBolt impleme
 
     public void processSyncResponse(SpeakerResponse response) {
         syncService.handleSegmentInstallResponse(getKey(), response);
+    }
+
+    /**
+     * Route worker error response on sync command.
+     */
+    public void processSyncWorkerError(String key, String errorMessage) {
+        ErrorData errorPayload = new ErrorData(ErrorType.INTERNAL_ERROR, "Speaker worker report error", errorMessage);
+        syncService.handleTaskError(key, new ErrorMessage(
+                errorPayload, System.currentTimeMillis(), getCommandContext().getCorrelationId()));
     }
 
     // -- carrier implementation --

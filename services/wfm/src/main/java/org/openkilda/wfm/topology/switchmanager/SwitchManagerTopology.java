@@ -21,10 +21,11 @@ import org.openkilda.wfm.LaunchEnvironment;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.hubandspoke.CoordinatorBolt;
 import org.openkilda.wfm.share.hubandspoke.CoordinatorSpout;
+import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.AbstractTopology;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
 import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
-import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
 import org.openkilda.wfm.topology.utils.MessageTranslator;
 
 import org.apache.storm.generated.StormTopology;
@@ -55,27 +56,29 @@ public class SwitchManagerTopology extends AbstractTopology<SwitchManagerTopolog
         builder.setSpout(CoordinatorSpout.ID, new CoordinatorSpout());
         builder.setBolt(CoordinatorBolt.ID, new CoordinatorBolt())
                 .allGrouping(CoordinatorSpout.ID)
-                .fieldsGrouping(HubBolt.ID, CoordinatorBolt.INCOME_STREAM, FIELDS_KEY);
+                .fieldsGrouping(SwitchManagerHubBolt.ID, CoordinatorBolt.INCOME_STREAM, FIELDS_KEY);
 
         PersistenceManager persistenceManager =
                 PersistenceProvider.getInstance().createPersistenceManager(configurationProvider);
 
-        org.openkilda.wfm.share.hubandspoke.HubBolt.Config hubConfig = org.openkilda.wfm.share.hubandspoke.HubBolt.Config.builder()
+        HubBolt.Config hubConfig = HubBolt.Config.builder()
                 .requestSenderComponent(HUB_SPOUT)
                 .workerComponent(SpeakerWorkerBolt.ID)
                 .timeoutMs((int) TimeUnit.SECONDS.toMillis(topologyConfig.getProcessTimeout()))
                 .build();
         builder.setSpout(HUB_SPOUT, buildKafkaSpout(topologyConfig.getKafkaSwitchManagerNbTopic(), HUB_SPOUT));
-        builder.setBolt(HubBolt.ID, new HubBolt(hubConfig, persistenceManager,
-                                                configurationProvider.getConfiguration(FlowResourcesConfig.class)),
-                        topologyConfig.getNewParallelism())
+        builder.setBolt(
+                SwitchManagerHubBolt.ID, new SwitchManagerHubBolt(
+                        hubConfig, persistenceManager,
+                        configurationProvider.getConfiguration(FlowResourcesConfig.class)),
+                topologyConfig.getNewParallelism())
                 .fieldsGrouping(HUB_SPOUT, FIELDS_KEY)
-                .directGrouping(SpeakerWorkerBolt.ID, HubBolt.INCOME_STREAM)
+                .directGrouping(SpeakerWorkerBolt.ID, SwitchManagerHubBolt.INCOME_STREAM)
                 .directGrouping(CoordinatorBolt.ID);
 
         WorkerBolt.Config speakerWorkerConfig = WorkerBolt.Config.builder()
-                .hubComponent(HubBolt.ID)
-                .streamToHub(HubBolt.INCOME_STREAM)
+                .hubComponent(SwitchManagerHubBolt.ID)
+                .streamToHub(SwitchManagerHubBolt.INCOME_STREAM)
                 .workerSpoutComponent(WORKER_SPOUT)
                 .defaultTimeout((int) TimeUnit.SECONDS.toMillis(topologyConfig.getOperationTimeout()))
                 .build();
@@ -83,11 +86,11 @@ public class SwitchManagerTopology extends AbstractTopology<SwitchManagerTopolog
         builder.setBolt(SpeakerWorkerBolt.ID, new SpeakerWorkerBolt(speakerWorkerConfig),
                 topologyConfig.getNewParallelism())
                 .fieldsGrouping(WORKER_SPOUT, FIELDS_KEY)
-                .fieldsGrouping(HubBolt.ID, SpeakerWorkerBolt.INCOME_STREAM, FIELDS_KEY)
+                .fieldsGrouping(SwitchManagerHubBolt.ID, SpeakerWorkerBolt.INCOME_STREAM, FIELDS_KEY)
                 .directGrouping(CoordinatorBolt.ID);
 
         builder.setBolt(NB_KAFKA_BOLT, buildKafkaBolt(topologyConfig.getKafkaNorthboundTopic()))
-                .shuffleGrouping(HubBolt.ID, StreamType.TO_NORTHBOUND.toString());
+                .shuffleGrouping(SwitchManagerHubBolt.ID, StreamType.TO_NORTHBOUND.toString());
 
         builder.setBolt(SPEAKER_KAFKA_BOLT, buildKafkaJsonBolt(topologyConfig.getKafkaSpeakerTopic()))
                 .shuffleGrouping(SpeakerWorkerBolt.ID, StreamType.TO_FLOODLIGHT.toString());

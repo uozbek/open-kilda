@@ -16,7 +16,7 @@
 package org.openkilda.wfm.topology.switchmanager.bolt.hub.command;
 
 import org.openkilda.messaging.Message;
-import org.openkilda.wfm.topology.switchmanager.bolt.hub.HubBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
 
 public class HubSyncMessageResponseCommand extends HubCommand {
     private final Message response;
@@ -27,7 +27,7 @@ public class HubSyncMessageResponseCommand extends HubCommand {
     }
 
     @Override
-    public void apply(HubBolt handler) {
+    public void apply(SwitchManagerHubBolt handler) {
         handler.processSyncResponse(response);
     }
 }

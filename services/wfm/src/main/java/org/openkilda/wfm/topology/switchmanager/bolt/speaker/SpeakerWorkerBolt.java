@@ -227,36 +227,36 @@ public class SpeakerWorkerBolt extends WorkerBolt implements SpeakerWorkerCarrie
 
     private class HandlerWrapper implements Closeable {
         private final String key;
-        private final WorkerHandler h;
+        private final WorkerHandler target;
         private boolean forceComplete = false;
 
-        private HandlerWrapper(String key) {
+        HandlerWrapper(String key) {
             this.key = key;
-            h = handlers.getOrDefault(key, DummyHandler.INSTANCE);
+            target = handlers.getOrDefault(key, DummyHandler.INSTANCE);
         }
 
         void speakerResponse(Message response) {
-            h.speakerResponse(response);
+            target.speakerResponse(response);
         }
 
         void speakerResponse(SpeakerResponse response) {
-            h.speakerResponse(response);
+            target.speakerResponse(response);
         }
 
         void timeout() {
             forceComplete = true;
-            h.timeout();
+            target.timeout();
         }
 
         public void close() {
-            if (forceComplete || h.isCompleted()) {
-                handlers.remove(key, h);
+            if (forceComplete || target.isCompleted()) {
+                handlers.remove(key, target);
             }
         }
     }
 
     private static class DummyHandler extends WorkerHandler {
-        private final static DummyHandler INSTANCE = new DummyHandler();
+        private static final DummyHandler INSTANCE = new DummyHandler();
 
         @Override
         public void speakerResponse(Message response) {

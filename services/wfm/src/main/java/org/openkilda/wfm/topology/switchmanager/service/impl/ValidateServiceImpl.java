@@ -53,7 +53,6 @@ import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -316,7 +315,9 @@ public class ValidateServiceImpl implements ValidateService {
         }
 
         if (flowDefect != null || meterDefect != null) {
-            return Optional.of(new ValidateDefect(flowDefect, meterDefect));
+            return Optional.of(ValidateDefect.builder()
+                                       .flow(flowDefect)
+                                       .meter(meterDefect).build());
         }
         return Optional.empty();
     }

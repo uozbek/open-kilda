@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -19,9 +18,6 @@ package org.openkilda.wfm.share.service;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-import org.openkilda.model.FlowEndpoint;
-import org.openkilda.model.FlowTransitEncapsulation;
-import org.openkilda.model.MeterConfig;
 import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
 import org.openkilda.floodlight.api.request.IngressFlowSegmentBlankRequest;
@@ -30,8 +26,10 @@ import org.openkilda.floodlight.api.request.TransitFlowSegmentBlankRequest;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.FlowPath;
-import org.openkilda.model.PathId;
+import org.openkilda.model.FlowTransitEncapsulation;
+import org.openkilda.model.MeterConfig;
 import org.openkilda.model.PathSegment;
 import org.openkilda.model.SwitchId;
 import org.openkilda.wfm.CommandContext;
@@ -41,13 +39,13 @@ import org.openkilda.wfm.topology.flowhs.service.FlowCommandBuilder;
 
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.NoArgGenerator;
+import lombok.NonNull;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -68,11 +66,11 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     @Override
     public List<FlowSegmentBlankGenericResolver> buildAll(
             CommandContext context, Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        return null;
+        return makeAll(context, flow, forwardPath, reversePath);
     }
 
     @Override
-    public List<FlowSegmentBlankGenericResolver> buildAllExceptIngress(CommandContext context, Flow flow) {
+    public List<FlowSegmentBlankGenericResolver> buildAllExceptIngress(CommandContext context, @NonNull Flow flow) {
         return buildAllExceptIngress(context, flow, flow.getForwardPath(), flow.getReversePath());
     }
 
@@ -83,7 +81,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     }
 
     @Override
-    public List<FlowSegmentBlankGenericResolver> buildIngressOnly(CommandContext context, Flow flow) {
+    public List<FlowSegmentBlankGenericResolver> buildIngressOnly(CommandContext context, @NonNull Flow flow) {
         return buildIngressOnly(context, flow, flow.getForwardPath(), flow.getReversePath());
     }
 
@@ -94,51 +92,57 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     }
 
     private List<FlowSegmentBlankGenericResolver> makeAll(
-            CommandContext context, Flow flow, FlowPath path, FlowPath oppositePath) {
-        ensureValidArguments(flow, path, oppositePath);
-
+            CommandContext context, Flow flow, FlowPath pathAtoZ, FlowPath pathZtoA) {
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, path, oppositePath, context, true, true, true));
+                flow, pathAtoZ, pathZtoA, context, true, true, true));
         requests.addAll(makeRequests(
-                flow, oppositePath, path, context, true, true, true));
+                flow, pathZtoA, pathAtoZ, context, true, true, true));
         return requests;
     }
 
     private List<FlowSegmentBlankGenericResolver> makeAllExceptionIngress(
-            CommandContext context, Flow flow, FlowPath path, FlowPath oppositePath) {
-        ensureValidArguments(flow, path, oppositePath);
-
+            CommandContext context, Flow flow, FlowPath pathAtoZ, FlowPath pathZtoA) {
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, path, oppositePath, context, false, true, true));
+                flow, pathAtoZ, pathZtoA, context, false, true, true));
         requests.addAll(makeRequests(
-                flow, oppositePath, path, context, false, true, true));
+                flow, pathZtoA, pathAtoZ, context, false, true, true));
         return requests;
     }
 
     private List<FlowSegmentBlankGenericResolver> makeIngressOnly(
-            CommandContext context, Flow flow, FlowPath path, FlowPath oppositePath) {
-        ensureValidArguments(flow, path, oppositePath);
-
+            CommandContext context, Flow flow, FlowPath pathAtoZ, FlowPath pathZtoA) {
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
         requests.addAll(makeRequests(
-                flow, path, oppositePath, context, true, false, false));
+                flow, pathAtoZ, pathZtoA, context, true, false, false));
         requests.addAll(makeRequests(
-                flow, oppositePath, path, context, true, false, false));
+                flow, pathZtoA, pathAtoZ, context, true, false, false));
         return requests;
     }
 
     private List<FlowSegmentBlankGenericResolver> makeRequests(
+            @NonNull Flow flow, @NonNull FlowPath path, @NonNull FlowPath oppositePath, CommandContext context,
+            boolean doEnter, boolean doTransit, boolean doExit) {
+        FlowEndpoint ingressEndpoint = getIngressEndpoint(flow, path);
+        FlowEndpoint egressEndpoint = getEgressEndpoint(flow, path);
+
+        if (flow.isOneSwitchFlow()) {
+            return Collections.singletonList(makeOneSwitchFlowRequest(path, context, ingressEndpoint, egressEndpoint));
+        } else {
+            return makeCommonRequest(
+                    flow, path, oppositePath, context, ingressEndpoint, egressEndpoint, doEnter, doTransit, doExit);
+        }
+    }
+
+    private List<FlowSegmentBlankGenericResolver> makeCommonRequest(
             Flow flow, FlowPath path, FlowPath oppositePath, CommandContext context,
+            FlowEndpoint ingressEndpoint, FlowEndpoint egressEndpoint,
             boolean doEnter, boolean doTransit, boolean doExit) {
         ensureFlowPathValid(flow, path);
 
         List<FlowSegmentBlankGenericResolver> requests = new ArrayList<>();
-
         FlowTransitEncapsulation encapsulation = getEncapsulation(flow.getEncapsulationType(), path, oppositePath);
-        FlowEndpoint ingressEndpoint = getIngressEndpoint(flow, path);
-        FlowEndpoint egressEndpoint = getEgressEndpoint(flow, path);
 
         if (doEnter && isRequiredSwitch(ingressEndpoint.getDatapath())) {
             if (flow.isOneSwitchFlow()) {
@@ -261,9 +265,6 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     }
 
     private void ensureFlowPathValid(Flow flow, FlowPath path) {
-        if (path == null) {
-            throw new IllegalArgumentException();
-        }
         final List<PathSegment> segments = path.getSegments();
         if (CollectionUtils.isEmpty(segments)) {
             throw new IllegalArgumentException(String.format(

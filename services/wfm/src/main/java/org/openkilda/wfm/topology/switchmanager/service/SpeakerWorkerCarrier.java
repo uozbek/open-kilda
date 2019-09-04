@@ -19,7 +19,6 @@ import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.Message;
 import org.openkilda.messaging.command.CommandData;
-import org.openkilda.messaging.command.CommandMessage;
 import org.openkilda.wfm.CommandContext;
 import org.openkilda.wfm.topology.switchmanager.model.SpeakerSwitchSchema;
 

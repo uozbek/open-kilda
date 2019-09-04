@@ -92,13 +92,13 @@ public interface FlowMapper {
                     + "f.getSourceSwitch(), "
                     + "f.getSourcePort(), "
                     + "f.getSourceVlan(), "
-                    + "f.getSourceInnerVlan))")
+                    + "f.getSourceInnerVlan()))")
     @Mapping(target = "destination",
             expression = "java(new FlowEndpointV2("
                     + "f.getDestinationSwitch(), "
                     + "f.getDestinationPort(), "
                     + "f.getDestinationVlan(), "
-                    + "f.getDestinationInnerVlan))")
+                    + "f.getDestinationInnerVlan()))")
     @Mapping(target = "maximumBandwidth", source = "bandwidth")
     @Mapping(target = "status", source = "state")
     @Mapping(target = "created", source = "createdTime")
@@ -146,10 +146,11 @@ public interface FlowMapper {
 
     @Mapping(target = "flowId", source = "flowId")
     @Mapping(target = "source",
-            expression = "java(new FlowEndpointV2(f.getSourceSwitch(), f.getSourcePort(), f.getSourceVlan()))")
+            expression = "java(new FlowEndpointV2(f.getSourceSwitch(), f.getSourcePort(), f.getSourceVlan(), "
+                    + "f.getSourceInnerVlan()))")
     @Mapping(target = "destination",
             expression = "java(new FlowEndpointV2(f.getDestinationSwitch(), f.getDestinationPort(), "
-                    + "f.getDestinationVlan()))")
+                    + "f.getDestinationVlan(), f.getDestinationInnerVlan()))")
     SwapFlowPayload toSwapOutput(FlowDto f);
 
     @Mapping(target = "sourceSwitch", expression = "java(request.getSource().getSwitchId())")

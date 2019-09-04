@@ -19,6 +19,7 @@ import static org.easymock.EasyMock.expect;
 import static org.openkilda.messaging.model.SpeakerSwitchView.Feature.BFD;
 import static org.openkilda.messaging.model.SpeakerSwitchView.Feature.BFD_REVIEW;
 import static org.openkilda.messaging.model.SpeakerSwitchView.Feature.GROUP_PACKET_OUT_CONTROLLER;
+import static org.openkilda.messaging.model.SpeakerSwitchView.Feature.INACCURATE_METER;
 import static org.openkilda.messaging.model.SpeakerSwitchView.Feature.LIMITED_BURST_SIZE;
 import static org.openkilda.messaging.model.SpeakerSwitchView.Feature.METERS;
 import static org.openkilda.messaging.model.SpeakerSwitchView.Feature.NOVIFLOW_COPY_FIELD;
@@ -78,15 +79,17 @@ public class FeatureDetectorServiceTest extends EasyMockSupport {
     @Test
     public void bfdCommon() {
         discoveryCheck(makeSwitchMock("NoviFlow Inc", "NW400.4.0", "NS21100", OFVersion.OF_13),
-                       ImmutableSet.of(GROUP_PACKET_OUT_CONTROLLER, BFD, METERS, RESET_COUNTS_FLAG,
-                               NOVIFLOW_COPY_FIELD, PKTPS_FLAG));
+                       ImmutableSet.of(
+                               GROUP_PACKET_OUT_CONTROLLER, BFD, METERS, RESET_COUNTS_FLAG,
+                               INACCURATE_METER, NOVIFLOW_COPY_FIELD, PKTPS_FLAG));
     }
 
     @Test
     public void bfdReview() {
         discoveryCheck(makeSwitchMock("NoviFlow Inc", "NW400.4.0", "NS21100", OFVersion.OF_14),
-                       ImmutableSet.of(GROUP_PACKET_OUT_CONTROLLER, BFD, BFD_REVIEW, METERS, RESET_COUNTS_FLAG,
-                               NOVIFLOW_COPY_FIELD, PKTPS_FLAG));
+                       ImmutableSet.of(
+                               GROUP_PACKET_OUT_CONTROLLER, BFD, BFD_REVIEW, METERS, RESET_COUNTS_FLAG,
+                               INACCURATE_METER, NOVIFLOW_COPY_FIELD, PKTPS_FLAG));
     }
 
     @Test
@@ -117,7 +120,8 @@ public class FeatureDetectorServiceTest extends EasyMockSupport {
     @Test
     public void pktpsFlagCommon() {
         discoveryCheck(makeSwitchMock("NoviFlow Inc", "NW400.4.0", "NS21100", OFVersion.OF_13),
-                ImmutableSet.of(GROUP_PACKET_OUT_CONTROLLER, BFD, METERS, RESET_COUNTS_FLAG,
+                ImmutableSet.of(
+                        GROUP_PACKET_OUT_CONTROLLER, BFD, METERS, RESET_COUNTS_FLAG, INACCURATE_METER,
                         NOVIFLOW_COPY_FIELD, PKTPS_FLAG));
     }
 

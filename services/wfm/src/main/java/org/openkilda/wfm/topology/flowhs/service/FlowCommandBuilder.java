@@ -16,7 +16,6 @@
 package org.openkilda.wfm.topology.flowhs.service;
 
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
 import org.openkilda.wfm.CommandContext;

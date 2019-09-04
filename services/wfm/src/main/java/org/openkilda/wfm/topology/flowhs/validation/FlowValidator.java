@@ -157,9 +157,9 @@ public class FlowValidator {
         }
 
         Flow diverseFlow = flowRepository.findById(targetFlow.getDiverseFlowId())
-                .orElseThrow(() ->
-                                     new InvalidFlowException(format("Failed to find diverse flow id %s",
-                                                                     targetFlow.getDiverseFlowId()), ErrorType.PARAMETERS_INVALID));
+                .orElseThrow(() -> new InvalidFlowException(
+                        format("Failed to find diverse flow id %s",
+                               targetFlow.getDiverseFlowId()), ErrorType.PARAMETERS_INVALID));
 
         if (diverseFlow.isOneSwitchFlow()) {
             throw new InvalidFlowException("Couldn't create diverse group with one-switch flow",

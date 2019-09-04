@@ -19,12 +19,18 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.openkilda.messaging.info.InfoData;
-import org.openkilda.messaging.info.switches.MeterInfoEntry;
-import org.openkilda.messaging.info.switches.MetersSyncEntry;
-import org.openkilda.messaging.info.switches.RulesSyncEntry;
 import org.openkilda.messaging.info.switches.SwitchSyncResponse;
+import org.openkilda.model.Cookie;
+import org.openkilda.model.PathId;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.OfFlowSchema;
+import org.openkilda.model.validate.FlowSegmentReference;
+import org.openkilda.model.validate.OfFlowReference;
+import org.openkilda.model.validate.ValidateDefaultOfFlowsReport;
+import org.openkilda.model.validate.ValidateDefect;
+import org.openkilda.model.validate.ValidateFlowSegmentReport;
+import org.openkilda.model.validate.ValidateOfFlowDefect;
+import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.northbound.MessageExchanger;
 import org.openkilda.northbound.config.KafkaConfig;
 import org.openkilda.northbound.converter.FlowMapper;
@@ -48,6 +54,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
 @RunWith(SpringRunner.class)
@@ -73,10 +80,8 @@ public class SwitchServiceTest {
         Long excessRule = 101L;
         Long properRule = 10L;
         SwitchId switchId = new SwitchId(1L);
-
-        RulesSyncEntry rulesSyncEntry = new RulesSyncEntry(singletonList(missingRule), singletonList(properRule),
-                singletonList(excessRule), singletonList(missingRule), singletonList(excessRule));
-        SwitchSyncResponse rules = new SwitchSyncResponse(rulesSyncEntry, MetersSyncEntry.builder().build());
+        ValidateSwitchReport report = makeValidateReport(switchId, missingRule, excessRule, properRule);
+        SwitchSyncResponse rules = new SwitchSyncResponse(report, true, true, true);
         messageExchanger.mockResponse(correlationId, rules);
 
         RulesSyncResult result = switchService.syncRules(switchId).get();
@@ -96,10 +101,8 @@ public class SwitchServiceTest {
         Long properRule = 10L;
         SwitchId switchId = new SwitchId(1L);
 
-        RulesSyncEntry rulesEntry = new RulesSyncEntry(singletonList(missingRule), singletonList(properRule),
-                singletonList(excessRule), singletonList(missingRule), singletonList(excessRule));
-        InfoData validationResult = new SwitchSyncResponse(rulesEntry,
-                MetersSyncEntry.builder().proper(singletonList(getMeterInfo(properRule))).build());
+        ValidateSwitchReport report = makeValidateReport(switchId, missingRule, excessRule, properRule);
+        SwitchSyncResponse validationResult = new SwitchSyncResponse(report, true, true, true);
         messageExchanger.mockResponse(correlationId, validationResult);
 
         SwitchSyncResult result = switchService.syncSwitch(switchId, true).get();
@@ -111,14 +114,29 @@ public class SwitchServiceTest {
         assertThat(rules.getRemoved(), is(singletonList(excessRule)));
     }
 
-    private MeterInfoEntry getMeterInfo(Long cookie) {
-        return MeterInfoEntry.builder()
-                .meterId(1L)
-                .cookie(cookie)
-                .flowId("flowId")
-                .rate(1L)
-                .burstSize(1L)
-                .flags(new String[]{"f1", "f2"})
+    private ValidateSwitchReport makeValidateReport(
+            SwitchId switchId, Long missingRule, Long excessRule, Long properRule) {
+        return ValidateSwitchReport.builder()
+                .datapath(switchId)
+                .excessOfFlow(new OfFlowReference(0, new Cookie(excessRule), switchId))
+                .segmentReport(new ValidateFlowSegmentReport(
+                        new FlowSegmentReference("flow-0", new PathId("flow-0-fwd"), switchId, new Cookie(properRule)),
+                        Collections.singletonList(new OfFlowReference(0, new Cookie(properRule), switchId)),
+                        Collections.emptyList(), Collections.emptyList()))
+                .segmentReport(new ValidateFlowSegmentReport(
+                        new FlowSegmentReference("flow-1", new PathId("flow-1-fwd"), switchId, new Cookie(missingRule)),
+                        Collections.emptyList(), Collections.emptyList(),
+                        Collections.singletonList(
+                                ValidateDefect.builder().flow(
+                                        ValidateOfFlowDefect.builder()
+                                                .reference(new OfFlowReference(0, new Cookie(missingRule), switchId))
+                                                .expected(OfFlowSchema.builder()
+                                                                  .tableId((short) 0)
+                                                                  .cookie(new Cookie(missingRule))
+                                                                  .build())
+                                                .build()).build())))
+                .defaultFlowsReport(new ValidateDefaultOfFlowsReport(
+                        switchId, Collections.emptyList(), Collections.emptyList(), Collections.emptyList()))
                 .build();
     }
 
@@ -146,5 +164,4 @@ public class SwitchServiceTest {
             return new FlowMapperImpl();
         }
     }
-
 }

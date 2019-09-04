@@ -15,6 +15,7 @@
 
 package org.openkilda.floodlight.converter;
 
+import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.of.MeterSchema;
@@ -58,7 +59,7 @@ public abstract class MeterSchemaMapper {
                 .datapath(new SwitchId(datapath.getLong()))
                 .meterId(new MeterId(meterMod.getMeterId()));
         fillFlags(schema, meterMod.getFlags());
-        fillBands(schema, meterMod.getBands());
+        fillBands(schema, OfAdapter.INSTANCE.getMeterBands(meterMod));
         return schema.build();
     }
 

@@ -113,7 +113,7 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         verifyAll();
     }
 
@@ -158,7 +158,7 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
         if (error == null) {
             report = new MeterReport(meterConfig.getId());
         } else {
-            report = new MeterReport(meterConfig.getId(), error);
+            report = new MeterReport(error);
         }
         expectMeter(report);
     }

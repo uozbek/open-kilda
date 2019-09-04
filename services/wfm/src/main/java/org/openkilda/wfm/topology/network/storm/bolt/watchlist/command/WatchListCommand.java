@@ -15,15 +15,14 @@
 
 package org.openkilda.wfm.topology.network.storm.bolt.watchlist.command;
 
-import org.openkilda.wfm.share.model.Endpoint;
 import org.openkilda.wfm.share.ICommand;
+import org.openkilda.wfm.share.model.Endpoint;
 import org.openkilda.wfm.topology.network.storm.bolt.watchlist.WatchListHandler;
 
 import lombok.Getter;
 
 public abstract class WatchListCommand implements ICommand<WatchListHandler> {
     @Getter
-
     private final Endpoint endpoint;
 
     public WatchListCommand(Endpoint endpoint) {
