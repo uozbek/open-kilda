@@ -16,7 +16,6 @@
 package org.openkilda.wfm.share.service;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 
 import org.openkilda.floodlight.api.request.EgressFlowSegmentBlankRequest;
 import org.openkilda.floodlight.api.request.FlowSegmentBlankGenericResolver;
@@ -128,11 +127,19 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         FlowEndpoint egressEndpoint = getEgressEndpoint(flow, path);
 
         if (flow.isOneSwitchFlow()) {
-            return Collections.singletonList(makeOneSwitchFlowRequest(path, context, ingressEndpoint, egressEndpoint));
+            return makeOneSwitchRequest(path, context, ingressEndpoint, egressEndpoint);
         } else {
             return makeCommonRequest(
                     flow, path, oppositePath, context, ingressEndpoint, egressEndpoint, doEnter, doTransit, doExit);
         }
+    }
+
+    private List<FlowSegmentBlankGenericResolver> makeOneSwitchRequest(
+            FlowPath path, CommandContext context, FlowEndpoint ingressEndpoint, FlowEndpoint egressEndpoint) {
+        if (! isRequiredSwitch(ingressEndpoint.getDatapath())) {
+            return Collections.emptyList();
+        }
+        return Collections.singletonList(makeOneSwitchFlowRequest(path, context, ingressEndpoint, egressEndpoint));
     }
 
     private List<FlowSegmentBlankGenericResolver> makeCommonRequest(
@@ -256,12 +263,6 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
                 .islPort(islPort)
                 .encapsulation(encapsulation)
                 .build().makeGenericResolver();
-    }
-
-    private void ensureValidArguments(Flow flow, FlowPath forwardPath, FlowPath reversePath) {
-        requireNonNull(flow, "Argument \"flow\" must not be null");
-        requireNonNull(forwardPath, "Argument \"forwardPath\" must not be null");
-        requireNonNull(reversePath, "Argument \"reversePath\" must not be null");
     }
 
     private void ensureFlowPathValid(Flow flow, FlowPath path) {
