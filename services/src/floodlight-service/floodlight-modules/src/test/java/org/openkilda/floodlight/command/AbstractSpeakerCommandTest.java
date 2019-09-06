@@ -19,8 +19,10 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
+import static org.easymock.EasyMock.replay;
 
 import org.openkilda.floodlight.command.meter.MeterInstallCommand;
+import org.openkilda.floodlight.command.meter.MeterInstallDryRunCommand;
 import org.openkilda.floodlight.command.meter.MeterInstallReport;
 import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
 import org.openkilda.floodlight.command.meter.MeterRemoveReport;
@@ -45,6 +47,7 @@ import net.floodlightcontroller.core.SwitchDescription;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.internal.OFSwitchManager;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
+import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.easymock.IAnswer;
 import org.easymock.Mock;
@@ -81,13 +84,13 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
     protected static final FlowTransitEncapsulation encapsulationVxLan = new FlowTransitEncapsulation(
             75, FlowEncapsulationType.VXLAN);
 
-    protected static final FlowEndpoint endpointEgressDefaultPort = new FlowEndpoint(mapSwitchId(dpIdNext), 11, 0);
-    protected static final FlowEndpoint endpointEgressSingleVlan = new FlowEndpoint(mapSwitchId(dpIdNext), 12, 60);
+    protected static final FlowEndpoint endpointIngresDefaultPort = new FlowEndpoint(mapSwitchId(dpId), 11, 0);
+    protected static final FlowEndpoint endpointIngressSingleVlan = new FlowEndpoint(mapSwitchId(dpId), 12, 40);
+    protected static final FlowEndpoint endpointIngressDoubleVlan = new FlowEndpoint(mapSwitchId(dpId), 12, 40, 50);
 
-    protected static final FlowEndpoint endpointIngresDefaultPort = new FlowEndpoint(
-            mapSwitchId(dpId), 21, 0);
-    protected static final FlowEndpoint endpointIngressSingleVlan = new FlowEndpoint(
-            mapSwitchId(dpId), 22, 70);
+    protected static final FlowEndpoint endpointEgressDefaultPort = new FlowEndpoint(mapSwitchId(dpIdNext), 21, 0);
+    protected static final FlowEndpoint endpointEgressSingleVlan = new FlowEndpoint(mapSwitchId(dpIdNext), 22, 60);
+    protected static final FlowEndpoint endpointEgressDoubleVlan = new FlowEndpoint(mapSwitchId(dpIdNext), 22, 60, 70);
 
     private final SwitchDescription swDesc = SwitchDescription.builder()
             .setManufacturerDescription("manufacturer")
@@ -107,6 +110,9 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
 
     @Mock
     protected SpeakerCommandProcessor commandProcessor;
+
+    @Mock
+    private SpeakerCommandProcessor shadowCommandProcessor;
 
     @Mock
     protected Session session;
@@ -137,6 +143,23 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
         prepareSessionService();
         switchSessionProducePlan.put(dpId, ImmutableList.of(session).iterator());
         switchSessionProducePlan.put(dpIdNext, ImmutableList.of(session).iterator());
+
+        setupMeterInstallMocks();
+    }
+
+    private void setupMeterInstallMocks() {
+        FloodlightModuleContext moduleContext = new FloodlightModuleContext();
+        moduleContext.addService(SessionService.class, sessionService);
+        moduleContext.addService(IOFSwitchService.class, ofSwitchManager);
+
+        FeatureDetectorService featureDetector = EasyMock.createMock(FeatureDetectorService.class);
+        expect(featureDetector.detectSwitch(anyObject()))
+                .andReturn(ImmutableSet.of(SwitchFeature.METERS))
+                .anyTimes();
+        moduleContext.addService(FeatureDetectorService.class, featureDetector);
+        replay(featureDetector);
+
+        expect(shadowCommandProcessor.getModuleContext()).andReturn(moduleContext).anyTimes();
     }
 
     @After
@@ -186,9 +209,10 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
     }
 
     protected void expectMeterInstall(Exception error) {
-        MeterInstallAnswer answer = new MeterInstallAnswer(error);
+        MeterInstallAnswer answer = new MeterInstallAnswer(shadowCommandProcessor, error);
         expect(commandProcessor.chain(anyObject(MeterInstallCommand.class)))
                 .andAnswer(answer);
+        expectSwitchDescription();
     }
 
     protected void expectMeterRemove() {
@@ -199,6 +223,12 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
         MeterRemoveAnswer answer = new MeterRemoveAnswer(error);
         expect(commandProcessor.chain(anyObject(MeterRemoveCommand.class)))
                 .andAnswer(answer);
+    }
+
+    protected void verifyEarlyErrorResponse(CompletableFuture<? extends SpeakerCommandReport> result) throws Exception {
+        if (result.isDone()) {
+            result.get(0, TimeUnit.SECONDS).raiseError();
+        }
     }
 
     protected void verifyOfMessageEquals(OFMessage expected, OFMessage actual) {
@@ -275,9 +305,11 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
     }
 
     private static class MeterInstallAnswer implements IAnswer<CompletableFuture<MeterInstallReport>> {
+        private final SpeakerCommandProcessor commandProcessor;
         private final Exception error;
 
-        MeterInstallAnswer(Exception error) {
+        MeterInstallAnswer(SpeakerCommandProcessor commandProcessor, Exception error) {
+            this.commandProcessor = commandProcessor;
             this.error = error;
         }
 
@@ -287,7 +319,11 @@ public abstract class AbstractSpeakerCommandTest extends EasyMockSupport {
 
             MeterInstallReport report;
             if (error == null) {
-                report = new MeterInstallReport(command);
+                MeterInstallDryRunCommand dryRun = new MeterInstallDryRunCommand(
+                        command.getMessageContext(), command.getSwitchId(), command.getMeterConfig());
+                CompletableFuture<MeterInstallReport> future = dryRun.execute(commandProcessor);
+                Assert.assertTrue(future.isDone());
+                report = future.get();
             } else {
                 report = new MeterInstallReport(command, error);
             }

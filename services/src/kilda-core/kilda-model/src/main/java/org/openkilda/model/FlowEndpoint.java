@@ -16,18 +16,26 @@
 package org.openkilda.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @Value
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class FlowEndpoint extends NetworkEndpoint {
     @JsonProperty("outer_vlan_id")
-    private final int vlanId;
+    private final int outerVlanId;
+
+    @JsonProperty("inner_vlan_id")
+    private final int innerVlanId;
 
     @JsonProperty("track_connected_devices")
     private final boolean trackConnectedDevices;
@@ -36,8 +44,12 @@ public class FlowEndpoint extends NetworkEndpoint {
         this(datapath, portNumber, 0);
     }
 
-    public FlowEndpoint(SwitchId datapath, Integer portNumber, int vlanId) {
-        this(datapath, portNumber, vlanId, false);
+    public FlowEndpoint(SwitchId datapath, Integer portNumber, int outerVlanId) {
+        this(datapath, portNumber, outerVlanId, 0, false);
+    }
+
+    public FlowEndpoint(SwitchId datapath, Integer portNumber, int outerVlanId, int innerVlanId) {
+        this(datapath, portNumber, outerVlanId, innerVlanId, false);
     }
 
     @JsonCreator
@@ -45,11 +57,39 @@ public class FlowEndpoint extends NetworkEndpoint {
     public FlowEndpoint(
             @JsonProperty("datapath") SwitchId datapath,
             @JsonProperty("port_number") Integer portNumber,
-            @JsonProperty("outer_vlan_id") int vlanId,
+            @JsonProperty("outer_vlan_id") int outerVlanId,
+            @JsonProperty("inner_vlan_id") int innerVlanId,
             @JsonProperty("track_connected_devices") boolean trackConnectedDevices) {
         super(datapath, portNumber);
-        this.vlanId = vlanId;
+
         this.trackConnectedDevices = trackConnectedDevices;
+
+        // normalize VLANs representation
+        List<Integer> vlanStack = makeVlanStack(innerVlanId, outerVlanId);
+        if (1 < vlanStack.size()) {
+            this.outerVlanId = vlanStack.get(1);
+            this.innerVlanId = vlanStack.get(0);
+        } else if (!vlanStack.isEmpty()) {
+            this.outerVlanId = vlanStack.get(0);
+            this.innerVlanId = 0;
+        } else {
+            this.outerVlanId = 0;
+            this.innerVlanId = 0;
+        }
+    }
+
+    @JsonIgnore
+    public List<Integer> getVlanStack() {
+        return makeVlanStack(innerVlanId, outerVlanId);
+    }
+
+    /**
+     * Scan provided sequence for valid VLAN IDs and return them as a list.
+     */
+    public static List<Integer> makeVlanStack(Integer... sequence) {
+        return Stream.of(sequence)
+                .filter(FlowEndpoint::isVlanIdSet)
+                .collect(Collectors.toList());
     }
 
     public static boolean isVlanIdSet(Integer vlanId) {

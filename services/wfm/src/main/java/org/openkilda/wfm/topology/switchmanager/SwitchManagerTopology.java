@@ -24,8 +24,8 @@ import org.openkilda.wfm.share.hubandspoke.CoordinatorSpout;
 import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.AbstractTopology;
-import org.openkilda.wfm.topology.switchmanager.bolt.SpeakerWorkerBolt;
-import org.openkilda.wfm.topology.switchmanager.bolt.SwitchManagerHub;
+import org.openkilda.wfm.topology.switchmanager.bolt.hub.SwitchManagerHubBolt;
+import org.openkilda.wfm.topology.switchmanager.bolt.speaker.SpeakerWorkerBolt;
 import org.openkilda.wfm.topology.utils.MessageKafkaTranslator;
 
 import com.google.common.collect.Lists;
@@ -58,7 +58,7 @@ public class SwitchManagerTopology extends AbstractTopology<SwitchManagerTopolog
         builder.setSpout(CoordinatorSpout.ID, new CoordinatorSpout());
         builder.setBolt(CoordinatorBolt.ID, new CoordinatorBolt())
                 .allGrouping(CoordinatorSpout.ID)
-                .fieldsGrouping(SwitchManagerHub.ID, CoordinatorBolt.INCOME_STREAM, FIELDS_KEY);
+                .fieldsGrouping(SwitchManagerHubBolt.ID, CoordinatorBolt.INCOME_STREAM, FIELDS_KEY);
 
         PersistenceManager persistenceManager =
                 PersistenceProvider.getInstance().createPersistenceManager(configurationProvider);
@@ -71,16 +71,18 @@ public class SwitchManagerTopology extends AbstractTopology<SwitchManagerTopolog
         List<String> inputTopics = Lists.newArrayList(topologyConfig.getKafkaSwitchManagerNbTopic(),
                 topologyConfig.getKafkaSwitchManagerNetworkTopic());
         builder.setSpout(HUB_SPOUT, buildKafkaSpout(inputTopics, HUB_SPOUT));
-        builder.setBolt(SwitchManagerHub.ID, new SwitchManagerHub(hubConfig, persistenceManager,
-                topologyConfig, configurationProvider.getConfiguration(FlowResourcesConfig.class)),
+        builder.setBolt(
+                SwitchManagerHubBolt.ID, new SwitchManagerHubBolt(
+                        hubConfig, persistenceManager,
+                        configurationProvider.getConfiguration(FlowResourcesConfig.class)),
                 topologyConfig.getNewParallelism())
                 .fieldsGrouping(HUB_SPOUT, FIELDS_KEY)
-                .directGrouping(SpeakerWorkerBolt.ID, SwitchManagerHub.INCOME_STREAM)
+                .directGrouping(SpeakerWorkerBolt.ID, SwitchManagerHubBolt.INCOME_STREAM)
                 .directGrouping(CoordinatorBolt.ID);
 
         WorkerBolt.Config speakerWorkerConfig = WorkerBolt.Config.builder()
-                .hubComponent(SwitchManagerHub.ID)
-                .streamToHub(SwitchManagerHub.INCOME_STREAM)
+                .hubComponent(SwitchManagerHubBolt.ID)
+                .streamToHub(SwitchManagerHubBolt.INCOME_STREAM)
                 .workerSpoutComponent(WORKER_SPOUT)
                 .defaultTimeout((int) TimeUnit.SECONDS.toMillis(topologyConfig.getOperationTimeout()))
                 .build();
@@ -88,13 +90,13 @@ public class SwitchManagerTopology extends AbstractTopology<SwitchManagerTopolog
         builder.setBolt(SpeakerWorkerBolt.ID, new SpeakerWorkerBolt(speakerWorkerConfig),
                 topologyConfig.getNewParallelism())
                 .fieldsGrouping(WORKER_SPOUT, FIELDS_KEY)
-                .fieldsGrouping(SwitchManagerHub.ID, SpeakerWorkerBolt.INCOME_STREAM, FIELDS_KEY)
+                .fieldsGrouping(SwitchManagerHubBolt.ID, SpeakerWorkerBolt.INCOME_STREAM, FIELDS_KEY)
                 .directGrouping(CoordinatorBolt.ID);
 
         builder.setBolt(NB_KAFKA_BOLT, buildKafkaBolt(topologyConfig.getKafkaNorthboundTopic()))
-                .shuffleGrouping(SwitchManagerHub.ID, StreamType.TO_NORTHBOUND.toString());
+                .shuffleGrouping(SwitchManagerHubBolt.ID, StreamType.TO_NORTHBOUND.toString());
 
-        builder.setBolt(SPEAKER_KAFKA_BOLT, buildKafkaBolt(topologyConfig.getKafkaSpeakerTopic()))
+        builder.setBolt(SPEAKER_KAFKA_BOLT, buildKafkaJsonBolt(topologyConfig.getKafkaSpeakerTopic()))
                 .shuffleGrouping(SpeakerWorkerBolt.ID, StreamType.TO_FLOODLIGHT.toString());
 
         return builder.createTopology();

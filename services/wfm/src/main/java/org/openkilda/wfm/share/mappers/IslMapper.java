@@ -19,6 +19,7 @@ import org.openkilda.messaging.info.event.IslChangeType;
 import org.openkilda.messaging.info.event.IslInfoData;
 import org.openkilda.messaging.info.event.PathNode;
 import org.openkilda.model.Isl;
+import org.openkilda.model.IslEndpoint;
 import org.openkilda.model.IslStatus;
 import org.openkilda.model.Switch;
 
@@ -138,5 +139,13 @@ public abstract class IslMapper {
             default:
                 throw new IllegalArgumentException("Unsupported ISL status: " + status);
         }
+    }
+
+    public IslEndpoint buildSourceEndpoint(Isl isl) {
+        return new IslEndpoint(isl.getSrcSwitch().getSwitchId(), isl.getSrcPort());
+    }
+
+    public IslEndpoint buildDestinationEndpoint(Isl isl) {
+        return new IslEndpoint(isl.getDestSwitch().getSwitchId(), isl.getDestPort());
     }
 }

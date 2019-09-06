@@ -33,9 +33,8 @@ import java.util.UUID;
 public class EgressFlowSegmentRemoveCommandTest extends EgressFlowSegmentBlankCommandTest {
     @Test
     public void happyPathTransitVlan() throws Exception {
-        FlowEndpoint ingressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 1, 0);
         EgressFlowSegmentRemoveCommand command = makeCommand(
-                endpointEgressDefaultPort, ingressEndpoint, encapsulationVlan);
+                endpointEgressDefaultPort, endpointIngresDefaultPort, encapsulationVlan);
         executeCommand(command, 1);
 
         OFFlowDeleteStrict expected = of.buildFlowDeleteStrict()

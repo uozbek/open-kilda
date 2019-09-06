@@ -52,7 +52,7 @@ abstract class IngressFlowSegmentBlankCommandJsonTest
                 UUID.randomUUID(),
                 new FlowSegmentMetadata(
                         "ingress-flow-segment-json-remove-request", new Cookie(1), false),
-                new FlowEndpoint(new SwitchId(2), 3, 4),
+                new FlowEndpoint(new SwitchId(2), 3, 4, 5),
                 new MeterConfig(new MeterId(6), 7000),
                 new SwitchId(20),
                 8,

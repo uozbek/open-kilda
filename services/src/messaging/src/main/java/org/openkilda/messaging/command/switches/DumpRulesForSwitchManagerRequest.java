@@ -23,8 +23,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Value;
 
+// TODO(surabujin) - drop (replaced with TableDumpRequest)
 @Value
 @Builder
+@Deprecated
 public class DumpRulesForSwitchManagerRequest extends CommandData {
 
     @JsonProperty("switch_id")

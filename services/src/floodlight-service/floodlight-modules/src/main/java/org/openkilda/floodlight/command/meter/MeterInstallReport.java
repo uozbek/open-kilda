@@ -17,19 +17,26 @@ package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.model.MeterId;
+import org.openkilda.model.of.MeterSchema;
 
 import java.util.Optional;
 
 public class MeterInstallReport extends SpeakerCommandReport {
     private final MeterInstallCommand command;
+    private final MeterSchema schema;
 
-    public MeterInstallReport(MeterInstallCommand command) {
-        this(command, null);
+    public MeterInstallReport(MeterInstallCommand command, MeterSchema schema) {
+        this(command, schema, null);
     }
 
     public MeterInstallReport(MeterInstallCommand command, Exception error) {
+        this(command, null, error);
+    }
+
+    private MeterInstallReport(MeterInstallCommand command, MeterSchema schema, Exception error) {
         super(command, error);
         this.command = command;
+        this.schema = schema;
     }
 
     /**
@@ -40,5 +47,9 @@ public class MeterInstallReport extends SpeakerCommandReport {
             return Optional.empty();
         }
         return Optional.of(command.getMeterConfig().getId());
+    }
+
+    public Optional<MeterSchema> getSchema() {
+        return Optional.ofNullable(schema);
     }
 }

@@ -42,6 +42,11 @@ public class FlowSegmentBlankResolver<T extends FlowSegmentRequest> implements I
     }
 
     @Override
+    public T makeSchemaRequest() {
+        return blank.makeSchemaRequest();
+    }
+
+    @Override
     public UUID getCommandId() {
         return blank.getCommandId();
     }

@@ -33,7 +33,7 @@ abstract class EgressFlowSegmentBlankCommandTest extends AbstractSpeakerCommandT
         switchFeaturesSetup(sw, true);
         replayAll();
 
-        FlowEndpoint ingressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 1, 0);
+        FlowEndpoint ingressEndpoint = new FlowEndpoint(mapSwitchId(dpId), 1, 0, 0);
         EgressFlowSegmentBlankCommand command = makeCommand(
                 endpointEgressDefaultPort, ingressEndpoint, encapsulationVlan);
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);

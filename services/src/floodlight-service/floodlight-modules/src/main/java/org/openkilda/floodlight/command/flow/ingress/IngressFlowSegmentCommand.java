@@ -20,6 +20,7 @@ import org.openkilda.floodlight.command.SpeakerCommandReport;
 import org.openkilda.floodlight.command.flow.FlowSegmentCommand;
 import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.command.meter.MeterInstallCommand;
+import org.openkilda.floodlight.command.meter.MeterInstallDryRunCommand;
 import org.openkilda.floodlight.command.meter.MeterInstallReport;
 import org.openkilda.floodlight.command.meter.MeterRemoveCommand;
 import org.openkilda.floodlight.command.meter.MeterRemoveReport;
@@ -30,6 +31,8 @@ import org.openkilda.floodlight.model.FlowSegmentMetadata;
 import org.openkilda.floodlight.service.FeatureDetectorService;
 import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.floodlight.switchmanager.SwitchManager;
+import org.openkilda.floodlight.utils.MetadataAdapter;
+import org.openkilda.floodlight.utils.MetadataAdapter.MetadataMatch;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.FlowEndpoint;
@@ -39,6 +42,7 @@ import org.openkilda.model.SwitchFeature;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.of.MeterSchema;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -51,8 +55,11 @@ import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.types.OFMetadata;
 import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.TableId;
+import org.projectfloodlight.openflow.types.U64;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -93,6 +100,15 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
         ensureSwitchEnoughCapabilities();
     }
 
+    @Override
+    protected void validate() {
+        super.validate();
+
+        if (FlowEndpoint.isVlanIdSet(endpoint.getInnerVlanId()) && ! metadata.isMultiTable()) {
+            throw new IllegalArgumentException("QinQ ingress flow segment can be installed only in multi table mode");
+        }
+    }
+
     protected CompletableFuture<FlowSegmentReport> makeInstallPlan(SpeakerCommandProcessor commandProcessor) {
         CompletableFuture<MeterId> future = CompletableFuture.completedFuture(null);
         if (meterConfig != null) {
@@ -119,6 +135,18 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
         return future.thenCompose(this::planOfFlowsVerify);
     }
 
+    protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(SpeakerCommandProcessor commandProcessor) {
+        CompletableFuture<MeterInstallReport> future = CompletableFuture.completedFuture(null);
+        if (meterConfig != null) {
+            future = planMeterDryRun(commandProcessor)
+                    .thenApply(report -> {
+                        ensureMeterSuccess(report);
+                        return report;
+                    });
+        }
+        return future.thenCompose(this::planOfFlowsSchema);
+    }
+
     private CompletableFuture<MeterInstallReport> planMeterInstall(SpeakerCommandProcessor commandProcessor) {
         MeterInstallCommand meterCommand = new MeterInstallCommand(messageContext, switchId, meterConfig);
         return commandProcessor.chain(meterCommand);
@@ -133,6 +161,11 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
     private CompletableFuture<MeterVerifyReport> planMeterVerify(SpeakerCommandProcessor commandProcessor) {
         MeterVerifyCommand meterVerify = new MeterVerifyCommand(messageContext, switchId, meterConfig);
         return commandProcessor.chain(meterVerify);
+    }
+
+    private CompletableFuture<MeterInstallReport> planMeterDryRun(SpeakerCommandProcessor commandProcessor) {
+        MeterInstallDryRunCommand meterDryRun = new MeterInstallDryRunCommand(messageContext, switchId, meterConfig);
+        return commandProcessor.chain(meterDryRun);
     }
 
     private CompletableFuture<FlowSegmentReport> planOfFlowsInstall(MeterId effectiveMeterId) {
@@ -154,6 +187,13 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
         }
         List<OFFlowMod> ofMessages = new ArrayList<>(makeIngressModMessages(meterId));
 
+        // TODO(surabujin): drop after migration
+        // to make smooth migration between different ingress rules format remove old (pre QinQ) rule by cookie match
+        OFFactory of = getSw().getOFFactory();
+        ofMessages.add(setFlowModTableId(of.buildFlowDelete(), SwitchManager.INGRESS_TABLE_ID)
+                               .setCookie(U64.of(getCookie().getValue()))
+                               .build());
+
         List<CompletableFuture<?>> requests = new ArrayList<>(ofMessages.size());
         try (Session session = getSessionService().open(messageContext, getSw())) {
             for (OFFlowMod message : ofMessages) {
@@ -166,6 +206,15 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
 
     private CompletableFuture<FlowSegmentReport> planOfFlowsVerify(MeterId effectiveMeterId) {
         return makeVerifyPlan(makeIngressModMessages(effectiveMeterId));
+    }
+
+    private CompletableFuture<FlowSegmentReport> planOfFlowsSchema(MeterInstallReport meterReport) {
+        Optional<MeterSchema> meterSchema = Optional.ofNullable(meterReport)
+                .flatMap(MeterInstallReport::getSchema);
+        MeterId effectiveMeterId = meterSchema
+                .map(MeterSchema::getMeterId)
+                .orElse(null);
+        return makeSchemaPlan(meterSchema.orElse(null), makeIngressModMessages(effectiveMeterId));
     }
 
     private MeterId handleMeterReport(MeterInstallReport report) {
@@ -192,33 +241,106 @@ abstract class IngressFlowSegmentCommand extends FlowSegmentCommand {
     }
 
     protected List<OFFlowMod> makeIngressModMessages(MeterId effectiveMeterId) {
-        List<OFFlowMod> ofMessages = new ArrayList<>();
-        OFFactory of = getSw().getOFFactory();
-        if (FlowEndpoint.isVlanIdSet(endpoint.getVlanId())) {
-            ofMessages.add(makeOuterVlanOnlyForwardMessage(of, effectiveMeterId));
+        // TODO(surabujin): drop after migration
+        if (metadata.isMultiTable()) {
+            return makeIngressMultiTableModMessages(effectiveMeterId);
         } else {
-            ofMessages.add(makeDefaultPortFlowMatchAndForwardMessage(of, effectiveMeterId));
+            return makeIngressSingleTableModMessages(effectiveMeterId);
+        }
+    }
+
+    protected List<OFFlowMod> makeIngressMultiTableModMessages(MeterId effectiveMeterId) {
+        List<OFFlowMod> ofMessages = new ArrayList<>(2);
+        OFFactory of = getSw().getOFFactory();
+        if (FlowEndpoint.isVlanIdSet(endpoint.getOuterVlanId())) {
+            ofMessages.add(makeOuterVlanMatchMessage(of));
+            if (FlowEndpoint.isVlanIdSet(endpoint.getInnerVlanId())) {
+                ofMessages.add(makeInnerVlanMatchAndForwardMessage(of, effectiveMeterId));
+            } else {
+                ofMessages.add(makeOuterVlanForwardMessage(of, effectiveMeterId));
+            }
+        } else {
+            ofMessages.add(makeDefaultPortMatchAndForwardMessage(of, effectiveMeterId));
         }
 
         return ofMessages;
     }
 
-    private OFFlowMod makeOuterVlanOnlyForwardMessage(OFFactory of, MeterId effectiveMeterId) {
+    protected List<OFFlowMod> makeIngressSingleTableModMessages(MeterId effectiveMeterId) {
+        List<OFFlowMod> ofMessages = new ArrayList<>();
+        OFFactory of = getSw().getOFFactory();
+        if (FlowEndpoint.isVlanIdSet(endpoint.getOuterVlanId())) {
+            ofMessages.add(makeOuterVlanMatchAndForwardMessage(of, effectiveMeterId));
+        } else {
+            ofMessages.add(makeDefaultPortMatchAndForwardMessage(of, effectiveMeterId));
+        }
+
+        return ofMessages;
+    }
+
+    private OFFlowMod makeOuterVlanMatchMessage(OFFactory of) {
+        return makeFlowModBuilder(of)
+                .setTableId(TableId.of(SwitchManager.PRE_INGRESS_TABLE_ID))
+                .setMatch(of.buildMatch()
+                                  .setExact(MatchField.IN_PORT, OFPort.of(endpoint.getPortNumber()))
+                                  .setExact(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(endpoint.getOuterVlanId()))
+                                  .build())
+                .setInstructions(makeOuterVlanMatchMessageInstructions(of))
+                .build();
+    }
+
+    protected List<OFInstruction> makeOuterVlanMatchMessageInstructions(OFFactory of) {
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(endpoint.getOuterVlanId()));
+        return ImmutableList.of(
+                                of.instructions().applyActions(ImmutableList.of(of.actions().popVlan())),
+                                of.instructions().writeMetadata(metadata.getValue(), metadata.getMask()),
+                                of.instructions().gotoTable(TableId.of(SwitchManager.INGRESS_TABLE_ID)));
+    }
+
+    private OFFlowMod makeOuterVlanForwardMessage(OFFactory of, MeterId effectiveMeterId) {
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(endpoint.getOuterVlanId()));
+        OFFlowMod.Builder builder = setFlowModTableId(makeFlowModBuilder(of), SwitchManager.INGRESS_TABLE_ID)
+                .setPriority(FLOW_PRIORITY - 10)
+                .setMatch(of.buildMatch()
+                                  .setExact(MatchField.IN_PORT, OFPort.of(endpoint.getPortNumber()))
+                                  .setMasked(MatchField.METADATA,
+                                             OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
+                                  .build());
+        return makeForwardMessage(of, builder, effectiveMeterId);
+    }
+
+    private OFFlowMod makeOuterVlanMatchAndForwardMessage(OFFactory of, MeterId effectiveMeterId) {
         OFFlowMod.Builder builder = setFlowModTableId(makeFlowModBuilder(of), SwitchManager.INGRESS_TABLE_ID)
                 .setPriority(FLOW_PRIORITY)
-                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), getEndpoint().getVlanId())
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), getEndpoint().getOuterVlanId())
                                   .setExact(MatchField.IN_PORT, OFPort.of(endpoint.getPortNumber()))
                                   .build());
         return makeForwardMessage(of, builder, effectiveMeterId);
     }
 
-    private OFFlowMod makeDefaultPortFlowMatchAndForwardMessage(OFFactory of, MeterId effectiveMeterId) {
+    private OFFlowMod makeInnerVlanMatchAndForwardMessage(OFFactory of, MeterId effectiveMeterId) {
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(endpoint.getOuterVlanId()));
+        OFFlowMod.Builder builder = makeFlowModBuilder(of)
+                .setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID))
+                .setMatch(of.buildMatch()
+                                  .setExact(MatchField.IN_PORT, OFPort.of(endpoint.getPortNumber()))
+                                  .setExact(MatchField.VLAN_VID, OFVlanVidMatch.ofVlan(endpoint.getInnerVlanId()))
+                                  .setMasked(MatchField.METADATA,
+                                             OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
+                                  .build());
+        return makeForwardMessage(of, builder, effectiveMeterId);
+    }
+
+    private OFFlowMod makeDefaultPortMatchAndForwardMessage(OFFactory of, MeterId effectiveMeterId) {
         OFFlowMod.Builder builder = setFlowModTableId(makeFlowModBuilder(of), SwitchManager.INGRESS_TABLE_ID)
                 // FIXME we need some space between match rules (so it should be -10 instead of -1)
                 .setPriority(FLOW_PRIORITY - 1)
                 .setMatch(of.buildMatch()
-                        .setExact(MatchField.IN_PORT, OFPort.of(endpoint.getPortNumber()))
-                        .build());
+                                  .setExact(MatchField.IN_PORT, OFPort.of(endpoint.getPortNumber()))
+                                  .build());
         return makeForwardMessage(of, builder, effectiveMeterId);
     }
 

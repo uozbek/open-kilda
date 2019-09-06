@@ -30,5 +30,6 @@ import lombok.Data;
 public class FlowEndpointV2 {
     private SwitchId switchId;
     private Integer portNumber;
-    private int vlanId;
+    private Integer vlanId;
+    private Integer innerVlanId;
 }

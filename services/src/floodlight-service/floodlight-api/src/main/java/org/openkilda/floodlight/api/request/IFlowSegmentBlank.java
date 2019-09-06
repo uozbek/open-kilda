@@ -27,6 +27,8 @@ public interface IFlowSegmentBlank<T extends FlowSegmentRequest> extends Seriali
 
     T makeVerifyRequest();
 
+    T makeSchemaRequest();
+
     UUID getCommandId();
 
     SwitchId getSwitchId();

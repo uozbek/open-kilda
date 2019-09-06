@@ -15,20 +15,17 @@
 
 package org.openkilda.wfm.topology.switchmanager.service.impl;
 
+import org.openkilda.floodlight.api.response.SpeakerResponse;
 import org.openkilda.messaging.command.switches.SwitchValidateRequest;
 import org.openkilda.messaging.error.ErrorMessage;
 import org.openkilda.messaging.info.flow.FlowReinstallResponse;
-import org.openkilda.persistence.PersistenceManager;
-import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchSyncFsm;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchSyncFsm.SwitchSyncEvent;
 import org.openkilda.wfm.topology.switchmanager.fsm.SwitchSyncFsm.SwitchSyncState;
-import org.openkilda.wfm.topology.switchmanager.model.ValidationResult;
-import org.openkilda.wfm.topology.switchmanager.service.CommandBuilder;
+import org.openkilda.wfm.topology.switchmanager.model.SwitchSyncData;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchManagerCarrier;
 import org.openkilda.wfm.topology.switchmanager.service.SwitchSyncService;
 
-import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
 import org.squirrelframework.foundation.fsm.StateMachineBuilder;
 
@@ -42,37 +39,25 @@ public class SwitchSyncServiceImpl implements SwitchSyncService {
 
     private Map<String, SwitchSyncFsm> fsms = new HashMap<>();
 
-    @VisibleForTesting
-    CommandBuilder commandBuilder;
     private SwitchManagerCarrier carrier;
     private StateMachineBuilder<SwitchSyncFsm, SwitchSyncState, SwitchSyncEvent, Object> builder;
 
-    public SwitchSyncServiceImpl(SwitchManagerCarrier carrier, PersistenceManager persistenceManager,
-                                 FlowResourcesConfig flowResourcesConfig) {
+    public SwitchSyncServiceImpl(SwitchManagerCarrier carrier) {
         this.carrier = carrier;
-        this.commandBuilder = new CommandBuilderImpl(persistenceManager, flowResourcesConfig);
         this.builder = SwitchSyncFsm.builder();
     }
 
     @Override
-    public void handleSwitchSync(String key, SwitchValidateRequest request, ValidationResult validationResult) {
+    public void handleSwitchSync(String key, SwitchValidateRequest request, SwitchSyncData syncData) {
         SwitchSyncFsm fsm =
-                builder.newStateMachine(SwitchSyncState.INITIALIZED, carrier, key, commandBuilder, request,
-                        validationResult);
+                builder.newStateMachine(SwitchSyncState.INITIALIZED, carrier, key, request, syncData);
 
         process(fsm);
     }
 
     @Override
-    public void handleInstallRulesResponse(String key) {
-        SwitchSyncFsm fsm = fsms.get(key);
-        if (fsm == null) {
-            logFsmNotFound(key);
-            return;
-        }
-
-        fsm.fire(SwitchSyncEvent.RULES_INSTALLED);
-        process(fsm);
+    public void handleSegmentInstallResponse(String key, SpeakerResponse response) {
+        feedFsm(key, SwitchSyncEvent.SEGMENT_INSTALLED, response);
     }
 
     @Override
@@ -135,6 +120,17 @@ public class SwitchSyncServiceImpl implements SwitchSyncService {
 
     private void logFsmNotFound(String key) {
         log.warn("Switch sync FSM with key {} not found", key);
+    }
+
+    private void feedFsm(String key, SwitchSyncEvent event, Object context) {
+        SwitchSyncFsm fsm = fsms.get(key);
+        if (fsm == null) {
+            log.debug("There is no FSM to receive {} with context {}", event, context);
+            return;
+        }
+
+        fsm.fire(event, context);
+        process(fsm);
     }
 
     void process(SwitchSyncFsm fsm) {

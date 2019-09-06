@@ -33,7 +33,6 @@ import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -74,7 +73,8 @@ public class EgressFlowSegmentInstallCommand extends EgressFlowSegmentBlankComma
     }
 
     private List<OFAction> makeVlanTransformActions(OFFactory of) {
-        List<Integer> currentVlanStack = Collections.singletonList(encapsulation.getId());
+        List<Integer> currentVlanStack = FlowEndpoint.makeVlanStack(
+                ingressEndpoint.getInnerVlanId(), encapsulation.getId());
         return makeEndpointReEncoding(of, currentVlanStack);
     }
 
@@ -82,20 +82,14 @@ public class EgressFlowSegmentInstallCommand extends EgressFlowSegmentBlankComma
         List<OFAction> actions = new ArrayList<>();
         actions.add(of.actions().noviflowPopVxlanTunnel());
 
-        List<Integer> currentVlanStack = new ArrayList<>();
-        if (FlowEndpoint.isVlanIdSet(ingressEndpoint.getVlanId())) {
-            currentVlanStack.add(ingressEndpoint.getVlanId());
-        }
+        List<Integer> currentVlanStack = ingressEndpoint.getVlanStack();
         actions.addAll(makeEndpointReEncoding(of, currentVlanStack));
 
         return actions;
     }
 
     private List<OFAction> makeEndpointReEncoding(OFFactory of, List<Integer> currentVlanStack) {
-        List<Integer> desiredVlanStack = new ArrayList<>();
-        if (FlowEndpoint.isVlanIdSet(endpoint.getVlanId())) {
-            desiredVlanStack.add(endpoint.getVlanId());
-        }
+        List<Integer> desiredVlanStack = endpoint.getVlanStack();
         return OfAdapter.INSTANCE.makeVlanReplaceActions(of, currentVlanStack, desiredVlanStack);
     }
 

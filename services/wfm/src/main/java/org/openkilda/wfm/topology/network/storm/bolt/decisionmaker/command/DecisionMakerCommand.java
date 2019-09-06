@@ -15,8 +15,8 @@
 
 package org.openkilda.wfm.topology.network.storm.bolt.decisionmaker.command;
 
+import org.openkilda.wfm.share.ICommand;
 import org.openkilda.wfm.share.model.Endpoint;
-import org.openkilda.wfm.topology.network.storm.ICommand;
 import org.openkilda.wfm.topology.network.storm.bolt.decisionmaker.DecisionMakerHandler;
 
 import lombok.Getter;

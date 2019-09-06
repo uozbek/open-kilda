@@ -50,8 +50,8 @@ abstract class EgressFlowSegmentBlankCommandJsonTest
                 new MessageContext(),
                 UUID.randomUUID(),
                 new FlowSegmentMetadata("egress-flow-segment-install-request", new Cookie(2), false),
-                new FlowEndpoint(swId, 3, 4),
-                new FlowEndpoint(new SwitchId(swId.toLong() + 1), 6, 7),
+                new FlowEndpoint(swId, 3, 4, 5),
+                new FlowEndpoint(new SwitchId(swId.toLong() + 1), 6, 7, 8),
                 9,
                 new FlowTransitEncapsulation(10, FlowEncapsulationType.TRANSIT_VLAN));
 

@@ -80,7 +80,7 @@ public class SimulatorTopology extends AbstractTopology<SimulatorTopologyConfig>
                 .fieldsGrouping(SIMULATOR_COMMAND_BOLT, SIMULATOR_COMMAND_STREAM, new Fields("dpid"));
 
         // TODO(dbogun): check is it must be output topic
-        builder.setBolt(KAFKA_BOLT, createKafkaBolt(inputTopic), parallelism)
+        builder.setBolt(KAFKA_BOLT, buildKafkaJsonBolt(inputTopic), parallelism)
                 .shuffleGrouping(SWITCH_BOLT, KAFKA_BOLT_STREAM);
 
         return builder.createTopology();

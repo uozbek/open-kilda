@@ -81,7 +81,31 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentBlankC
                                   .build())
                 .setInstructions(ImmutableList.of(
                         of.instructions().applyActions(ImmutableList.of(
-                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getVlanId()),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
+                                of.actions().buildOutput()
+                                        .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
+                                        .build()))))
+                .build();
+        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+    }
+
+    @Test
+    public void happyPathTransitVlanZeroVlanToDoubleVlan() throws Exception {
+        EgressFlowSegmentInstallCommand command = makeCommand(
+                endpointEgressDoubleVlan, endpointIngresDefaultPort, encapsulationVlan);
+        executeCommand(command, 1);
+
+        OFFlowAdd expected = of.buildFlowAdd()
+                .setPriority(EgressFlowSegmentInstallCommand.FLOW_PRIORITY)
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEncapsulation().getId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getIngressIslPort()))
+                                  .build())
+                .setInstructions(ImmutableList.of(
+                        of.instructions().applyActions(ImmutableList.of(
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getInnerVlanId()),
+                                of.actions().pushVlan(EthType.VLAN_FRAME),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
                                 of.actions().buildOutput()
                                         .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
                                         .build()))))
@@ -125,7 +149,102 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentBlankC
                          .build())
                 .setInstructions(ImmutableList.of(
                         of.instructions().applyActions(ImmutableList.of(
-                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getVlanId()),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
+                                of.actions().buildOutput()
+                                        .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
+                                        .build()))))
+                .build();
+        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+    }
+
+    @Test
+    public void happyPathTransitVlanSingleVlanToDoubleVlan() throws Exception {
+        EgressFlowSegmentInstallCommand command = makeCommand(
+                endpointEgressDoubleVlan, endpointIngressSingleVlan, encapsulationVlan);
+        executeCommand(command, 1);
+
+        OFFlowAdd expected = of.buildFlowAdd()
+                .setPriority(EgressFlowSegmentInstallCommand.FLOW_PRIORITY)
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEncapsulation().getId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getIngressIslPort()))
+                                  .build())
+                .setInstructions(ImmutableList.of(
+                        of.instructions().applyActions(ImmutableList.of(
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getInnerVlanId()),
+                                of.actions().pushVlan(EthType.VLAN_FRAME),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
+                                of.actions().buildOutput()
+                                        .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
+                                        .build()))))
+                .build();
+        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+    }
+
+    @Test
+    public void happyPathTransitVlanDoubleVlanToZeroVlan() throws Exception {
+        EgressFlowSegmentInstallCommand command = makeCommand(
+                endpointEgressDefaultPort, endpointIngressDoubleVlan, encapsulationVlan);
+        executeCommand(command, 1);
+
+        OFFlowAdd expected = of.buildFlowAdd()
+                .setPriority(EgressFlowSegmentInstallCommand.FLOW_PRIORITY)
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEncapsulation().getId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getIngressIslPort()))
+                                  .build())
+                .setInstructions(ImmutableList.of(
+                        of.instructions().applyActions(ImmutableList.of(
+                                of.actions().popVlan(),
+                                of.actions().popVlan(),
+                                of.actions().buildOutput()
+                                        .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
+                                        .build()))))
+                .build();
+        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+    }
+
+    @Test
+    public void happyPathTransitVlanDoubleVlanToSingleVlan() throws Exception {
+        EgressFlowSegmentInstallCommand command = makeCommand(
+                endpointEgressSingleVlan, endpointIngressDoubleVlan, encapsulationVlan);
+        executeCommand(command, 1);
+
+        OFFlowAdd expected = of.buildFlowAdd()
+                .setPriority(EgressFlowSegmentInstallCommand.FLOW_PRIORITY)
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEncapsulation().getId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getIngressIslPort()))
+                                  .build())
+                .setInstructions(ImmutableList.of(
+                        of.instructions().applyActions(ImmutableList.of(
+                                of.actions().popVlan(),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
+                                of.actions().buildOutput()
+                                        .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
+                                        .build()))))
+                .build();
+        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+    }
+
+    @Test
+    public void happyPathTransitVlanDoubleVlanToDoubleVlan() throws Exception {
+        EgressFlowSegmentInstallCommand command = makeCommand(
+                endpointEgressDoubleVlan, endpointIngressDoubleVlan, encapsulationVlan);
+        executeCommand(command, 1);
+
+        OFFlowAdd expected = of.buildFlowAdd()
+                .setPriority(EgressFlowSegmentInstallCommand.FLOW_PRIORITY)
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEncapsulation().getId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getIngressIslPort()))
+                                  .build())
+                .setInstructions(ImmutableList.of(
+                        of.instructions().applyActions(ImmutableList.of(
+                                of.actions().popVlan(),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getInnerVlanId()),
+                                of.actions().pushVlan(EthType.VLAN_FRAME),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
                                 of.actions().buildOutput()
                                         .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
                                         .build()))))
@@ -179,7 +298,7 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentBlankC
                         of.instructions().applyActions(ImmutableList.of(
                                 of.actions().noviflowPopVxlanTunnel(),
                                 of.actions().pushVlan(EthType.VLAN_FRAME),
-                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getVlanId()),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
                                 of.actions().buildOutput()
                                         .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
                                         .build()))))
@@ -233,7 +352,7 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentBlankC
                 .setInstructions(ImmutableList.of(
                         of.instructions().applyActions(ImmutableList.of(
                                 of.actions().noviflowPopVxlanTunnel(),
-                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getVlanId()),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
                                 of.actions().buildOutput()
                                         .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
                                         .build()))))
@@ -257,7 +376,7 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentBlankC
                          .build())
                 .setInstructions(ImmutableList.of(
                         of.instructions().applyActions(ImmutableList.of(
-                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getVlanId()),
+                                OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
                                 of.actions().buildOutput()
                                         .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
                                         .build()))))

@@ -57,6 +57,11 @@ public class SpeakerFlowSegmentResponse extends SpeakerResponse {
     }
 
     @JsonIgnore
+    public String getFlowId() {
+        return metadata.getFlowId();
+    }
+
+    @JsonIgnore
     public Cookie getCookie() {
         return metadata.getCookie();
     }

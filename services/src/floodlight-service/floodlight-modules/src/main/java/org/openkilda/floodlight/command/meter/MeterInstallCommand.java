@@ -17,6 +17,7 @@ package org.openkilda.floodlight.command.meter;
 
 import org.openkilda.floodlight.command.IOfErrorResponseHandler;
 import org.openkilda.floodlight.command.SpeakerCommandProcessor;
+import org.openkilda.floodlight.converter.MeterSchemaMapper;
 import org.openkilda.floodlight.error.InvalidMeterIdException;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchIncorrectMeterException;
@@ -27,7 +28,9 @@ import org.openkilda.floodlight.service.session.Session;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.MeterConfig;
 import org.openkilda.model.MeterId;
+import org.openkilda.model.SwitchFeature;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.MeterSchema;
 
 import lombok.Getter;
 import org.projectfloodlight.openflow.protocol.OFErrorMsg;
@@ -40,7 +43,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-public class MeterInstallCommand extends AbstractMeterInstall<MeterInstallReport> implements IOfErrorResponseHandler {
+public class  MeterInstallCommand extends AbstractMeterInstall<MeterInstallReport> implements IOfErrorResponseHandler {
 
     private SpeakerCommandProcessor commandProcessor;
 
@@ -59,7 +62,8 @@ public class MeterInstallCommand extends AbstractMeterInstall<MeterInstallReport
 
         OFMeterMod meterMod = makeMeterAddMessage();
         return writeSwitchRequest(meterMod)
-                .thenApply(ignore -> makeSuccessReport());
+                .thenApply(ignore -> makeMeterSchema(meterMod))
+                .thenApply(this::makeSuccessReport);
     }
 
     @Override
@@ -67,8 +71,8 @@ public class MeterInstallCommand extends AbstractMeterInstall<MeterInstallReport
         return new MeterInstallReport(this, error);
     }
 
-    private MeterInstallReport makeSuccessReport() {
-        return new MeterInstallReport(this);
+    private MeterInstallReport makeSuccessReport(MeterSchema meterSchema) {
+        return new MeterInstallReport(this, meterSchema);
     }
 
     protected CompletableFuture<Optional<OFMessage>> writeSwitchRequest(OFMeterMod request) {
@@ -121,5 +125,10 @@ public class MeterInstallCommand extends AbstractMeterInstall<MeterInstallReport
             throw new InvalidMeterIdException(getSw().getId(), String.format(
                     "Invalid meterId value - expect not negative integer, got - %s", meterId));
         }
+    }
+
+    private MeterSchema makeMeterSchema(OFMeterMod meterMod) {
+        boolean isInaccurate = getSwitchFeatures().contains(SwitchFeature.INACCURATE_METER);
+        return MeterSchemaMapper.INSTANCE.map(getSw().getId(), meterMod, isInaccurate);
     }
 }

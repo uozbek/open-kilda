@@ -16,6 +16,8 @@
 package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.model.FlowSegmentMetadata;
+import org.openkilda.floodlight.switchmanager.SwitchManager;
+import org.openkilda.floodlight.utils.MetadataAdapter;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -27,7 +29,10 @@ import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFFlowDeleteStrict;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.types.OFMetadata;
 import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.OFVlanVidMatch;
+import org.projectfloodlight.openflow.types.TableId;
 import org.projectfloodlight.openflow.types.U64;
 
 import java.util.UUID;
@@ -36,7 +41,7 @@ public class IngressFlowSegmentRemoveCommandTest extends IngressFlowSegmentRemov
     @Test
     public void happyPathDefaultPort() throws Exception {
         IngressFlowSegmentRemoveCommand command = getCommandBuilder().endpoint(endpointIngresDefaultPort).build();
-        executeCommand(command, 1);
+        executeCommand(command, 2);
 
         OFFlowMod expect = of.buildFlowDeleteStrict()
                 .setCookie(U64.of(command.getCookie().getValue()))
@@ -46,21 +51,63 @@ public class IngressFlowSegmentRemoveCommandTest extends IngressFlowSegmentRemov
                                   .build())
                 .build();
         verifyOfMessageEquals(expect, getWriteRecord(0).getRequest());
+        verifyPreQinqRuleRemove(command, getWriteRecord(1).getRequest());
     }
 
     @Test
     public void happyPathOuterVlan() throws Exception {
-        IngressFlowSegmentRemoveCommand command = getCommandBuilder().endpoint(endpointIngressSingleVlan).build();
-        executeCommand(command, 1);
+        IngressFlowSegmentRemoveCommand command = getCommandBuilder()
+                .updateMultiTableFlag(true)
+                .endpoint(endpointIngressSingleVlan).build();
+        executeCommand(command, 3);
 
+        // table - dispatch
+        verifyOuterVlanMatchRemove(command, getWriteRecord(0).getRequest());
+
+        // table - ingress (match inner vlan)
+        MetadataAdapter.MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
         OFFlowDeleteStrict expect = of.buildFlowDeleteStrict()
+                .setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID))
                 .setCookie(U64.of(command.getCookie().getValue()))
-                .setPriority(IngressFlowSegmentRemoveCommand.FLOW_PRIORITY)
-                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getVlanId())
+                .setPriority(IngressFlowSegmentRemoveCommand.FLOW_PRIORITY - 10)
+                .setMatch(of.buildMatch()
                                   .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                                  .setMasked(MatchField.METADATA,
+                                             OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
                                   .build())
                 .build();
-        verifyOfMessageEquals(expect, getWriteRecord(0).getRequest());
+        verifyOfMessageEquals(expect, getWriteRecord(1).getRequest());
+
+        verifyPreQinqRuleRemove(command, getWriteRecord(2).getRequest());
+    }
+
+    @Test
+    public void happyPathOuterAndInnerVlan() throws Exception {
+        IngressFlowSegmentRemoveCommand command = getCommandBuilder()
+                .updateMultiTableFlag(true)
+                .endpoint(endpointIngressDoubleVlan).build();
+        executeCommand(command, 3);
+
+        // table - dispatch
+        verifyOuterVlanMatchRemove(command, getWriteRecord(0).getRequest());
+
+        // table - ingress (match inner vlan)
+        MetadataAdapter.MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
+        OFFlowDeleteStrict expect = of.buildFlowDeleteStrict()
+                .setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID))
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setPriority(IngressFlowSegmentRemoveCommand.FLOW_PRIORITY)
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getInnerVlanId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                                  .setMasked(MatchField.METADATA,
+                                             OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
+                                  .build())
+                .build();
+        verifyOfMessageEquals(expect, getWriteRecord(1).getRequest());
+
+        verifyPreQinqRuleRemove(command, getWriteRecord(2).getRequest());
     }
 
     @Override
@@ -69,7 +116,7 @@ public class IngressFlowSegmentRemoveCommandTest extends IngressFlowSegmentRemov
     }
 
     static class CommandBuilder implements ICommandBuilder {
-        private final FlowSegmentMetadata metadata = new FlowSegmentMetadata(
+        private FlowSegmentMetadata metadata = new FlowSegmentMetadata(
                 "ingress-segment-remove-flow-id", new Cookie(2), false);
         private final int islPort = 7;
 
@@ -77,6 +124,11 @@ public class IngressFlowSegmentRemoveCommandTest extends IngressFlowSegmentRemov
         private FlowEndpoint egressEndpoint = IngressFlowSegmentRemoveCommandTest.endpointEgressSingleVlan;
         private MeterConfig meterConfig = IngressFlowSegmentRemoveCommandTest.meterConfig;
         private FlowTransitEncapsulation encapsulation = IngressFlowSegmentRemoveCommandTest.encapsulationVlan;
+
+        public CommandBuilder updateMultiTableFlag(boolean isMultiTable) {
+            this.metadata = metadata.toBuilder().multiTable(isMultiTable).build();
+            return this;
+        }
 
         @Override
         public IngressFlowSegmentRemoveCommand build() {

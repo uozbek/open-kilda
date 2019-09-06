@@ -841,6 +841,7 @@ class RecordHandler implements Runnable {
 
     }
 
+    @Deprecated
     private void doGetExpectedDefaultRulesRequest(CommandMessage message) {
         IKafkaProducerService producerService = getKafkaProducer();
         String replyToTopic = context.getKafkaSwitchManagerTopic();

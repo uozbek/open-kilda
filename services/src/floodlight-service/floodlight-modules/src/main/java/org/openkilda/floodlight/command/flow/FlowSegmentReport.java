@@ -34,7 +34,7 @@ import org.projectfloodlight.openflow.protocol.errormsg.OFFlowModFailedErrorMsg;
 
 @Slf4j
 public class FlowSegmentReport extends SpeakerCommandRemoteReport {
-    private final FlowSegmentCommand command;
+    private final FlowSegmentCommand segmentCommand;
 
     protected FlowSegmentReport(FlowSegmentCommand command) {
         this(command, null);
@@ -42,7 +42,7 @@ public class FlowSegmentReport extends SpeakerCommandRemoteReport {
 
     protected FlowSegmentReport(@NonNull FlowSegmentCommand command, Exception error) {
         super(command, error);
-        this.command = command;
+        this.segmentCommand = command;
     }
 
     @Override
@@ -67,28 +67,28 @@ public class FlowSegmentReport extends SpeakerCommandRemoteReport {
             errorResponse.errorCode(ErrorCode.UNKNOWN);
             errorResponse.description(e.getMessage());
         } catch (Exception e) {
-            log.error(String.format("Unhandled exception while processing command %s", command), e);
+            log.error(String.format("Unhandled exception while processing command %s", segmentCommand), e);
             errorResponse.errorCode(ErrorCode.UNKNOWN);
         }
 
         FlowErrorResponse response = errorResponse.build();
-        log.error("Command {} have failed - {}:{}", command, response.getErrorCode(), response.getDescription());
+        log.error("Command {} have failed - {}:{}", segmentCommand, response.getErrorCode(), response.getDescription());
         return response;
     }
 
     @Override
     protected SpeakerResponse makeSuccessReply() {
-        log.debug("Command {} successfully completed", command);
+        log.debug("Command {} successfully completed", segmentCommand);
         return SpeakerFlowSegmentResponse.builder()
-                .commandId(command.getCommandId())
-                .metadata(command.getMetadata())
-                .messageContext(command.getMessageContext())
-                .switchId(command.getSwitchId())
+                .commandId(segmentCommand.getCommandId())
+                .metadata(segmentCommand.getMetadata())
+                .messageContext(segmentCommand.getMessageContext())
+                .switchId(segmentCommand.getSwitchId())
                 .success(true)
                 .build();
     }
 
-    protected void decodeError(FlowErrorResponseBuilder errorResponse, OFErrorMsg error) {
+    private void decodeError(FlowErrorResponseBuilder errorResponse, OFErrorMsg error) {
         if (error instanceof OFFlowModFailedErrorMsg) {
             decodeError(errorResponse, (OFFlowModFailedErrorMsg) error);
         } else {
@@ -115,9 +115,9 @@ public class FlowSegmentReport extends SpeakerCommandRemoteReport {
 
     private FlowErrorResponse.FlowErrorResponseBuilder makeErrorTemplate() {
         return FlowErrorResponse.errorBuilder()
-                .messageContext(command.getMessageContext())
-                .commandId(command.getCommandId())
-                .switchId(command.getSwitchId())
-                .metadata(command.getMetadata());
+                .messageContext(segmentCommand.getMessageContext())
+                .commandId(segmentCommand.getCommandId())
+                .switchId(segmentCommand.getSwitchId())
+                .metadata(segmentCommand.getMetadata());
     }
 }

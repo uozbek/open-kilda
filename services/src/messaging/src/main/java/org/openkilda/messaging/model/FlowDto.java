@@ -121,6 +121,12 @@ public class FlowDto implements Serializable {
     @JsonProperty("dst_vlan")
     private int destinationVlan;
 
+    @JsonProperty("src_inner_vlan")
+    private int sourceInnerVlan;
+
+    @JsonProperty("dst_inner_vlan")
+    private int destinationInnerVlan;
+
     @JsonProperty("detect_connected_devices")
     private DetectConnectedDevicesDto detectConnectedDevices
             = new DetectConnectedDevicesDto(false, false, false, false);

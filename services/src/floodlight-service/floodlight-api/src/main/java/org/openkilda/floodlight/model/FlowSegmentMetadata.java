@@ -19,6 +19,7 @@ import org.openkilda.model.Cookie;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
@@ -35,6 +36,7 @@ public class FlowSegmentMetadata implements Serializable {
     @JsonProperty("multi_table")
     private final boolean multiTable;
 
+    @Builder(toBuilder = true)
     @JsonCreator
     public FlowSegmentMetadata(
             @JsonProperty("flowid") @NonNull String flowId,

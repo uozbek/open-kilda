@@ -19,14 +19,17 @@ import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
+import org.openkilda.floodlight.switchmanager.SwitchManager;
 import org.openkilda.floodlight.utils.OfAdapter;
 
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;
+import org.projectfloodlight.openflow.protocol.OFFlowDelete;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.TableId;
 import org.projectfloodlight.openflow.types.U64;
 
 import java.util.concurrent.CompletableFuture;
@@ -79,13 +82,23 @@ abstract class IngressFlowSegmentRemoveTest extends IngressCommandTest {
 
     protected void verifyOuterVlanMatchRemove(IngressFlowSegmentCommand command, OFMessage actual) {
         OFFlowMod expect = of.buildFlowDeleteStrict()
+                .setTableId(TableId.of(SwitchManager.PRE_INGRESS_TABLE_ID))
                 .setCookie(U64.of(command.getCookie().getValue()))
                 .setPriority(IngressFlowSegmentRemoveCommand.FLOW_PRIORITY)
-                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getVlanId())
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getOuterVlanId())
                                   .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
                                   .build())
                 .build();
         verifyOfMessageEquals(expect, actual);
+    }
+
+    protected void verifyPreQinqRuleRemove(IngressFlowSegmentCommand command, OFMessage actual) {
+        OFFlowDelete.Builder builder = of.buildFlowDelete()
+                .setCookie(U64.of(command.getCookie().getValue()));
+        if (command.getMetadata().isMultiTable()) {
+            builder.setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID));
+        }
+        verifyOfMessageEquals(builder.build(), actual);
     }
 
     @Override

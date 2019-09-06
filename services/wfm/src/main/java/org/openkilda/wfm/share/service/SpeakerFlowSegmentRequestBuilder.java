@@ -319,7 +319,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     private FlowEndpoint getIngressEndpoint(Flow flow) {
         DetectConnectedDevices trackConnectedDevices = flow.getDetectConnectedDevices();
         return new FlowEndpoint(
-                flow.getSrcSwitch().getSwitchId(), flow.getSrcPort(), flow.getSrcVlan(),
+                flow.getSrcSwitch().getSwitchId(), flow.getSrcPort(), flow.getSrcVlan(), flow.getSrcInnerVlan(),
                 trackConnectedDevices.isSrcLldp() || trackConnectedDevices.isSrcArp());
     }
 
@@ -334,7 +334,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     private FlowEndpoint getEgressEndpoint(Flow flow) {
         DetectConnectedDevices trackConnectedDevices = flow.getDetectConnectedDevices();
         return new FlowEndpoint(
-                flow.getDestSwitch().getSwitchId(), flow.getDestPort(), flow.getDestVlan(),
+                flow.getDestSwitch().getSwitchId(), flow.getDestPort(), flow.getDestVlan(), flow.getDestInnerVlan(),
                 trackConnectedDevices.isDstLldp() || trackConnectedDevices.isDstArp());
     }
 

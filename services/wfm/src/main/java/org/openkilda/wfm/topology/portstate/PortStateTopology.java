@@ -76,7 +76,7 @@ public class PortStateTopology extends AbstractTopology<PortStateTopologyConfig>
                 .shuffleGrouping(WFM_STATS_PARSE_BOLT_NAME, WfmStatsParseBolt.WFM_TO_PARSE_PORT_INFO_STREAM);
 
         String openTsdbTopic = topologyConfig.getKafkaOtsdbTopic();
-        KafkaBolt openTsdbBolt = createKafkaBolt(openTsdbTopic);
+        KafkaBolt openTsdbBolt = buildKafkaJsonBolt(openTsdbTopic);
         builder.setBolt(OTSDB_KAFKA_BOLT_NAME, openTsdbBolt, topologyConfig.getParallelism())
                 .shuffleGrouping(PARSE_PORT_INFO_BOLT_NAME);
 
@@ -94,7 +94,7 @@ public class PortStateTopology extends AbstractTopology<PortStateTopologyConfig>
         builder.setSpout(SWITCH_PORTS_SPOUT_NAME, switchPortsSpout);
 
         String speakerTopic = topologyConfig.getKafkaSpeakerTopic();
-        KafkaBolt speakerBolt = createKafkaBolt(speakerTopic);
+        KafkaBolt speakerBolt = buildKafkaJsonBolt(speakerTopic);
         builder.setBolt(SPEAKER_KAFKA_BOLT_NAME, speakerBolt, topologyConfig.getParallelism())
                 .shuffleGrouping(SWITCH_PORTS_SPOUT_NAME);
 

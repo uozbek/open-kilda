@@ -16,7 +16,6 @@
 package org.openkilda.wfm.topology.network.service;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -32,20 +31,18 @@ import org.openkilda.messaging.info.event.PortChangeType;
 import org.openkilda.messaging.info.event.PortInfoData;
 import org.openkilda.messaging.info.event.SwitchChangeType;
 import org.openkilda.messaging.info.event.SwitchInfoData;
-import org.openkilda.messaging.info.switches.MetersSyncEntry;
-import org.openkilda.messaging.info.switches.RulesSyncEntry;
 import org.openkilda.messaging.info.switches.SwitchSyncResponse;
 import org.openkilda.messaging.model.SpeakerSwitchDescription;
 import org.openkilda.messaging.model.SpeakerSwitchPortView;
 import org.openkilda.messaging.model.SpeakerSwitchPortView.State;
 import org.openkilda.messaging.model.SpeakerSwitchView;
-import org.openkilda.model.Cookie;
 import org.openkilda.model.Isl;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchFeature;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.SwitchProperties;
 import org.openkilda.model.SwitchStatus;
+import org.openkilda.model.validate.ValidateSwitchReport;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.TransactionCallbackWithoutResult;
 import org.openkilda.persistence.TransactionManager;
@@ -698,12 +695,10 @@ public class NetworkSwitchServiceTest {
         NetworkSwitchService service = new NetworkSwitchService(carrier, persistenceManager, options);
         service.switchEvent(switchAddEvent);
 
-        RulesSyncEntry rulesSyncEntry =
-                new RulesSyncEntry(singletonList(Cookie.buildForwardCookie(1).getValue()), emptyList(), emptyList(),
-                        emptyList(), emptyList(), emptyList());
-        MetersSyncEntry metersSyncEntry =
-                new MetersSyncEntry(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList());
-        SwitchSyncResponse response = new SwitchSyncResponse(alphaDatapath, rulesSyncEntry, metersSyncEntry);
+        ValidateSwitchReport report = ValidateSwitchReport.builder()
+                .datapath(alphaDatapath)
+                .build();
+        SwitchSyncResponse response = new SwitchSyncResponse(report, true, true, true);
 
         // for a randomly generated key in SwitchFsm
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
@@ -812,11 +807,10 @@ public class NetworkSwitchServiceTest {
         SwitchSyncErrorData errorData = new SwitchSyncErrorData(alphaDatapath, null, null, null);
         service.switchManagerErrorResponse(errorData, captor.getValue());
 
-        RulesSyncEntry rulesSyncEntry =
-                new RulesSyncEntry(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList());
-        MetersSyncEntry metersSyncEntry =
-                new MetersSyncEntry(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList());
-        SwitchSyncResponse response = new SwitchSyncResponse(alphaDatapath, rulesSyncEntry, metersSyncEntry);
+        ValidateSwitchReport report = ValidateSwitchReport.builder()
+                .datapath(alphaDatapath)
+                .build();
+        SwitchSyncResponse response = new SwitchSyncResponse(report, true, true, true);
 
 
         verify(carrier, times(SYNC_ATTEMPTS)).sendSwitchSynchronizeRequest(captor.capture(), eq(alphaDatapath));
@@ -850,9 +844,10 @@ public class NetworkSwitchServiceTest {
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(carrier).sendSwitchSynchronizeRequest(captor.capture(), eq(alphaDatapath));
 
-        RulesSyncEntry rulesSyncEntry =
-                new RulesSyncEntry(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList());
-        SwitchSyncResponse response = new SwitchSyncResponse(alphaDatapath, rulesSyncEntry, null);
+        ValidateSwitchReport report = ValidateSwitchReport.builder()
+                .datapath(alphaDatapath)
+                .build();
+        SwitchSyncResponse response = new SwitchSyncResponse(report, true, true, true);
         service.switchManagerResponse(response, captor.getValue());
 
         verifyNewSwitchAfterSwitchSync(ports);
@@ -865,11 +860,10 @@ public class NetworkSwitchServiceTest {
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(carrier).sendSwitchSynchronizeRequest(captor.capture(), eq(alphaDatapath));
 
-        RulesSyncEntry rulesSyncEntry =
-                new RulesSyncEntry(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList());
-        MetersSyncEntry metersSyncEntry =
-                new MetersSyncEntry(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList());
-        SwitchSyncResponse response = new SwitchSyncResponse(alphaDatapath, rulesSyncEntry, metersSyncEntry);
+        ValidateSwitchReport report = ValidateSwitchReport.builder()
+                .datapath(alphaDatapath)
+                .build();
+        SwitchSyncResponse response = new SwitchSyncResponse(report, true, true, true);
         service.switchManagerResponse(response, captor.getValue());
     }
 

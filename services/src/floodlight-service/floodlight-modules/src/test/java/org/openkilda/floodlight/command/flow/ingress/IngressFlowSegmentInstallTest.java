@@ -21,7 +21,11 @@ import org.openkilda.floodlight.command.flow.FlowSegmentReport;
 import org.openkilda.floodlight.error.SwitchErrorResponseException;
 import org.openkilda.floodlight.error.SwitchOperationException;
 import org.openkilda.floodlight.error.UnsupportedSwitchOperationException;
+import org.openkilda.floodlight.switchmanager.SwitchManager;
+import org.openkilda.floodlight.utils.MetadataAdapter;
+import org.openkilda.floodlight.utils.OfAdapter;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 import org.junit.Test;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;
@@ -32,6 +36,11 @@ import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyActions;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionMeter;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionWriteActions;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.OFVlanVidMatch;
+import org.projectfloodlight.openflow.types.TableId;
+import org.projectfloodlight.openflow.types.U64;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -77,13 +86,14 @@ abstract class IngressFlowSegmentInstallTest extends IngressCommandTest {
     }
 
     @Test
-    public void errorOnFlowMod() {
+    public void errorOnFlowMod() throws Exception {
         switchFeaturesSetup(sw, true);
         expectMeterInstall();
         replayAll();
 
         IngressFlowSegmentCommand command = getCommandBuilder().build();
         CompletableFuture<FlowSegmentReport> result = command.execute(commandProcessor);
+        verifyEarlyErrorResponse(result);
 
         getWriteRecord(0).getFuture()
                 .completeExceptionally(new SwitchErrorResponseException(
@@ -109,5 +119,23 @@ abstract class IngressFlowSegmentInstallTest extends IngressCommandTest {
                 Assert.fail("Found unexpected meter call");
             }
         }
+    }
+
+    protected OFFlowAdd makeOuterVlanMatch(IngressFlowSegmentCommand command) {
+        MetadataAdapter.MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
+
+        return of.buildFlowAdd()
+                .setTableId(TableId.of(SwitchManager.PRE_INGRESS_TABLE_ID))
+                .setPriority(IngressFlowSegmentCommand.FLOW_PRIORITY)
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getOuterVlanId())
+                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                                  .build())
+                .setInstructions(ImmutableList.of(
+                        of.instructions().applyActions(ImmutableList.of(of.actions().popVlan())),
+                        of.instructions().writeMetadata(metadata.getValue(), metadata.getMask()),
+                        of.instructions().gotoTable(TableId.of(SwitchManager.INGRESS_TABLE_ID))))
+                .build();
     }
 }

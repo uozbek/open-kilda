@@ -57,6 +57,11 @@ public class OneSwitchFlowRemoveCommand extends OneSwitchFlowBlankCommand {
     }
 
     @Override
+    protected List<OFInstruction> makeOuterVlanMatchMessageInstructions(OFFactory of) {
+        return ImmutableList.of();  // do not add instructions into delete request
+    }
+
+    @Override
     protected List<OFInstruction> makeForwardMessageInstructions(OFFactory of, MeterId effectiveMeterId) {
         return ImmutableList.of();  // do not add instructions into delete request
     }

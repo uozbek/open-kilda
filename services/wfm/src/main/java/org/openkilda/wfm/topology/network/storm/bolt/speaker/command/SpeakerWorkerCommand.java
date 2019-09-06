@@ -15,7 +15,7 @@
 
 package org.openkilda.wfm.topology.network.storm.bolt.speaker.command;
 
-import org.openkilda.wfm.topology.network.storm.ICommand;
+import org.openkilda.wfm.share.ICommand;
 import org.openkilda.wfm.topology.network.storm.bolt.speaker.SpeakerWorker;
 
 import lombok.Getter;

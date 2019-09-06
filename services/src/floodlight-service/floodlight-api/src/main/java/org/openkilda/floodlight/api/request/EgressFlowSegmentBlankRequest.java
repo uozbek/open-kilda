@@ -82,6 +82,11 @@ public class EgressFlowSegmentBlankRequest
         return new EgressFlowSegmentVerifyRequest(this);
     }
 
+    @Override
+    public EgressFlowSegmentBlankRequest makeSchemaRequest() {
+        return new EgressFlowSegmentSchemaRequest(this);
+    }
+
     /**
      * Create "blank" resolver - object capable to create any "real" request type.
      */

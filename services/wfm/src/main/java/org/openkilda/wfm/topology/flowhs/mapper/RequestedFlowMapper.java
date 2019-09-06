@@ -35,9 +35,11 @@ public abstract class RequestedFlowMapper {
     @Mapping(source = "sourceSwitch", target = "srcSwitch")
     @Mapping(source = "sourcePort", target = "srcPort")
     @Mapping(source = "sourceVlan", target = "srcVlan")
+    @Mapping(source = "sourceInnerVlan", target = "srcInnerVlan")
     @Mapping(source = "destinationSwitch", target = "destSwitch")
     @Mapping(source = "destinationPort", target = "destPort")
     @Mapping(source = "destinationVlan", target = "destVlan")
+    @Mapping(source = "destinationInnerVlan", target = "destInnerVlan")
     @Mapping(source = "encapsulationType", target = "flowEncapsulationType")
     public abstract RequestedFlow toRequestedFlow(FlowRequest request);
 

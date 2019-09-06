@@ -16,6 +16,7 @@
 package org.openkilda.floodlight.command.flow;
 
 import org.openkilda.floodlight.command.SpeakerCommand;
+import org.openkilda.floodlight.converter.FlowSegmentSchemaMapper;
 import org.openkilda.floodlight.error.SwitchMissingFlowsException;
 import org.openkilda.floodlight.model.FlowSegmentMetadata;
 import org.openkilda.floodlight.utils.OfFlowDumpProducer;
@@ -23,6 +24,8 @@ import org.openkilda.floodlight.utils.OfFlowPresenceVerifier;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.of.FlowSegmentSchema;
+import org.openkilda.model.of.MeterSchema;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -34,7 +37,9 @@ import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.types.TableId;
 import org.projectfloodlight.openflow.types.U64;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -57,6 +62,18 @@ public abstract class FlowSegmentCommand extends SpeakerCommand<FlowSegmentRepor
         OfFlowPresenceVerifier verifier = new OfFlowPresenceVerifier(dumper, expected);
         return verifier.getFinish()
                 .thenApply(verifyResults -> handleVerifyResponse(expected, verifyResults));
+    }
+
+    protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(List<OFFlowMod> requests) {
+        return makeSchemaPlan(null, requests);
+    }
+
+    protected CompletableFuture<FlowSegmentReport> makeSchemaPlan(MeterSchema meterSchema, List<OFFlowMod> requests) {
+        List<MeterSchema> meters = Optional.ofNullable(meterSchema)
+                .map(Collections::singletonList)
+                .orElse(Collections.emptyList());
+        FlowSegmentSchema schema = FlowSegmentSchemaMapper.INSTANCE.toFlowSegmentSchema(getSw(), meters, requests);
+        return CompletableFuture.completedFuture(new FlowSegmentSchemaReport(this, schema));
     }
 
     protected FlowSegmentReport makeReport(Exception error) {

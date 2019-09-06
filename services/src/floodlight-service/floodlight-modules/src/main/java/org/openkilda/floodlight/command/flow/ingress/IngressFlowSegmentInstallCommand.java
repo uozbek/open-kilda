@@ -52,6 +52,11 @@ public class IngressFlowSegmentInstallCommand extends IngressFlowSegmentBlankCom
     }
 
     @Override
+    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
+        return makeInstallPlan(commandProcessor);
+    }
+
+    @Override
     protected Set<SwitchFeature> getRequiredFeatures() {
         Set<SwitchFeature> required = super.getRequiredFeatures();
         if (encapsulation.getType() == FlowEncapsulationType.VXLAN) {
@@ -59,11 +64,6 @@ public class IngressFlowSegmentInstallCommand extends IngressFlowSegmentBlankCom
             required.add(SwitchFeature.NOVIFLOW_COPY_FIELD);
         }
         return required;
-    }
-
-    @Override
-    protected CompletableFuture<FlowSegmentReport> makeExecutePlan(SpeakerCommandProcessor commandProcessor) {
-        return makeInstallPlan(commandProcessor);
     }
 
     @Override

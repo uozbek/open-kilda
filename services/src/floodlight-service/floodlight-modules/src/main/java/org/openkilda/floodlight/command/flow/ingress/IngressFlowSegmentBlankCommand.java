@@ -28,7 +28,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
-import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.MacAddress;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -72,16 +71,16 @@ abstract class IngressFlowSegmentBlankCommand extends IngressFlowSegmentCommand 
     }
 
     private List<OFAction> makeVlanEncapsulationTransformActions(OFFactory of) {
-        List<OFAction> actions = new ArrayList<>();
-        if (! FlowEndpoint.isVlanIdSet(endpoint.getVlanId())) {
-            actions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
-        }
-        actions.add(OfAdapter.INSTANCE.setVlanIdAction(of, encapsulation.getId()));
-        return actions;
+        List<Integer> desiredVlanStack = FlowEndpoint.makeVlanStack(
+                endpoint.getInnerVlanId(), encapsulation.getId());
+        return OfAdapter.INSTANCE.makeVlanReplaceActions(of, getForwardTimeVlanStack(), desiredVlanStack);
     }
 
     private List<OFAction> makeVxLanEncapsulationTransformActions(OFFactory of) {
         List<OFAction> actions = new ArrayList<>();
+
+        actions.addAll(OfAdapter.INSTANCE.makeVlanReplaceActions(
+                of, getForwardTimeVlanStack(), endpoint.getVlanStack()));
 
         MacAddress l2src = MacAddress.of(getSw().getId());
         actions.add(of.actions().buildNoviflowPushVxlanTunnel()
@@ -117,6 +116,15 @@ abstract class IngressFlowSegmentBlankCommand extends IngressFlowSegmentCommand 
     @Override
     protected OFAction makeOutputAction(OFFactory of) {
         return super.makeOutputAction(of,  OFPort.of(islPort));
+    }
+
+    private List<Integer> getForwardTimeVlanStack() {
+        if (metadata.isMultiTable()) {
+            // outer VLAN tag was removed by outer match rule (pre-ingress)
+            return FlowEndpoint.makeVlanStack(endpoint.getInnerVlanId());
+        } else {
+            return endpoint.getVlanStack();
+        }
     }
 
     public String toString() {

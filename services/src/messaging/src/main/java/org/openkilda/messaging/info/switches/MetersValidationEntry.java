@@ -23,6 +23,7 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
+@Deprecated
 @Data
 @Builder
 public class MetersValidationEntry implements Serializable {

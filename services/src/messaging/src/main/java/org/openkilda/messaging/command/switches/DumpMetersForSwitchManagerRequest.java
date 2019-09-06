@@ -21,6 +21,7 @@ import org.openkilda.model.SwitchId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
+// TODO(surabujin) - drop (replaced with TableDumpRequest)
 @Value
 public class DumpMetersForSwitchManagerRequest extends CommandData {
 

@@ -17,6 +17,8 @@ package org.openkilda.floodlight.command.flow.ingress;
 
 import org.openkilda.floodlight.model.FlowSegmentMetadata;
 import org.openkilda.floodlight.switchmanager.SwitchManager;
+import org.openkilda.floodlight.utils.MetadataAdapter;
+import org.openkilda.floodlight.utils.MetadataAdapter.MetadataMatch;
 import org.openkilda.floodlight.utils.OfAdapter;
 import org.openkilda.messaging.MessageContext;
 import org.openkilda.model.Cookie;
@@ -28,7 +30,10 @@ import org.projectfloodlight.openflow.protocol.OFFlowAdd;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.types.EthType;
+import org.projectfloodlight.openflow.types.OFMetadata;
 import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.TableId;
 import org.projectfloodlight.openflow.types.U64;
 
@@ -39,15 +44,19 @@ import java.util.UUID;
 public class OneSwitchFlowInstallCommandTest extends IngressFlowSegmentInstallTest {
     private static final FlowEndpoint endpointEgressDefaultPort = new FlowEndpoint(
             endpointIngresDefaultPort.getDatapath(),
-            IngressFlowSegmentInstallTest.endpointEgressDefaultPort.getPortNumber(),
-            IngressFlowSegmentInstallTest.endpointEgressDefaultPort.getVlanId());
+            IngressFlowSegmentInstallTest.endpointEgressDefaultPort.getPortNumber());
     private static final FlowEndpoint endpointEgressSingleVlan = new FlowEndpoint(
             endpointIngressSingleVlan.getDatapath(),
             IngressFlowSegmentInstallTest.endpointEgressSingleVlan.getPortNumber(),
-            IngressFlowSegmentInstallTest.endpointEgressSingleVlan.getVlanId());
+            IngressFlowSegmentInstallTest.endpointEgressSingleVlan.getOuterVlanId());
+    private static final FlowEndpoint endpointEgressDoubleVlan = new FlowEndpoint(
+            endpointIngressDoubleVlan.getDatapath(),
+            IngressFlowSegmentInstallTest.endpointEgressDoubleVlan.getPortNumber(),
+            IngressFlowSegmentInstallTest.endpointEgressDoubleVlan.getOuterVlanId(),
+            IngressFlowSegmentInstallTest.endpointEgressDoubleVlan.getInnerVlanId());
 
     @Test
-    public void happyPathDefaultPort() throws Exception {
+    public void happyPathZeroVlan() throws Exception {
         OneSwitchFlowInstallCommand command = getCommandBuilder()
                 .endpoint(endpointIngresDefaultPort)
                 .egressEndpoint(endpointEgressDefaultPort)
@@ -73,85 +82,154 @@ public class OneSwitchFlowInstallCommandTest extends IngressFlowSegmentInstallTe
     }
 
     @Test
-    public void happyPathOuterVlan() throws Exception {
+    public void happyPathSingleVlan() throws Exception {
         OneSwitchFlowInstallCommand command = getCommandBuilder()
                 .endpoint(endpointIngressSingleVlan)
                 .egressEndpoint(endpointEgressDefaultPort)
+                .updateMultiTableFlag(true)
                 .build();
-        executeCommand(command, 1);
+        executeCommand(command, 2);
+
+        verifyOfMessageEquals(makeOuterVlanMatch(command), getWriteRecord(0).getRequest());
 
         List<OFAction> applyActions = new ArrayList<>();
         List<OFInstruction> instructions = new ArrayList<>();
         OfAdapter.INSTANCE.makeMeterCall(of, command.getMeterConfig().getId(), applyActions, instructions);
-        applyActions.add(of.actions().popVlan());
         applyActions.add(of.actions().buildOutput().setPort(
                 OFPort.of(command.getEgressEndpoint().getPortNumber())).build());
         instructions.add(of.instructions().applyActions(applyActions));
 
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
         OFFlowAdd expected = of.buildFlowAdd()
-                .setPriority(OneSwitchFlowInstallCommand.FLOW_PRIORITY)
+                .setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID))
+                .setPriority(OneSwitchFlowInstallCommand.FLOW_PRIORITY - 10)
                 .setCookie(U64.of(command.getCookie().getValue()))
-                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getVlanId())
+                .setMatch(of.buildMatch()
                         .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                        .setMasked(MatchField.METADATA,
+                                   OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
                                   .build())
                 .setInstructions(instructions)
                 .build();
-        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+        verifyOfMessageEquals(expected, getWriteRecord(1).getRequest());
     }
 
     @Test
-    public void happyPathDefaultPortSameOutput() throws Exception {
+    public void happyPathDoubleVlan() throws Exception {
+        OneSwitchFlowInstallCommand command = getCommandBuilder()
+                .endpoint(endpointIngressDoubleVlan)
+                .egressEndpoint(endpointEgressSingleVlan)
+                .updateMultiTableFlag(true)
+                .build();
+        executeCommand(command, 2);
+
+        // table - dispatch
+        OFFlowAdd expect = makeOuterVlanMatch(command);
+        verifyOfMessageEquals(expect, getWriteRecord(0).getRequest());
+
+        // table - ingress
+        List<OFAction> applyActions = new ArrayList<>();
+        List<OFInstruction> instructions = new ArrayList<>();
+        OfAdapter.INSTANCE.makeMeterCall(of, command.getMeterConfig().getId(), applyActions, instructions);
+        applyActions.add(OfAdapter.INSTANCE.setVlanIdAction(of, command.getEgressEndpoint().getOuterVlanId()));
+        applyActions.add(of.actions().buildOutput().setPort(
+                OFPort.of(command.getEgressEndpoint().getPortNumber())).build());
+        instructions.add(of.instructions().applyActions(applyActions));
+
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
+        expect = of.buildFlowAdd()
+                .setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID))
+                .setPriority(OneSwitchFlowInstallCommand.FLOW_PRIORITY)
+                .setCookie(U64.of(command.getCookie().getValue()))
+                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getInnerVlanId())
+                        .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                        .setMasked(MatchField.METADATA,
+                                OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
+                        .build())
+                .setInstructions(instructions)
+                .build();
+        verifyOfMessageEquals(expect, getWriteRecord(1).getRequest());
+    }
+
+    @Test
+    public void happyPathSingleVlanSameOutput() throws Exception {
         OneSwitchFlowInstallCommand command = getCommandBuilder()
                 .endpoint(endpointIngressSingleVlan)
                 .egressEndpoint(new FlowEndpoint(
                         endpointEgressSingleVlan.getDatapath(), endpointIngressSingleVlan.getPortNumber(),
-                        endpointIngressSingleVlan.getVlanId() + 1))
+                        endpointIngressSingleVlan.getOuterVlanId() + 1))
+                .updateMultiTableFlag(true)
                 .build();
-        executeCommand(command, 1);
+        executeCommand(command, 2);
 
+        // table - dispatch
+        OFFlowAdd expect = makeOuterVlanMatch(command);
+        verifyOfMessageEquals(expect, getWriteRecord(0).getRequest());
+
+        // table - ingress
         List<OFAction> applyActions = new ArrayList<>();
         List<OFInstruction> instructions = new ArrayList<>();
         OfAdapter.INSTANCE.makeMeterCall(of, command.getMeterConfig().getId(), applyActions, instructions);
-        applyActions.add(OfAdapter.INSTANCE.setVlanIdAction(of, command.getEgressEndpoint().getVlanId()));
+        applyActions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
+        applyActions.add(OfAdapter.INSTANCE.setVlanIdAction(of, command.getEgressEndpoint().getOuterVlanId()));
         applyActions.add(of.actions().buildOutput().setPort(OFPort.IN_PORT).build());
         instructions.add(of.instructions().applyActions(applyActions));
 
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
+
         OFFlowAdd expected = of.buildFlowAdd()
-                .setPriority(OneSwitchFlowInstallCommand.FLOW_PRIORITY)
+                .setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID))
+                .setPriority(OneSwitchFlowInstallCommand.FLOW_PRIORITY - 10)
                 .setCookie(U64.of(command.getCookie().getValue()))
-                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getVlanId())
-                                  .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
-                                  .build())
+                .setMatch(of.buildMatch()
+                        .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                        .setMasked(MatchField.METADATA,
+                                OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
+                        .build())
                 .setInstructions(instructions)
                 .build();
-        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+        verifyOfMessageEquals(expected, getWriteRecord(1).getRequest());
     }
 
     @Test
     public void happyPathMultiTable() throws Exception {
         OneSwitchFlowInstallCommand command = getCommandBuilder()
-                .metadata(new FlowSegmentMetadata("single-switch-flow-install-multitable", new Cookie(1), true))
+                .updateMultiTableFlag(true)
                 .build();
-        executeCommand(command, 1);
+        executeCommand(command, 2);
 
+        // table - dispatch
+        OFFlowAdd expect = makeOuterVlanMatch(command);
+        verifyOfMessageEquals(expect, getWriteRecord(0).getRequest());
+
+        // table - ingress
         List<OFAction> applyActions = new ArrayList<>();
         List<OFInstruction> instructions = new ArrayList<>();
         OfAdapter.INSTANCE.makeMeterCall(of, command.getMeterConfig().getId(), applyActions, instructions);
-        applyActions.add(OfAdapter.INSTANCE.setVlanIdAction(of, command.getEgressEndpoint().getVlanId()));
+        applyActions.add(of.actions().pushVlan(EthType.VLAN_FRAME));
+        applyActions.add(OfAdapter.INSTANCE.setVlanIdAction(of, command.getEgressEndpoint().getOuterVlanId()));
         applyActions.add(of.actions().buildOutput().setPort(
                 OFPort.of(command.getEgressEndpoint().getPortNumber())).build());
         instructions.add(of.instructions().applyActions(applyActions));
 
+        MetadataMatch metadata = MetadataAdapter.INSTANCE.addressOuterVlan(
+                OFVlanVidMatch.ofVlan(command.getEndpoint().getOuterVlanId()));
+
         OFFlowAdd expected = of.buildFlowAdd()
                 .setTableId(TableId.of(SwitchManager.INGRESS_TABLE_ID))
-                .setPriority(OneSwitchFlowInstallCommand.FLOW_PRIORITY)
+                .setPriority(OneSwitchFlowInstallCommand.FLOW_PRIORITY - 10)
                 .setCookie(U64.of(command.getCookie().getValue()))
-                .setMatch(OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getVlanId())
+                .setMatch(of.buildMatch()
                                   .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
+                                  .setMasked(MatchField.METADATA,
+                                             OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
                                   .build())
                 .setInstructions(instructions)
                 .build();
-        verifyOfMessageEquals(expected, getWriteRecord(0).getRequest());
+        verifyOfMessageEquals(expected, getWriteRecord(1).getRequest());
     }
 
     @Override
@@ -179,6 +257,11 @@ public class OneSwitchFlowInstallCommandTest extends IngressFlowSegmentInstallTe
                     new MessageContext(), commandId, metadata, endpoint, meterConfig, egressEndpoint);
         }
 
+        public CommandBuilder updateMultiTableFlag(boolean isMultiTable) {
+            this.metadata = metadata.toBuilder().multiTable(isMultiTable).build();
+            return this;
+        }
+
         @Override
         public CommandBuilder endpoint(FlowEndpoint endpoint) {
             this.endpoint = endpoint;
@@ -193,11 +276,6 @@ public class OneSwitchFlowInstallCommandTest extends IngressFlowSegmentInstallTe
         @Override
         public CommandBuilder meterConfig(MeterConfig meterConfig) {
             this.meterConfig = meterConfig;
-            return this;
-        }
-
-        public CommandBuilder metadata(FlowSegmentMetadata metadata) {
-            this.metadata = metadata;
             return this;
         }
     }

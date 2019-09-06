@@ -16,26 +16,23 @@
 package org.openkilda.messaging.info.switches;
 
 import org.openkilda.messaging.info.InfoData;
+import org.openkilda.model.validate.ValidateSwitchReport;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
 @Builder
+@EqualsAndHashCode(callSuper = false)
 public class SwitchValidationResponse extends InfoData {
-
-    @JsonProperty("rules")
-    private RulesValidationEntry rules;
-
-    @JsonProperty("meters")
-    private MetersValidationEntry meters;
+    @JsonProperty("report")
+    private final ValidateSwitchReport report;
 
     @JsonCreator
-    public SwitchValidationResponse(@JsonProperty("rules") RulesValidationEntry rules,
-                                    @JsonProperty("meters") MetersValidationEntry meters) {
-        this.rules = rules;
-        this.meters = meters;
+    public SwitchValidationResponse(@JsonProperty("report") ValidateSwitchReport report) {
+        this.report = report;
     }
 }

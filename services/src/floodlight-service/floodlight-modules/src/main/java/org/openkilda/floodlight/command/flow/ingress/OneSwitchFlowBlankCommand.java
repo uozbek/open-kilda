@@ -57,16 +57,13 @@ abstract class OneSwitchFlowBlankCommand extends IngressFlowSegmentCommand {
 
     @Override
     protected List<OFAction> makeTransformActions(OFFactory of) {
-        List<Integer> currentVlanStack = new ArrayList<>();
-        if (FlowEndpoint.isVlanIdSet(endpoint.getVlanId())) {
-            currentVlanStack.add(endpoint.getVlanId());
+        List<Integer> currentVlanStack = new ArrayList<>(2);
+        // outer VLAN ID was removed by pre-match rule
+        if (FlowEndpoint.isVlanIdSet(endpoint.getInnerVlanId())) {
+            currentVlanStack.add(endpoint.getInnerVlanId());
         }
 
-        List<Integer> desiredVlanStack = new ArrayList<>();
-        if (FlowEndpoint.isVlanIdSet(egressEndpoint.getVlanId())) {
-            desiredVlanStack.add(egressEndpoint.getVlanId());
-        }
-
+        List<Integer> desiredVlanStack = egressEndpoint.getVlanStack();
         return OfAdapter.INSTANCE.makeVlanReplaceActions(of, currentVlanStack, desiredVlanStack);
     }
 

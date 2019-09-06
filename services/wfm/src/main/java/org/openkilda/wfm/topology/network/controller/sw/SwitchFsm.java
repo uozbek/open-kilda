@@ -15,8 +15,6 @@
 
 package org.openkilda.wfm.topology.network.controller.sw;
 
-import org.openkilda.messaging.info.switches.MetersSyncEntry;
-import org.openkilda.messaging.info.switches.RulesSyncEntry;
 import org.openkilda.messaging.info.switches.SwitchSyncResponse;
 import org.openkilda.messaging.model.SpeakerSwitchDescription;
 import org.openkilda.messaging.model.SpeakerSwitchPortView;
@@ -226,55 +224,13 @@ public final class SwitchFsm extends AbstractBaseFsm<SwitchFsm, SwitchFsmState, 
     private void processSyncResponse(SwitchFsmContext context) {
         if (isAwaitingResponse(context.getSyncKey())) {
             SwitchSyncResponse syncResponse = context.getSyncResponse();
-            if (syncResponse != null && isSynchronized(syncResponse)) {
+            if (syncResponse != null && syncResponse.isSuccess()) {
                 fire(SwitchFsmEvent.SYNC_ENDED, context);
             } else {
                 syncAttempts--;
                 performActionsDependingOnAttemptsCount(context);
             }
         }
-    }
-
-    private boolean isSynchronized(SwitchSyncResponse syncResponse) {
-        RulesSyncEntry rules = syncResponse.getRules();
-        boolean missingRulesCheck = missingRulesCheck(rules);
-        boolean misconfiguredRulesCheck = misconfiguredRulesCheck(rules);
-        boolean excessRulesCheck = excessRulesCheck(rules);
-
-        boolean missingMetersCheck = true;
-        boolean excessMetersCheck = true;
-        MetersSyncEntry meters = syncResponse.getMeters();
-        if (meters != null) {
-            missingMetersCheck = missingMetersCheck(meters);
-            excessMetersCheck = excessMetersCheck(meters);
-        }
-
-        return missingRulesCheck && misconfiguredRulesCheck && excessRulesCheck
-                && missingMetersCheck && excessMetersCheck;
-    }
-
-    private boolean missingRulesCheck(RulesSyncEntry rules) {
-        return rules.getMissing().isEmpty() || rules.getInstalled().containsAll(rules.getMissing());
-    }
-
-    private boolean misconfiguredRulesCheck(RulesSyncEntry rules) {
-        return rules.getMisconfigured().isEmpty()
-                || (rules.getInstalled().containsAll(rules.getMisconfigured())
-                && rules.getRemoved().containsAll(rules.getMisconfigured()));
-    }
-
-    private boolean excessRulesCheck(RulesSyncEntry rules) {
-        return !options.isRemoveExcessWhenSwitchSync()
-                || rules.getExcess().isEmpty() || rules.getRemoved().containsAll(rules.getExcess());
-    }
-
-    private boolean missingMetersCheck(MetersSyncEntry meters) {
-        return meters.getMissing().isEmpty() || meters.getInstalled().containsAll(meters.getMissing());
-    }
-
-    private boolean excessMetersCheck(MetersSyncEntry meters) {
-        return !options.isRemoveExcessWhenSwitchSync()
-                || meters.getExcess().isEmpty() || meters.getRemoved().containsAll(meters.getExcess());
     }
 
     private void performActionsDependingOnAttemptsCount(SwitchFsmContext context) {

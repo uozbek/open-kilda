@@ -74,6 +74,11 @@ public class OneSwitchFlowBlankRequest extends IngressFlowSegmentRequest
         return new OneSwitchFlowVerifyRequest(this);
     }
 
+    @Override
+    public OneSwitchFlowBlankRequest makeSchemaRequest() {
+        return new OneSwitchFlowSchemaRequest(this);
+    }
+
     /**
      * Create "blank" resolver - object capable to create any "real" request type.
      */

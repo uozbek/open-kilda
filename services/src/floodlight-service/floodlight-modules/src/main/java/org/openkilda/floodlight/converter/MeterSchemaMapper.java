@@ -55,11 +55,18 @@ public abstract class MeterSchemaMapper {
      * Produce {@code MeterSchema} from {@code OFMeterMod}.
      */
     public MeterSchema map(DatapathId datapath, OFMeterMod meterMod) {
+        return map(datapath, meterMod, false);
+    }
+
+    /**
+     * Produce {@code MeterSchema} from {@code OFMeterMod}.
+     */
+    public MeterSchema map(DatapathId datapath, OFMeterMod meterMod, boolean isInaccurate) {
         MeterSchema.MeterSchemaBuilder schema = MeterSchema.builder()
                 .datapath(new SwitchId(datapath.getLong()))
                 .meterId(new MeterId(meterMod.getMeterId()));
         fillFlags(schema, meterMod.getFlags());
-        fillBands(schema, OfAdapter.INSTANCE.getMeterBands(meterMod));
+        fillBands(schema, OfAdapter.INSTANCE.getMeterBands(meterMod), isInaccurate);
         return schema.build();
     }
 
@@ -74,10 +81,6 @@ public abstract class MeterSchemaMapper {
         for (OFMeterFlags entry : flagsSet) {
             schema.flag(mapFlag(entry));
         }
-    }
-
-    private void fillBands(MeterSchema.MeterSchemaBuilder schema, List<OFMeterBand> bandsSequence) {
-        fillBands(schema, bandsSequence, false);
     }
 
     private void fillBands(
