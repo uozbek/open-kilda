@@ -13,20 +13,25 @@
  *   limitations under the License.
  */
 
-package org.openkilda.model;
+package org.openkilda.messaging.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
-/**
- * Represents flow LLDP resources.
- */
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
-public class LldpResources implements Serializable {
-
-    private MeterId meterId;
-    private Cookie cookie;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(SnakeCaseStrategy.class)
+public class DetectConnectedDevicesDto implements Serializable {
+    boolean srcLldp;
+    boolean srcArp;
+    boolean dstLldp;
+    boolean dstArp;
 }

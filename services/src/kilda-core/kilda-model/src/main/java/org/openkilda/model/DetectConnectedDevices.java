@@ -1,4 +1,4 @@
-/* Copyright 2018 Telstra Open Source
+/* Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,15 +13,20 @@
  *   limitations under the License.
  */
 
-package org.openkilda.persistence.repositories;
+package org.openkilda.model;
 
-import org.openkilda.model.LldpResources;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.io.Serializable;
 
-public interface LldpResourcesRepository extends Repository<LldpResources> {
-    Optional<LldpResources> findByFlowId(String flowId);
+@Data
+@AllArgsConstructor
+public class DetectConnectedDevices implements Serializable {
+    private static final long serialVersionUID = 1260347183633947083L;
 
-    Collection<LldpResources> findByFlowIds(Collection<String> flowIds);
+    private boolean srcLldp;
+    private boolean srcArp;
+    private boolean dstLldp;
+    private boolean dstArp;
 }
