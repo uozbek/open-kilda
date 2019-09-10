@@ -116,7 +116,9 @@ import org.projectfloodlight.openflow.protocol.action.OFActionOutput;
 import org.projectfloodlight.openflow.protocol.action.OFActionSetField;
 import org.projectfloodlight.openflow.protocol.action.OFActions;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyActions;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstructionGotoTable;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionMeter;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstructionWriteMetadata;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.Match.Builder;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
@@ -129,8 +131,10 @@ import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.MacAddress;
 import org.projectfloodlight.openflow.types.OFBufferId;
 import org.projectfloodlight.openflow.types.OFGroup;
+import org.projectfloodlight.openflow.types.OFMetadata;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
+import org.projectfloodlight.openflow.types.TableId;
 import org.projectfloodlight.openflow.types.TransportPort;
 import org.projectfloodlight.openflow.types.U64;
 import org.slf4j.Logger;
@@ -374,6 +378,7 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         installBfdCatchFlow(dpid);
         installRoundTripLatencyFlow(dpid);
         installUnicastVerificationRuleVxlan(dpid);
+        installDropFlowForTable(dpid, 1);
     }
 
     /**
@@ -400,7 +405,10 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
 
         // build instruction with action list
         OFInstructionApplyActions actions = buildInstructionApplyActions(ofFactory, actionList);
-
+        OFInstructionGotoTable gotoTable = ofFactory.instructions().gotoTable(TableId.of(1));
+        OFInstructionWriteMetadata writeMetadata = ofFactory.instructions().buildWriteMetadata()
+                .setMetadata(U64.of(transitTunnelId))
+                .setMetadataMask(U64.of(4095)).build();
         // build match by input port and input vlan id, it's always transit vlan type, since kilda doesn't allow
         // other flow endpoints
         Match match = matchFlow(ofFactory, inputPort, inputVlanId, FlowEncapsulationType.TRANSIT_VLAN, null);
@@ -409,13 +417,16 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
 
         // build FLOW_MOD command with meter
         OFFlowMod.Builder builder = prepareFlowModBuilder(ofFactory, cookie & FLOW_COOKIE_MASK, flowPriority)
-                .setInstructions(meter != null ? ImmutableList.of(meter, actions) : ImmutableList.of(actions))
+                .setInstructions(meter != null ? ImmutableList.of(meter, writeMetadata, actions,
+                        gotoTable) : ImmutableList.of(writeMetadata, actions, gotoTable))
                 .setMatch(match);
 
         // centec switches don't support RESET_COUNTS flag
         if (featureDetectorService.detectSwitch(sw).contains(SwitchFeature.RESET_COUNTS_FLAG)) {
             builder.setFlags(ImmutableSet.of(OFFlowModFlags.RESET_COUNTS));
         }
+
+        pushFlow(sw, "--InstallIngressFlowDrop--", buildDropFlowForMetadataTable(sw, 1, transitTunnelId));
         return pushFlow(sw, "--InstallIngressFlow--", builder.build());
     }
 
@@ -603,6 +614,7 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         OFFlowStatsRequest flowRequest = ofFactory.buildFlowStatsRequest()
                 .setOutGroup(OFGroup.ANY)
                 .setCookieMask(U64.ZERO)
+                .setTableId(TableId.of(0))
                 .build();
 
         try {
@@ -1169,6 +1181,24 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         }
     }
 
+    private Long installDropFlowForTable(final DatapathId dpid, int tableId) throws SwitchOperationException {
+        // TODO: leverage installDropFlowCustom
+        IOFSwitch sw = lookupSwitch(dpid);
+
+        OFFlowMod flowMod = buildDropFlowForTable(sw, tableId);
+
+        if (flowMod == null) {
+            logger.debug("Skip installation of drop flow for switch {}", dpid);
+            return null;
+        } else {
+            logger.debug("Installing drop flow for switch {}", dpid);
+            String flowName = "--DropRule--" + dpid.toString();
+            pushFlow(sw, flowName, flowMod);
+            return DROP_RULE_COOKIE;
+        }
+    }
+
+
     private OFFlowMod buildDropFlow(IOFSwitch sw) {
         OFFactory ofFactory = sw.getOFFactory();
 
@@ -1177,6 +1207,32 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         }
 
         return prepareFlowModBuilder(ofFactory, DROP_RULE_COOKIE, 1)
+                .build();
+    }
+
+    private OFFlowMod buildDropFlowForTable(IOFSwitch sw, int tableId) {
+        OFFactory ofFactory = sw.getOFFactory();
+
+        if (ofFactory.getVersion() == OF_12) {
+            return null;
+        }
+
+        return prepareFlowModBuilder(ofFactory, DROP_RULE_COOKIE, 1)
+                .setTableId(TableId.of(tableId))
+                .build();
+    }
+
+    private OFFlowMod buildDropFlowForMetadataTable(IOFSwitch sw, int tableId, int tunnelId) {
+        OFFactory ofFactory = sw.getOFFactory();
+
+        if (ofFactory.getVersion() == OF_12) {
+            return null;
+        }
+        Match match = sw.getOFFactory().buildMatch().setMasked(MatchField.METADATA, OFMetadata.ofRaw(tunnelId),
+                OFMetadata.ofRaw(4095)).build();
+        return prepareFlowModBuilder(ofFactory, DROP_RULE_COOKIE, 2)
+                .setTableId(TableId.of(tableId))
+                .setMatch(match)
                 .build();
     }
 
