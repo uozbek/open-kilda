@@ -446,6 +446,7 @@ class FlowCrudSpec extends HealthCheckSpecification {
         data << getConflictingData()
     }
 
+    @Ignore
     def "A flow cannot be created with asymmetric forward and reverse paths"() {
         given: "Two active neighboring switches with two possible flow paths at least and different number of hops"
         List<List<PathNode>> possibleFlowPaths = []

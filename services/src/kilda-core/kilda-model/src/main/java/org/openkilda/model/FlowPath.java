@@ -187,6 +187,70 @@ public class FlowPath implements Serializable {
         this.segments = new ArrayList<>(segments);
     }
 
+
+    /**
+     * Marks segments as failed if them match target endpoint.
+     *
+     * @param switchId target switch
+     * @param port target port
+     * @return result of operation
+     */
+    public boolean markFailedSegmetnsForEndpoint(SwitchId switchId, int port) {
+        return setSegmentStatus(switchId, port, true);
+    }
+
+    /**
+     * Reset failed segments for flow.
+     */
+    public void resetSegmentsToUp() {
+        if (segments != null) {
+            for (PathSegment ps : segments) {
+                ps.setFailed(false);
+            }
+        }
+    }
+
+    /**
+     * Marks segments as up if them match target endpoint.
+     *
+     * @param switchId target switch
+     * @param port target port
+     * @return result of operation
+     */
+
+    public boolean markSegmentsAsUpForEndpoint(SwitchId switchId, int port) {
+        return setSegmentStatus(switchId, port, false);
+    }
+
+    private boolean setSegmentStatus(SwitchId switchId, int port, boolean failed) {
+        if (segments == null) {
+            return false;
+        }
+        for (PathSegment pathSegment : segments) {
+            if (pathSegment.getSrcPort() == port
+                    && switchId.equals(pathSegment.getSrcSwitch().getSwitchId())
+                    || (pathSegment.getDestPort() == port
+                    && switchId.equals(pathSegment.getDestSwitch().getSwitchId()))) {
+                pathSegment.setFailed(failed);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Searches for failed segments in path.
+     *
+     * @return true if path has failed segments.
+     */
+    public boolean hasFailedSegments() {
+        if (segments == null) {
+            return false;
+        }
+        return segments.stream().filter(pathSegment -> pathSegment.isFailed()).findFirst().isPresent();
+    }
+
+
     public boolean isProtected() {
         return pathId.equals(flow.getProtectedForwardPathId()) || pathId.equals(flow.getProtectedReversePathId());
     }

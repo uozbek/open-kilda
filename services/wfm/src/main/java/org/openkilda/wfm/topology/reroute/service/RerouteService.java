@@ -23,7 +23,6 @@ import org.openkilda.model.FlowPath;
 import org.openkilda.model.FlowPathStatus;
 import org.openkilda.model.FlowStatus;
 import org.openkilda.model.PathId;
-import org.openkilda.model.PathSegment;
 import org.openkilda.model.SwitchId;
 import org.openkilda.persistence.repositories.FlowPathRepository;
 import org.openkilda.persistence.repositories.FlowRepository;
@@ -62,9 +61,10 @@ public class RerouteService {
         PathNode pathNode = command.getPathNode();
         int port = pathNode.getPortNo();
         SwitchId switchId = pathNode.getSwitchId();
+        pathRepository.updatePathSegmentStatus(switchId, port, true);
+
         Collection<FlowPath> affectedFlowPaths
                 = getAffectedFlowPaths(pathNode.getSwitchId(), pathNode.getPortNo());
-
         // swapping affected primary paths with available protected
         List<FlowPath> pathsForSwapping = getPathsForSwapping(affectedFlowPaths);
         for (FlowPath path : pathsForSwapping) {
@@ -78,21 +78,11 @@ public class RerouteService {
         Set<Flow> affectedPinnedFlows = groupAffectedPinnedFlows(affectedFlowPaths);
         for (Flow flow : affectedPinnedFlows) {
             for (FlowPath fp : flow.getPaths()) {
-                boolean failedFlowPath = false;
-                for (PathSegment pathSegment : fp.getSegments()) {
-                    if (pathSegment.getSrcPort() == port
-                            && switchId.equals(pathSegment.getSrcSwitch().getSwitchId())
-                            || (pathSegment.getDestPort() == port
-                            && switchId.equals(pathSegment.getDestSwitch().getSwitchId()))) {
-                        pathSegment.setFailed(true);
-                        failedFlowPath = true;
-                        break;
-                    }
-                }
-                if (failedFlowPath) {
+                if (fp.hasFailedSegments()) {
                     fp.setStatus(FlowPathStatus.INACTIVE);
                 }
             }
+            flow.setStatus(flow.computeFlowStatus());
             if (flow.getStatus() != FlowStatus.DOWN) {
                 flowDashboardLogger.onFlowStatusUpdate(flow.getFlowId(), FlowStatus.DOWN);
                 flow.setStatus(FlowStatus.DOWN);
@@ -111,6 +101,7 @@ public class RerouteService {
         PathNode pathNode = command.getPathNode();
         int port = pathNode.getPortNo();
         SwitchId switchId = pathNode.getSwitchId();
+        pathRepository.updatePathSegmentStatus(switchId, port, false);
         Map<Flow, Set<PathId>> flowsForRerouting = getInactiveFlowsForRerouting();
 
         for (Entry<Flow, Set<PathId>> entry : flowsForRerouting.entrySet()) {
@@ -118,18 +109,9 @@ public class RerouteService {
             if (flow.isPinned()) {
                 int failedFlowPathsCount = 0;
                 for (FlowPath flowPath : flow.getPaths()) {
-                    int failedSegmentsCount = 0;
-                    for (PathSegment pathSegment : flowPath.getSegments()) {
-                        if (pathSegment.isFailed()) {
-                            if (pathSegment.containsNode(switchId, port)) {
-                                pathSegment.setFailed(false);
-                            } else {
-                                failedSegmentsCount++;
-                            }
-                        }
-                    }
                     if (flowPath.getStatus().equals(FlowPathStatus.INACTIVE)) {
-                        if (failedSegmentsCount == 0) {
+                        boolean hasFailedSegments = flowPath.hasFailedSegments();
+                        if (!hasFailedSegments) {
                             flowPath.setStatus(FlowPathStatus.ACTIVE);
                         } else {
                             failedFlowPathsCount++;
@@ -146,6 +128,10 @@ public class RerouteService {
                 flowRepository.createOrUpdate(flow);
                 log.info("Skipping reroute command for pinned flow {}", flow.getFlowId());
             } else {
+                for (FlowPath fp : flow.getPaths()) {
+                    fp.markSegmentsAsUpForEndpoint(switchId, port);
+                }
+                flowRepository.createOrUpdate(flow);
                 sender.emitRerouteCommand(correlationId, entry.getKey(), entry.getValue(),
                         command.getReason());
             }

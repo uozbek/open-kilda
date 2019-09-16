@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -367,8 +368,8 @@ public class Neo4jFlowPathRepository extends Neo4jGenericRepository<FlowPath> im
 
         Session session = getSession();
         queryForLongs("MATCH (flow_path {path_id: $path_id})-[:owns]-(ps:path_segment) "
-                        + "DETACH DELETE ps "
-                        + "RETURN id(ps) as id", parameters, "id")
+                + "DETACH DELETE ps "
+                + "RETURN id(ps) as id", parameters, "id")
                 .forEach(deletedEntityId -> ((Neo4jSession) session).context().detachNodeEntity(deletedEntityId));
     }
 
@@ -442,6 +443,33 @@ public class Neo4jFlowPathRepository extends Neo4jGenericRepository<FlowPath> im
                 + "WITH sum(fp.bandwidth) AS used_bandwidth RETURN used_bandwidth";
 
         return queryForLong(query, parameters, "used_bandwidth").orElse(0L);
+    }
+
+    @Override
+    public void updatePathSegmentStatus(SwitchId switchId, int port, boolean failed) {
+        Instant timestamp = Instant.now();
+        Map<String, Object> parameters = ImmutableMap.of(
+                "switch_id", switchIdConverter.toGraphProperty(switchId),
+                "port", port,
+                "failed", failed);
+        Session session = getSession();
+        List<Long> updatedEntityIds = queryForLongs(
+                "MATCH (src:switch)-[:source]-(ps:path_segment)-[:destination]->(dst:switch) "
+                        + "WHERE (src.name = $switch_id AND ps.src_port = $port) "
+                        + "OR (dst.name = $switch_id AND ps.dst_port = $port) "
+                        + "SET ps.failed=$failed "
+                        + "RETURN id(ps) as ps_id", parameters, "ps_id");
+
+        for (Long entityId: updatedEntityIds) {
+            Object updatedEntity = ((Neo4jSession) session).context().getNodeEntity(entityId);
+            if (updatedEntity instanceof PathSegment) {
+                PathSegment updatedPathSegment = (PathSegment) updatedEntity;
+                updatedPathSegment.setFailed(failed);
+            } else if (updatedEntity != null) {
+                throw new PersistenceException(format("Expected a PathSegment entity, but found %s.",
+                        updatedEntity));
+            }
+        }
     }
 
     @Override

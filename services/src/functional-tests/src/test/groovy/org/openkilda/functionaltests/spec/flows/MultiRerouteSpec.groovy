@@ -10,8 +10,11 @@ import org.openkilda.messaging.info.event.IslChangeType
 import org.openkilda.messaging.payload.flow.FlowPayload
 import org.openkilda.messaging.payload.flow.FlowState
 
+import spock.lang.Ignore
+
 import java.util.concurrent.TimeUnit
 
+@Ignore
 class MultiRerouteSpec extends HealthCheckSpecification {
 
     def "Simultaneous reroute of multiple flows should not oversubscribe any ISLs"() {

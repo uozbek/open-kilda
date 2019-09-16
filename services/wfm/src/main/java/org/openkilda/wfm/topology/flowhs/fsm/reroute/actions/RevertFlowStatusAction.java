@@ -17,8 +17,11 @@ package org.openkilda.wfm.topology.flowhs.fsm.reroute.actions;
 
 import static java.lang.String.format;
 
-import org.openkilda.model.FlowStatus;
+import org.openkilda.model.Flow;
+import org.openkilda.model.FlowPath;
+import org.openkilda.model.FlowPathStatus;
 import org.openkilda.persistence.PersistenceManager;
+import org.openkilda.persistence.TransactionManager;
 import org.openkilda.wfm.topology.flowhs.fsm.common.action.FlowProcessingAction;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteContext;
 import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm;
@@ -27,25 +30,37 @@ import org.openkilda.wfm.topology.flowhs.fsm.reroute.FlowRerouteFsm.State;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
+
 @Slf4j
 public class RevertFlowStatusAction extends
         FlowProcessingAction<FlowRerouteFsm, State, Event, FlowRerouteContext> {
 
+    private TransactionManager transactionManager;
+
     public RevertFlowStatusAction(PersistenceManager persistenceManager) {
         super(persistenceManager);
+        transactionManager = persistenceManager.getTransactionManager();
     }
 
     @Override
     protected void perform(State from, State to, Event event, FlowRerouteContext context, FlowRerouteFsm stateMachine) {
         String flowId = stateMachine.getFlowId();
-        FlowStatus originalStatus = stateMachine.getOriginalFlowStatus();
-        if (originalStatus != null) {
-            log.debug("Reverting the flow status of {} to {}", flowId, originalStatus);
 
-            flowRepository.updateStatus(flowId, originalStatus);
-
-            saveHistory(stateMachine, stateMachine.getCarrier(), flowId,
-                    format("Revert the flow status to %s.", originalStatus));
-        }
+        transactionManager.doInTransaction(() -> {
+            Optional<Flow> foundFlow = flowRepository.findById(flowId);
+            if (foundFlow.isPresent()) {
+                Flow flow = foundFlow.get();
+                for (FlowPath fp : flow.getPaths()) {
+                    if (fp.hasFailedSegments()) {
+                        fp.setStatus(FlowPathStatus.INACTIVE);
+                    }
+                }
+                flow.setStatus(flow.computeFlowStatus());
+                saveHistory(stateMachine, stateMachine.getCarrier(), flowId,
+                        format("Recalculate flow status to %s.", flow.getStatus()));
+                flowRepository.createOrUpdate(flow);
+            }
+        });
     }
 }

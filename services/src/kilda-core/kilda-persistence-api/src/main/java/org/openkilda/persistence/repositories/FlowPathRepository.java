@@ -73,6 +73,8 @@ public interface FlowPathRepository extends Repository<FlowPath> {
 
     long getUsedBandwidthBetweenEndpoints(SwitchId srcSwitchId, int srcPort, SwitchId dstSwitchId, int dstPort);
 
+    void updatePathSegmentStatus(SwitchId switchId, int port, boolean failed);
+
     void lockInvolvedSwitches(FlowPath... flowPaths);
 
     void updateStatus(PathId pathId, FlowPathStatus pathStatus);

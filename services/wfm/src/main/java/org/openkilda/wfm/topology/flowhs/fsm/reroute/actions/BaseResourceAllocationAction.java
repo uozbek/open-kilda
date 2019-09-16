@@ -118,7 +118,7 @@ abstract class BaseResourceAllocationAction extends
 
             return Optional.of(buildErrorMessage(stateMachine, ErrorType.NOT_FOUND,
                     getGenericErrorMessage(), errorDescription));
-        } catch (ResourceAllocationException e) {
+        } catch (ResourceAllocationException | RecoverablePersistenceException e) {
             String errorDescription = format("Failed to allocate resources for flow %s: %s",
                     flowId, e.getMessage());
             dashboardLogger.onFailedFlowReroute(flowId, getGenericErrorMessage() + ": " + errorDescription);

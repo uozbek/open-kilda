@@ -23,6 +23,7 @@ This spec verifies different situations when Kilda switches suddenly disconnect 
 Note: For now it is only runnable on virtual env due to no ability to disconnect hardware switches
 """)
 @Tags(VIRTUAL)
+@Ignore
 class SwitchFailuresSpec extends HealthCheckSpecification {
     @Tags(SMOKE)
     def "ISL is still able to properly fail even after switches were reconnected"() {
