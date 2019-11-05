@@ -162,6 +162,8 @@ Notification of the new flow endpoint to watch:
       "payload": {
           "clazz": "org.openkilda.applications.info.apps.FlowApplicationCreated",
           "flow_id": "string",
+          "tunnel_id": 0,
+          "switch_id": "string",
           "application": "telescope"
       },
       "timestamp": 0,
@@ -175,6 +177,8 @@ Notification of the flow endpoint to stop watch:
       "payload": {
           "clazz": "org.openkilda.applications.info.apps.FlowApplicationRemoved",
           "flow_id": "string",
+          "tunnel_id": 0,
+          "switch_id": "string",
           "application": "telescope"
       },
       "timestamp": 0,
@@ -228,7 +232,15 @@ Flow statistics:
                 "packet_count": 0,
                 "byte_count": 0,
                 "in_port": 0,
-                "out_port": 0
+                "out_port": 0,
+                "match" : {
+                    "src_ip": "string",
+                    "src_port": 0,
+                    "dst_ip": "string"
+                    "dst_port": 0,
+                    "proto": "string",
+                    "eth_type": "string"
+                }
              }
           ]
       },
