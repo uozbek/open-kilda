@@ -174,6 +174,10 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
         Config stormConfig = new Config();
 
         stormConfig.setNumWorkers(topologyConfig.getWorkers());
+        stormConfig.put(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS, 1000);
+        stormConfig.put(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS, 10);
+        stormConfig.put(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY, "org.apache.storm.spout.SleepSpoutWaitStrategy");
+        stormConfig.put(Config.TOPOLOGY_SLEEP_SPOUT_WAIT_STRATEGY_TIME_MS, 100);
         if (topologyConfig.getUseLocalCluster()) {
             stormConfig.setMaxTaskParallelism(topologyConfig.getParallelism());
         }
