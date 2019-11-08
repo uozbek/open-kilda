@@ -113,9 +113,49 @@ public interface NetworkTopologyConfig extends AbstractTopologyConfig {
     @Configuration
     @Key("discovery")
     interface DiscoveryConfig {
+
+        @IgnoreKey
+        ScaleConfig getScaleConfig();
+
         @Key("scale-factor")
         @Default("2")
         int getScaleFactor();
+
+        @Configuration
+        @Key("scale")
+        interface ScaleConfig {
+            @Key("port-handler")
+            @Default("2")
+            int getPortHandler();
+
+            @Key("decision-maker-handler")
+            @Default("2")
+            int getDecisionMakerHandler();
+
+            @Key("watcher-handler")
+            @Default("2")
+            int getWatcherHandler();
+
+            @Key("speaker.router")
+            @Default("2")
+            int getSpeakerRouter();
+
+            @Key("watch-list-handler")
+            @Default("2")
+            int getWatchListHandler();
+
+            @Key("input.speaker")
+            @Default("2")
+            int getInputSpeaker();
+
+            @Key("isl-handler")
+            @Default("2")
+            int getIslHandler();
+
+            @Key("switch-handler")
+            @Default("2")
+            int getSwitchHandler();
+        }
 
         @Key("interval")
         int getDiscoveryInterval();

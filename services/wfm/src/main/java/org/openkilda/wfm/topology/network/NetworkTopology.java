@@ -23,6 +23,7 @@ import org.openkilda.wfm.share.hubandspoke.CoordinatorBolt;
 import org.openkilda.wfm.share.hubandspoke.CoordinatorSpout;
 import org.openkilda.wfm.share.hubandspoke.WorkerBolt;
 import org.openkilda.wfm.topology.AbstractTopology;
+import org.openkilda.wfm.topology.network.NetworkTopologyConfig.DiscoveryConfig.ScaleConfig;
 import org.openkilda.wfm.topology.network.model.NetworkOptions;
 import org.openkilda.wfm.topology.network.storm.ComponentId;
 import org.openkilda.wfm.topology.network.storm.bolt.NorthboundEncoder;
@@ -72,29 +73,32 @@ public class NetworkTopology extends AbstractTopology<NetworkTopologyConfig> {
     public StormTopology createTopology() {
         int scaleFactor = topologyConfig.getScaleFactor();
 
+
         TopologyBuilder topology = new TopologyBuilder();
 
         inputSwitchManager(topology, scaleFactor);
         switchManagerRouter(topology, scaleFactor);
         workerSwitchManager(topology, scaleFactor);
 
-        inputSpeaker(topology, scaleFactor);
+        ScaleConfig scaleConfig = topologyConfig.getDiscoveryConfig().getScaleConfig();
+
+        inputSpeaker(topology, scaleConfig.getInputSpeaker());
         workerSpeaker(topology, scaleFactor);
 
         coordinator(topology);
         networkHistory(topology);
 
-        speakerRouter(topology, scaleFactor);
+        speakerRouter(topology, scaleConfig.getSpeakerRouter());
 
-        watchList(topology, scaleFactor);
-        watcher(topology, scaleFactor);
-        decisionMaker(topology, scaleFactor);
+        watchList(topology, scaleConfig.getWatchListHandler());
+        watcher(topology, scaleConfig.getWatcherHandler());
+        decisionMaker(topology, scaleConfig.getDecisionMakerHandler());
 
-        switchHandler(topology, scaleFactor);
-        portHandler(topology, scaleFactor);
+        switchHandler(topology, scaleConfig.getSwitchHandler());
+        portHandler(topology, scaleConfig.getPortHandler());
         bfdPortHandler(topology, scaleFactor);
         uniIslHandler(topology, scaleFactor);
-        islHandler(topology, scaleFactor);
+        islHandler(topology, scaleConfig.getIslHandler());
 
         outputSpeaker(topology, scaleFactor);
         outputSwitchManager(topology, scaleFactor);
