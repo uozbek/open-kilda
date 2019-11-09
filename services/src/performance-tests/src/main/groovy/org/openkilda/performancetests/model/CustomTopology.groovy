@@ -27,10 +27,16 @@ class CustomTopology extends TopologyDefinition {
      */
     Switch addCasualSwitch(String controller) {
         def swId = new SwitchId(faker.internet().macAddress())
-        def sw = Switch.factory("sw${switches.size() + 1}", swId, "OF_13", Status.Active,
+        def sw = Switch.factory("sw${switches.size() + 9501}", swId, "OF_13", Status.Active,
                 null, null, controller)
         switches << sw
         return sw
+    }
+
+    TraffGen getDefaultTraffgen(Switch sw) {
+        def tg = new TraffGen("tg-$sw.name", "http://0.0.0.0:${4040 + traffGens.size()}", "eth0", sw, 
+                10, Status.Active)
+        return tg
     }
 
     Isl addIsl(Switch src, Switch dst) {

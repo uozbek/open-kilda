@@ -1,5 +1,6 @@
 package org.openkilda.performancetests.spec
 
+import static groovyx.gpars.GParsPool.withPool
 import static org.hamcrest.CoreMatchers.equalTo
 import static org.openkilda.testing.service.lockkeeper.LockKeeperVirtualImpl.DUMMY_CONTROLLER
 
@@ -7,9 +8,16 @@ import org.openkilda.functionaltests.helpers.Wrappers
 import org.openkilda.functionaltests.helpers.Wrappers.WaitTimeoutException
 import org.openkilda.messaging.info.event.IslChangeType
 import org.openkilda.messaging.info.event.SwitchChangeType
+import org.openkilda.messaging.payload.flow.FlowPayload
+import org.openkilda.northbound.dto.v2.flows.FlowRequestV2
 import org.openkilda.performancetests.BaseSpecification
 import org.openkilda.performancetests.model.CustomTopology
+import org.openkilda.testing.model.topology.TopologyDefinition
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import groovy.util.logging.Slf4j
 import org.junit.Assume
 import spock.lang.Unroll
@@ -40,8 +48,8 @@ class DiscoverySpec extends BaseSpecification {
             topoHelper.verifyTopology(topo)
         }
 
-        cleanup: "purge topology"
-        topo && topoHelper.purgeTopology(topo, lab)
+//        cleanup: "purge topology"
+//        topo && topoHelper.purgeTopology(topo, lab)
 
         where:
         preset << [
@@ -58,6 +66,71 @@ class DiscoverySpec extends BaseSpecification {
         debugText = preset.debug ? " (debug mode)" : ""
     }
 
+    def "update topo yaml"() {
+        given:
+        def mapper = new ObjectMapper()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        def topo = mapper.readValue(new File("topology1.json").text, Map)
+        topo.switches.each {
+            it.controller = "tcp:192.168.14.137:6656"
+        }
+        def updatedTopo = mapper.writeValueAsString(topo)
+        println updatedTopo
+
+        expect: ""
+    }
+
+    def "Create flows"() {
+        when:
+        def mapper = new ObjectMapper()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        def topo = mapper.readValue(new File("topology2.json").text, TopologyDefinition)
+        topoHelper.setTopology(topo)
+        flowHelperV2.setTopology(topo)
+        List<FlowRequestV2> flows = []
+//        flows.addAll(northbound.getAllFlows())
+        withPool(20) {
+            (0..1000).eachParallel { num ->
+                Wrappers.silent {
+                    Wrappers.benchmark("create flow #$num") {
+                        def flow = flowHelperV2.randomFlow(*topoHelper.getRandomSwitchPair(false), false, flows)
+                        flowHelperV2.addFlow(flow)
+                        flows.add(flow)
+                    }
+                }
+            }
+        }
+        
+        then: ""
+    }
+
+    def "Create lab"() {
+        def switchesAmount = 500
+        int islsAmount = switchesAmount * 2
+
+        setup: "Create topology"
+        def topo = new CustomTopology()
+        switchesAmount.times {
+            def sw = topo.addCasualSwitch("tcp:192.168.14.141:6657")
+            if (it % 200 == 0) {
+                topo.traffGens << topo.getDefaultTraffgen(sw)
+            }
+        }
+        islsAmount.times {
+            def src = topo.pickRandomSwitch()
+            def dst = topo.pickRandomSwitch([src])
+            topo.addIsl(src, dst)
+        }
+        topo.setControllers(managementControllers)
+        def lab = labService.createLab(topo)
+
+        expect: "pray"
+    }
+
     /**
      * Push the system to its limits until it fails to discover new isls or switches. Measure system's capabilities
      */
@@ -66,13 +139,22 @@ class DiscoverySpec extends BaseSpecification {
         Assume.assumeThat(preset.debug, equalTo(debug))
 
         //unattainable amount that system won't be able to handle for sure
-        def switchesAmount = preset.minimumSwitchesRequirement * 1.5
-        def islsAmount = switchesAmount * 3
+//        def switchesAmount = preset.minimumSwitchesRequirement * 1.5
+        def switchesAmount = 500
+        def islsAmount = (int) (switchesAmount * 2.5)
         def allowedDiscoveryTime = 60 //seconds
 
         setup: "Create topology not connected to controller"
         def topo = new CustomTopology()
-        switchesAmount.times { topo.addCasualSwitch(DUMMY_CONTROLLER) }
+        switchesAmount.times {
+            def sw = topo.addCasualSwitch("tcp:192.168.14.137:6653")
+//            if(it % 300 == 0) {
+//                topo.traffGens << topo.getDefaultTraffgen(sw)
+//            }
+        }
+//        500.times {
+//            topo.addCasualSwitch("tcp:192.168.14.137:6655")
+//        }
         islsAmount.times {
             def src = topo.pickRandomSwitch()
             def dst = topo.pickRandomSwitch([src])
@@ -106,8 +188,8 @@ class DiscoverySpec extends BaseSpecification {
         log.info("Performance report: Kilda was able to discover $switchesCreated switches.\nFailed with $waitFailure")
         switchesCreated > preset.minimumSwitchesRequirement
 
-        cleanup: "purge topology"
-        topo && topoHelper.purgeTopology(topo, lab)
+//        cleanup: "purge topology"
+//        topo && topoHelper.purgeTopology(topo, lab)
 
         where:
         preset << [

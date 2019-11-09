@@ -103,30 +103,30 @@ class TopologyHelper extends org.openkilda.functionaltests.helpers.TopologyHelpe
      * topology definition.
      */
     def purgeTopology(TopologyDefinition topo, LabInstance lab = null) {
-        if (lab) {
-            labService.deleteLab(lab)
-        } else {
-            labService.flushLabs()
-        }
-        TimeUnit.SECONDS.sleep(discoveryTimeout + 3)
-        northbound.getAllLinks().findAll { it.state == IslChangeType.FAILED }.each {
-            try {
-                northbound.deleteLink(islUtils.toLinkParameters(it))
-            } catch (HttpClientErrorException e) {
-                if (e.statusCode == HttpStatus.NOT_FOUND) {
-                    //fine, it's not present, do nothing
-                } else {
-                    throw e
-                }
-            }
-        }
-        def topoSwitches = northbound.getAllSwitches().findAll { it.state == SwitchChangeType.DEACTIVATED }
-        topoSwitches.each {
-            northbound.deleteSwitch(it.switchId, false)
-        }
+//        if (lab) {
+//            labService.deleteLab(lab)
+//        } else {
+//            labService.flushLabs()
+//        }
+//        TimeUnit.SECONDS.sleep(discoveryTimeout + 3)
+//        northbound.getAllLinks().findAll { it.state == IslChangeType.FAILED }.each {
+//            try {
+//                northbound.deleteLink(islUtils.toLinkParameters(it))
+//            } catch (HttpClientErrorException e) {
+//                if (e.statusCode == HttpStatus.NOT_FOUND) {
+//                    //fine, it's not present, do nothing
+//                } else {
+//                    throw e
+//                }
+//            }
+//        }
+//        def topoSwitches = northbound.getAllSwitches().findAll { it.state == SwitchChangeType.DEACTIVATED }
+//        topoSwitches.each {
+//            northbound.deleteSwitch(it.switchId, false)
+//        }
     }
 
     def purgeTopology() {
-        purgeTopology(readCurrentTopology())
+//        purgeTopology(readCurrentTopology())
     }
 }

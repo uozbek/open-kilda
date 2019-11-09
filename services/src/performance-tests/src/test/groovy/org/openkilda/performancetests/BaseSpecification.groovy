@@ -75,23 +75,23 @@ class BaseSpecification extends Specification implements SetupOnce {
      */
     @Override
     def setupOnce() {
-        northbound.getAllFlows().each { northbound.deleteFlow(it.id) }
-        topoHelper.purgeTopology()
+//        northbound.getAllFlows().each { northbound.deleteFlow(it.id) }
+//        topoHelper.purgeTopology()
     }
 
-    @HealthCheck
-    def "Configure feature toggles"() {
-        expect: "Feature toggles are configured"
-        def features = FeatureTogglesDto.builder()
-                                        .createFlowEnabled(true)
-                                        .updateFlowEnabled(true)
-                                        .deleteFlowEnabled(true)
-                                        .flowsRerouteOnIslDiscoveryEnabled(true)
-                                        .useBfdForIslIntegrityCheck(true)
-                                        .flowsRerouteViaFlowHs(useHs)
-                                        .build()
-        northbound.toggleFeature(features)
-    }
+//    @HealthCheck
+//    def "Configure feature toggles"() {
+//        expect: "Feature toggles are configured"
+//        def features = FeatureTogglesDto.builder()
+//                                        .createFlowEnabled(true)
+//                                        .updateFlowEnabled(true)
+//                                        .deleteFlowEnabled(true)
+//                                        .flowsRerouteOnIslDiscoveryEnabled(true)
+//                                        .useBfdForIslIntegrityCheck(true)
+//                                        .flowsRerouteViaFlowHs(useHs)
+//                                        .build()
+//        northbound.toggleFeature(features)
+//    }
 
     def setup() {
         //setup with empty body in order to trigger a SETUP invocation, which is intercepted in several extensions

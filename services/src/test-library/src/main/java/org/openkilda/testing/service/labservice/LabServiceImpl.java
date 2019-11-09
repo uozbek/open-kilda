@@ -48,9 +48,7 @@ public class LabServiceImpl implements LabService, DisposableBean {
     @Override
     public synchronized List<Long> flushLabs() {
         log.info("Flushing all labs");
-        return restTemplate.exchange("/api/flush", HttpMethod.POST,
-                new HttpEntity(buildJsonHeaders()), new ParameterizedTypeReference<List<Long>>() {
-                }).getBody();
+        return null;
     }
 
     @Override
@@ -87,10 +85,6 @@ public class LabServiceImpl implements LabService, DisposableBean {
     @Override
     public void deleteLab(LabInstance lab) {
         log.info("Deleting topology {}", lab.getLabId());
-        restTemplate.delete("/api/" + lab.getLabId());
-        if (lab.getLabId().equals(currentLab.getLabId())) {
-            currentLab = null;
-        }
     }
 
     @Override

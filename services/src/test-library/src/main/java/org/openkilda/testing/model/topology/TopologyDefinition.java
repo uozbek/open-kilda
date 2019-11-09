@@ -195,7 +195,7 @@ public class TopologyDefinition {
     @JsonIdentityInfo(property = "name", generator = ObjectIdGenerators.PropertyGenerator.class)
     public static class Switch {
 
-        private static int DEFAULT_MAX_PORT = 20;
+        private static int DEFAULT_MAX_PORT = 40;
 
         private String name;
         @NonNull
@@ -363,9 +363,9 @@ public class TopologyDefinition {
         @JsonCreator
         public static TraffGen factory(
                 @JsonProperty("name") String name,
-                @JsonProperty("iface") String ifaceName,
+                @JsonProperty("iface_name") String ifaceName,
                 @JsonProperty("control_endpoint") String controlEndpoint,
-                @JsonProperty("switch") Switch switchConnected,
+                @JsonProperty("switch_connected") Switch switchConnected,
                 @JsonProperty("switch_port") int switchPort,
                 @JsonProperty("status") Status status) {
             return new TraffGen(name, controlEndpoint, ifaceName, switchConnected, switchPort, status);
