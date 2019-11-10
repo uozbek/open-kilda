@@ -25,6 +25,8 @@ import static org.openkilda.messaging.Utils.MAPPER;
 import static org.openkilda.model.Cookie.CATCH_BFD_RULE_COOKIE;
 import static org.openkilda.model.Cookie.DROP_RULE_COOKIE;
 import static org.openkilda.model.Cookie.DROP_VERIFICATION_LOOP_RULE_COOKIE;
+import static org.openkilda.model.Cookie.LLDP_INPUT_PRE_DROP_COOKIE;
+import static org.openkilda.model.Cookie.LLDP_TRANSIT_COOKIE;
 import static org.openkilda.model.Cookie.MULTITABLE_EGRESS_PASS_THROUGH_COOKIE;
 import static org.openkilda.model.Cookie.MULTITABLE_INGRESS_DROP_COOKIE;
 import static org.openkilda.model.Cookie.MULTITABLE_POST_INGRESS_DROP_COOKIE;
@@ -687,6 +689,10 @@ class RecordHandler implements Runnable {
         } else if (cookie == MULTITABLE_TRANSIT_DROP_COOKIE) {
             return switchManager.installDropFlowForTable(dpid, TRANSIT_TABLE_ID,
                     MULTITABLE_TRANSIT_DROP_COOKIE);
+        } else if (cookie == LLDP_INPUT_PRE_DROP_COOKIE) {
+            return switchManager.installLldpInputPreDropFlow(dpid);
+        } else if (cookie == LLDP_TRANSIT_COOKIE) {
+            return switchManager.installLldpTransitFlow(dpid);
         } else if (Cookie.isIngressRulePassThrough(cookie)) {
             long port = Cookie.getValueFromIntermediateCookie(cookie);
             return switchManager.installIntermediateIngressRule(dpid, (int) port);
@@ -699,6 +705,9 @@ class RecordHandler implements Runnable {
         } else if (Cookie.isIslVxlanEgress(cookie)) {
             long port = Cookie.getValueFromIntermediateCookie(cookie);
             return switchManager.installEgressIslVxlanRule(dpid, (int) port);
+        } else if (Cookie.isLldpInputIslVlan(cookie)) {
+            long port = Cookie.getValueFromIntermediateCookie(cookie);
+            return switchManager.installLldpInputIslVlanFlow(dpid, (int) port);
         } else {
             logger.warn("Skipping the installation of unexpected default switch rule {} for switch {}",
                     Long.toHexString(cookie), switchId);
@@ -799,6 +808,12 @@ class RecordHandler implements Runnable {
             } else if (installAction == InstallRulesAction.INSTALL_MULTITABLE_TRANSIT_DROP) {
                 switchManager.installDropFlowForTable(dpid, TRANSIT_TABLE_ID, MULTITABLE_TRANSIT_DROP_COOKIE);
                 installedRules.add(MULTITABLE_TRANSIT_DROP_COOKIE);
+            } else if (installAction == InstallRulesAction.INSTALL_LLDP_INPUT_PRE_DROP) {
+                switchManager.installLldpInputPreDropFlow(dpid);
+                installedRules.add(LLDP_INPUT_PRE_DROP_COOKIE);
+            } else if (installAction == InstallRulesAction.INSTALL_LLDP_TRANSIT) {
+                switchManager.installLldpTransitFlow(dpid);
+                installedRules.add(LLDP_TRANSIT_COOKIE);
             } else {
                 switchManager.installDefaultRules(dpid);
                 installedRules.addAll(asList(
@@ -826,6 +841,17 @@ class RecordHandler implements Runnable {
                     }
                     for (int port : request.getFlowPorts()) {
                         installedRules.add(switchManager.installIntermediateIngressRule(dpid, port));
+
+                        if (request.isSwitchLldp()) {
+                            installedRules.add(switchManager.installLldpInputIslVlanFlow(dpid, port));
+                        }
+                    }
+
+                    if (request.isSwitchLldp()) {
+                        installedRules.add(processInstallDefaultFlowByCookie(request.getSwitchId(),
+                                LLDP_INPUT_PRE_DROP_COOKIE));
+                        installedRules.add(processInstallDefaultFlowByCookie(request.getSwitchId(),
+                                LLDP_TRANSIT_COOKIE));
                     }
                 }
             }
@@ -914,6 +940,14 @@ class RecordHandler implements Runnable {
                         criteria = DeleteRulesCriteria.builder()
                                 .cookie(MULTITABLE_TRANSIT_DROP_COOKIE).build();
                         break;
+                    case REMOVE_LLDP_INPUT_PRE_DROP:
+                        criteria = DeleteRulesCriteria.builder()
+                                .cookie(LLDP_INPUT_PRE_DROP_COOKIE).build();
+                        break;
+                    case REMOVE_LLDP_TRANSIT:
+                        criteria = DeleteRulesCriteria.builder()
+                                .cookie(LLDP_TRANSIT_COOKIE).build();
+                        break;
                     default:
                         logger.warn("Received unexpected delete switch rule action: {}", deleteAction);
                 }
@@ -926,7 +960,7 @@ class RecordHandler implements Runnable {
                 // The cases when we delete the default rules.
                 if (deleteAction.defaultRulesToBeRemoved()) {
                     removedRules.addAll(switchManager.deleteDefaultRules(dpid, request.getIslPorts(),
-                            request.getFlowPorts(), request.isMultiTable()));
+                            request.getFlowPorts(), request.isMultiTable(), request.isSwitchLldp()));
                 }
             }
 
@@ -1011,6 +1045,7 @@ class RecordHandler implements Runnable {
         GetExpectedDefaultRulesRequest request = (GetExpectedDefaultRulesRequest) message.getData();
         SwitchId switchId = request.getSwitchId();
         boolean multiTable = request.isMultiTable();
+        boolean switchLldp = request.isSwitchLldp();
         List<Integer> islPorts = request.getIslPorts();
         List<Integer> flowPorts = request.getFlowPorts();
 
@@ -1018,11 +1053,15 @@ class RecordHandler implements Runnable {
             logger.debug("Loading expected default rules for switch {}", switchId);
             DatapathId dpid = DatapathId.of(switchId.toLong());
             List<OFFlowMod> defaultRules =
-                    context.getSwitchManager().getExpectedDefaultFlows(dpid, multiTable);
+                    context.getSwitchManager().getExpectedDefaultFlows(dpid, multiTable, switchLldp);
             if (multiTable) {
                 for (int port : islPorts) {
                     List<OFFlowMod> islFlows = context.getSwitchManager().getExpectedIslFlowsForPort(dpid, port);
                     defaultRules.addAll(islFlows);
+
+                    if (switchLldp) {
+                        defaultRules.add(context.getSwitchManager().buildLldpInputIslVlanFlow(dpid, port));
+                    }
                 }
                 for (int port : flowPorts) {
                     defaultRules.add(context.getSwitchManager().buildIntermediateIngressRule(dpid, port));

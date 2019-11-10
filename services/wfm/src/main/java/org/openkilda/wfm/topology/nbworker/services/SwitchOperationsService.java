@@ -274,10 +274,14 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
 
             SwitchProperties sf = foundSwitchProperties.get();
             final boolean previousMultiTableFlag = sf.isMultiTable();
+            final boolean previousLldpFlag = sf.isSwitchLldp();
+
             sf.setMultiTable(update.isMultiTable());
+            sf.setSwitchLldp(update.isSwitchLldp());
             sf.setSupportedTransitEncapsulation(update.getSupportedTransitEncapsulation());
+
             switchPropertiesRepository.createOrUpdate(sf);
-            if (previousMultiTableFlag != update.isMultiTable()) {
+            if (previousMultiTableFlag != update.isMultiTable() || previousLldpFlag != update.isSwitchLldp()) {
                 carrier.requestSwitchSync(switchId);
             }
 
