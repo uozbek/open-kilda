@@ -42,6 +42,7 @@ import org.openkilda.persistence.PersistenceException;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FeatureTogglesRepository;
 import org.openkilda.wfm.CommandContext;
+import org.openkilda.wfm.error.IllegalSwitchPropertiesCombinationException;
 import org.openkilda.wfm.error.IllegalSwitchStateException;
 import org.openkilda.wfm.error.SwitchNotFoundException;
 import org.openkilda.wfm.share.mappers.PortMapper;
@@ -194,8 +195,15 @@ public class SwitchOperationsBolt extends PersistenceOperationsBolt implements I
     }
 
     private SwitchPropertiesResponse updateSwitchProperties(UpdateSwitchPropertiesRequest request) {
-        SwitchPropertiesDto updated = switchOperationsService.updateSwitchProperties(request.getSwitchId(),
-                request.getSwitchProperties());
+        SwitchPropertiesDto updated;
+        try {
+            updated = switchOperationsService.updateSwitchProperties(request.getSwitchId(),
+                    request.getSwitchProperties());
+        } catch (IllegalSwitchPropertiesCombinationException e) {
+            throw new MessageException(ErrorType.REQUEST_INVALID, e.getMessage(),
+                    "Incorrect combination of switch properties");
+        }
+
         if (updated == null) {
             String message = String.format("Failed to update switch properties for switch '%s'", request.getSwitchId());
             throw new MessageException(ErrorType.NOT_FOUND, message, "SwitchProperties are not found.");

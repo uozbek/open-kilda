@@ -13,24 +13,13 @@
  *   limitations under the License.
  */
 
-package org.openkilda.messaging.model;
+package org.openkilda.wfm.error;
 
-import org.openkilda.messaging.payload.flow.FlowEncapsulationType;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
-
-import java.io.Serializable;
-import java.util.Set;
-
-@Data
-public class SwitchPropertiesDto implements Serializable {
-    @JsonProperty("supported_transit_encapsulation")
-    private Set<FlowEncapsulationType> supportedTransitEncapsulation;
-
-    @JsonProperty("multi_table")
-    private boolean multiTable;
-
-    @JsonProperty("switch_lldp")
-    private boolean switchLldp;
+/**
+ * Exception which indicates that some switch operation couldn't be completed because switch is in illegal state.
+ */
+public class IllegalSwitchPropertiesCombinationException extends Exception {
+    public IllegalSwitchPropertiesCombinationException(String switchId, String message) {
+        super(String.format("Switch '%s' has illegal properties combination. %s", switchId, message));
+    }
 }

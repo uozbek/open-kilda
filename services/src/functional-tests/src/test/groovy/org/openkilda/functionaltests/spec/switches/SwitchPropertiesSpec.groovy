@@ -91,6 +91,24 @@ class SwitchPropertiesSpec extends HealthCheckSpecification {
         exc.responseBodyAsString.to(MessageError).errorMessage == "Unable to parse request payload"
     }
 
+    def "Unable to turn on switchLldp property without turting on multiTable property"() {
+        given: "A switch"
+        def sw = topology.activeSwitches.first()
+
+        when: "Try to update set switchLldp property to True and multiTable property to False"
+        def switchProperties = new SwitchPropertiesDto()
+        switchProperties.supportedTransitEncapsulation = [FlowEncapsulationType.VXLAN.toString()]
+        switchProperties.multiTable = false
+        switchProperties.switchLldp = true
+        northbound.updateSwitchProperties(sw.dpId, switchProperties)
+
+        then: "Human readable error is returned"
+        def exc = thrown(HttpClientErrorException)
+        exc.statusCode == HttpStatus.BAD_REQUEST
+        exc.responseBodyAsString.to(MessageError).errorMessage.contains(
+                "Switch '$sw.dpId' has illegal properties combination")
+    }
+
     def "Unable to create a transit_vlan flow in case switch property doesn't support this type of encapsulation"() {
         given: "A switch pair"
         def switchPair = topologyHelper.getNeighboringSwitchPair()

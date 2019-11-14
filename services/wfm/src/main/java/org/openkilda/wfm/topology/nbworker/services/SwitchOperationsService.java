@@ -34,6 +34,7 @@ import org.openkilda.persistence.repositories.PortPropertiesRepository;
 import org.openkilda.persistence.repositories.RepositoryFactory;
 import org.openkilda.persistence.repositories.SwitchPropertiesRepository;
 import org.openkilda.persistence.repositories.SwitchRepository;
+import org.openkilda.wfm.error.IllegalSwitchPropertiesCombinationException;
 import org.openkilda.wfm.error.IllegalSwitchStateException;
 import org.openkilda.wfm.error.IslNotFoundException;
 import org.openkilda.wfm.error.SwitchNotFoundException;
@@ -264,7 +265,8 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
      * @param switchId target switch id
      * @param switchPropertiesDto switch properties
      */
-    public SwitchPropertiesDto updateSwitchProperties(SwitchId switchId, SwitchPropertiesDto switchPropertiesDto) {
+    public SwitchPropertiesDto updateSwitchProperties(SwitchId switchId, SwitchPropertiesDto switchPropertiesDto)
+            throws IllegalSwitchPropertiesCombinationException {
         SwitchProperties update = SwitchPropertiesMapper.INSTANCE.map(switchPropertiesDto);
         return transactionManager.doInTransaction(() -> {
             Optional<SwitchProperties> foundSwitchProperties = switchPropertiesRepository.findBySwitchId(switchId);
@@ -272,12 +274,21 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
                 return null;
             }
 
+            if (!update.isMultiTable() && update.isSwitchLldp()) {
+                throw new IllegalSwitchPropertiesCombinationException(switchId.toString(),
+                        "switchLldp property can be set to 'true' only if 'multiTable' property is 'true'.");
+            }
+
             SwitchProperties sf = foundSwitchProperties.get();
             final boolean previousMultiTableFlag = sf.isMultiTable();
+            final boolean previousLldpFlag = sf.isSwitchLldp();
+
             sf.setMultiTable(update.isMultiTable());
+            sf.setSwitchLldp(update.isSwitchLldp());
             sf.setSupportedTransitEncapsulation(update.getSupportedTransitEncapsulation());
+
             switchPropertiesRepository.createOrUpdate(sf);
-            if (previousMultiTableFlag != update.isMultiTable()) {
+            if (previousMultiTableFlag != update.isMultiTable() || previousLldpFlag != update.isSwitchLldp()) {
                 carrier.requestSwitchSync(switchId);
             }
 
