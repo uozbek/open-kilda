@@ -17,7 +17,6 @@ package org.openkilda.wfm.share.flow.resources;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 
 import org.openkilda.config.provider.PropertiesBasedConfigurationProvider;
@@ -158,9 +157,9 @@ public class FlowResourcesManagerTest extends Neo4jBasedTest {
         Flow flow = convertFlow(firstFlow);
         FlowResources flowResources = resourcesManager.allocateFlowResources(flow);
         resourcesManager.deallocatePathResources(flowResources.getForward().getPathId(),
-                flowResources.getUnmaskedCookie(), flowResources.getUnmaskedLldpCookie(), flow.getEncapsulationType());
+                flowResources.getUnmaskedCookie(), null, flow.getEncapsulationType());
         resourcesManager.deallocatePathResources(flowResources.getReverse().getPathId(),
-                flowResources.getUnmaskedCookie(), flowResources.getUnmaskedLldpCookie(), flow.getEncapsulationType());
+                flowResources.getUnmaskedCookie(), null, flow.getEncapsulationType());
 
         verifyAllocation(resourcesManager.allocateFlowResources(flow));
     }
@@ -213,9 +212,6 @@ public class FlowResourcesManagerTest extends Neo4jBasedTest {
         Flow flow = convertFlow(firstFlow);
         flow.setDetectConnectedDevices(new DetectConnectedDevices(detectSrcLldpConnectedDevices, false,
                 detectDstLldpConnectedDevices, false));
-
-        FlowResources resources = resourcesManager.allocateFlowResources(flow);
-        verifyLldpAllocation(resources, detectSrcLldpConnectedDevices, detectDstLldpConnectedDevices);
     }
 
     @Test
@@ -242,9 +238,9 @@ public class FlowResourcesManagerTest extends Neo4jBasedTest {
 
         FlowResources resources = resourcesManager.allocateFlowResources(flow);
         resourcesManager.deallocatePathResources(resources.getForward().getPathId(), resources.getUnmaskedCookie(),
-                resources.getUnmaskedLldpCookie(), flow.getEncapsulationType());
+                null, flow.getEncapsulationType());
         resourcesManager.deallocatePathResources(resources.getReverse().getPathId(), resources.getUnmaskedCookie(),
-                resources.getUnmaskedLldpCookie(), flow.getEncapsulationType());
+                null, flow.getEncapsulationType());
 
         verifyResourcesDeallocation();
     }
@@ -285,20 +281,6 @@ public class FlowResourcesManagerTest extends Neo4jBasedTest {
 
         assertEquals(2, ((TransitVlanEncapsulation) resources.getReverse().getEncapsulationResources())
                 .getTransitVlan().getVlan());
-    }
-
-    private void verifyLldpAllocation(FlowResources resources, boolean srcLldp, boolean dstLldp) {
-        if (!srcLldp && !dstLldp) {
-            // resources must not be allocated
-            assertNull(resources.getUnmaskedLldpCookie());
-            assertNull(resources.getForward().getLldpMeterId());
-            assertNull(resources.getReverse().getLldpMeterId());
-            return;
-        }
-
-        assertEquals(new Long(1), resources.getUnmaskedLldpCookie());
-        assertEquals(srcLldp ? METER_33 : null, resources.getForward().getLldpMeterId());
-        assertEquals(dstLldp ? METER_33 : null, resources.getReverse().getLldpMeterId());
     }
 
     private void verifyMetersAllocation(FlowResources resources) {

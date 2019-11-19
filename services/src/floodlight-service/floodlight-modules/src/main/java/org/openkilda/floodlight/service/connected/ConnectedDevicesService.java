@@ -15,7 +15,10 @@
 
 package org.openkilda.floodlight.service.connected;
 
+import static org.openkilda.model.Cookie.LLDP_INGRESS_COOKIE;
 import static org.openkilda.model.Cookie.LLDP_INPUT_PRE_DROP_COOKIE;
+import static org.openkilda.model.Cookie.LLDP_POST_INGRESS_COOKIE;
+import static org.openkilda.model.Cookie.LLDP_POST_INGRESS_VXLAN_COOKIE;
 import static org.openkilda.model.Cookie.LLDP_TRANSIT_COOKIE;
 
 import org.openkilda.floodlight.KafkaChannel;
@@ -78,6 +81,9 @@ public class ConnectedDevicesService implements IService, IInputTranslator {
     private boolean isLldpRelated(long value) {
         return value == LLDP_INPUT_PRE_DROP_COOKIE
                 || value == LLDP_TRANSIT_COOKIE
+                || value == LLDP_INGRESS_COOKIE
+                || value == LLDP_POST_INGRESS_COOKIE
+                || value == LLDP_POST_INGRESS_VXLAN_COOKIE
                 || Cookie.isFlowLldp(value);
     }
 
@@ -93,8 +99,8 @@ public class ConnectedDevicesService implements IService, IInputTranslator {
 
         if (Cookie.isFlowLldp(cookie)) {
             handleFlowLldp(input, switchId, cookie);
-        } else if (cookie == LLDP_TRANSIT_COOKIE || cookie == LLDP_INPUT_PRE_DROP_COOKIE) {
-            handleSwitchLldpNonIngress(input, switchId, cookie);
+        } else {
+            handleSwitchLldp(input, switchId, cookie);
         }
     }
 
@@ -109,7 +115,7 @@ public class ConnectedDevicesService implements IService, IInputTranslator {
         producerService.sendMessageAndTrack(topic, switchId.toString(), message);
     }
 
-    private void handleSwitchLldpNonIngress(OfInput input, SwitchId switchId, long cookie) {
+    private void handleSwitchLldp(OfInput input, SwitchId switchId, long cookie) {
         Ethernet ethernet = input.getPacketInPayload();
         LldpPacket lldpPacket = deserializeLldp(ethernet, switchId, cookie);
         if (lldpPacket == null) {

@@ -37,7 +37,6 @@ import org.openkilda.model.FlowPair;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.FlowPathStatus;
 import org.openkilda.model.FlowStatus;
-import org.openkilda.model.LldpResources;
 import org.openkilda.model.PathId;
 import org.openkilda.model.PathSegment;
 import org.openkilda.model.Switch;
@@ -97,6 +96,7 @@ import org.neo4j.driver.v1.exceptions.TransientException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -174,17 +174,26 @@ public class FlowService extends BaseFlowService {
                         Optional<SwitchProperties> srcSwitchProperties = switchPropertiesRepository.findBySwitchId(
                                 flow.getSrcSwitch().getSwitchId());
                         boolean srcWithMultiTable = false;
+                        boolean srcWithSwitchLldp = false;
                         if (srcSwitchProperties.isPresent()) {
                             srcWithMultiTable = srcSwitchProperties.get().isMultiTable();
+                            srcWithSwitchLldp = srcSwitchProperties.get().isSwitchLldp()
+                                    || flow.getDetectConnectedDevices().isSrcLldp();
                         }
                         flow.setSrcWithMultiTable(srcWithMultiTable);
+                        flow.getDetectConnectedDevices().setSrcLldp(srcWithSwitchLldp);
                         Optional<SwitchProperties> destSwitchProperties = switchPropertiesRepository.findBySwitchId(
                                 flow.getDestSwitch().getSwitchId());
                         boolean destWithMultiTable = false;
+                        boolean destWithSwitchLldp = false;
                         if (destSwitchProperties.isPresent()) {
                             destWithMultiTable = destSwitchProperties.get().isMultiTable();
+                            destWithSwitchLldp = destSwitchProperties.get().isSwitchLldp()
+                                    || flow.getDetectConnectedDevices().isDstLldp();
                         }
                         flow.setDestWithMultiTable(destWithMultiTable);
+                        flow.getDetectConnectedDevices().setDstLldp(destWithSwitchLldp);
+
                         // TODO: the strategy is defined either per flow or system-wide.
                         PathComputer pathComputer = pathComputerFactory.getPathComputer();
                         PathPair pathPair = pathComputer.getPath(flow);
@@ -964,20 +973,12 @@ public class FlowService extends BaseFlowService {
         if (flowResources.getForward().getMeterId() != null) {
             forwardPath.setMeterId(flowResources.getForward().getMeterId());
         }
-        if (flowResources.getForward().getLldpMeterId() != null) {
-            forwardPath.setLldpResources(new LldpResources(flowResources.getForward().getLldpMeterId(),
-                    Cookie.buildLldpCookie(flowResources.getUnmaskedLldpCookie(), true)));
-        }
 
         FlowPath reversePath = pathPair.getReverse();
         reversePath.setPathId(flowResources.getReverse().getPathId());
         reversePath.setCookie(Cookie.buildReverseCookie(flowResources.getUnmaskedCookie()));
         if (flowResources.getReverse().getMeterId() != null) {
             reversePath.setMeterId(flowResources.getReverse().getMeterId());
-        }
-        if (flowResources.getReverse().getLldpMeterId() != null) {
-            reversePath.setLldpResources(new LldpResources(flowResources.getReverse().getLldpMeterId(),
-                    Cookie.buildLldpCookie(flowResources.getUnmaskedLldpCookie(), false)));
         }
     }
 
@@ -1317,18 +1318,31 @@ public class FlowService extends BaseFlowService {
     }
 
     private CommandGroup createRemoveIngressRules(FlowPath flowPath) {
-        boolean checkIngress = false;
         SwitchId ingressSwitchId = flowPath.getSrcSwitch().getSwitchId();
-        int ingressPort = 0;
+        int ingressPort;
         if (flowPath.isForward()) {
             ingressPort = flowPath.getFlow().getSrcPort();
         } else {
             ingressPort = flowPath.getFlow().getDestPort();
         }
-        boolean cleanUpIngress = flowRepository.findByEndpointWithMultiTableSupport(
-                ingressSwitchId, ingressPort).size() == 0;
+
+        Collection<Flow> flowWithMultiTable = flowRepository.findByEndpointWithMultiTableSupport(
+                ingressSwitchId, ingressPort);
+        boolean cleanUpIngress = flowWithMultiTable.isEmpty();
+        boolean cleanUpIngressLldp = flowWithMultiTable.stream()
+                .noneMatch(flow -> isLldpEnabledOnFlowEndpoint(flow, ingressSwitchId, ingressPort));
         return new CommandGroup(singletonList(
-                flowCommandFactory.createRemoveIngressRulesForFlow(flowPath, cleanUpIngress)), FailureReaction.IGNORE);
+                flowCommandFactory.createRemoveIngressRulesForFlow(flowPath, cleanUpIngress, cleanUpIngressLldp)),
+                FailureReaction.IGNORE);
+    }
+
+    private boolean isLldpEnabledOnFlowEndpoint(Flow flow, SwitchId switchId, int port) {
+        return (flow.getSrcSwitch().getSwitchId().equals(switchId)
+                && flow.getSrcPort() == port
+                && flow.getDetectConnectedDevices().isSrcLldp())
+                || (flow.getDestSwitch().getSwitchId().equals(switchId)
+                && flow.getDestPort() == port
+                && flow.getDetectConnectedDevices().isDstLldp());
     }
 
     private Optional<CommandGroup> createRemoveLldpTransitAndEgressRules(
@@ -1365,8 +1379,7 @@ public class FlowService extends BaseFlowService {
                 .map(flowPath ->
                         new DeallocateFlowResourcesRequest(flowId,
                                 flowPath.getFlowPath().getCookie().getUnmaskedValue(),
-                                Optional.ofNullable(flowPath.getFlowPath().getLldpResources())
-                                        .map(LldpResources::getCookie).map(Cookie::getUnmaskedValue).orElse(null),
+                                null,
                                 flowPath.getFlowPath().getPathId(),
                                 flowPath.getFlowPath().getFlow().getEncapsulationType()))
                 .collect(Collectors.toList());

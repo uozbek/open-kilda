@@ -70,6 +70,15 @@ public enum DeleteRulesAction {
     // Remove Input table LLDP pre drop rule
     REMOVE_LLDP_INPUT_PRE_DROP,
 
+    // Remove Ingress Table LLDP rule
+    REMOVE_LLDP_INGRESS,
+
+    // Remove Post Ingress Table LLDP rule
+    REMOVE_LLDP_POST_INGRESS,
+
+    // Remove Post Ingress Table LLDP vxlan rule
+    REMOVE_LLDP_POST_INGRESS_VXLAN,
+
     // Remove Transit table LLDP rule
     REMOVE_LLDP_TRANSIT,
 

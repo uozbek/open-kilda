@@ -21,15 +21,20 @@ import org.openkilda.messaging.info.event.LldpInfoData;
 import org.openkilda.messaging.info.event.SwitchLldpInfoData;
 import org.openkilda.model.ConnectedDevice;
 import org.openkilda.model.Cookie;
+import org.openkilda.model.Flow;
 import org.openkilda.model.FlowCookie;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchConnectedDevice;
+import org.openkilda.model.SwitchId;
+import org.openkilda.model.TransitVlan;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.TransactionManager;
 import org.openkilda.persistence.repositories.ConnectedDeviceRepository;
 import org.openkilda.persistence.repositories.FlowCookieRepository;
+import org.openkilda.persistence.repositories.FlowRepository;
 import org.openkilda.persistence.repositories.SwitchConnectedDeviceRepository;
 import org.openkilda.persistence.repositories.SwitchRepository;
+import org.openkilda.persistence.repositories.TransitVlanRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,11 +43,14 @@ import java.util.Optional;
 
 @Slf4j
 public class PacketService {
+    public static final int FULL_PORT_VLAN = 0;
     private TransactionManager transactionManager;
     private FlowCookieRepository flowCookieRepository;
     private SwitchRepository switchRepository;
     private ConnectedDeviceRepository connectedDeviceRepository;
     private SwitchConnectedDeviceRepository switchConnectedDeviceRepository;
+    private TransitVlanRepository transitVlanRepository;
+    private FlowRepository flowRepository;
 
     public PacketService(PersistenceManager persistenceManager) {
         transactionManager = persistenceManager.getTransactionManager();
@@ -51,6 +59,8 @@ public class PacketService {
         connectedDeviceRepository = persistenceManager.getRepositoryFactory().createConnectedDeviceRepository();
         switchConnectedDeviceRepository = persistenceManager.getRepositoryFactory()
                 .createSwitchConnectedDeviceRepository();
+        transitVlanRepository = persistenceManager.getRepositoryFactory().createTransitVlanRepository();
+        flowRepository = persistenceManager.getRepositoryFactory().createFlowRepository();
     }
 
     /**
@@ -101,8 +111,30 @@ public class PacketService {
     public void handleSwitchLldpData(SwitchLldpInfoData data) {
         transactionManager.doInTransaction(() -> {
 
+            int vlan = data.getVlan();
+            String flowId = null;
+
+            if (data.getCookie() == Cookie.LLDP_POST_INGRESS_COOKIE) {
+                Flow flow = findFlowByTransitVlan(vlan);
+
+                if (flow != null) {
+                    flowId = flow.getFlowId();
+                    if (data.getSwitchId().equals(flow.getSrcSwitch().getSwitchId())) {
+                        vlan = flow.getSrcVlan();
+                    } else if (data.getSwitchId().equals(flow.getDestSwitch().getSwitchId())) {
+                        vlan = flow.getDestVlan();
+                    } else {
+                        log.warn("Got LLDP packet from Flow {} on non-src/non-dst switch {}. Transit vlan: {}",
+                                flowId, data.getSwitchId(), vlan);
+                        return;
+                    }
+                }
+            } else if (data.getCookie() == Cookie.LLDP_POST_INGRESS_VXLAN_COOKIE) {
+                flowId = getFlowIdForLldpVxlan(data.getSwitchId(), data.getPortNumber(), data.getVlan());
+            }
+
             Instant now = Instant.now();
-            SwitchConnectedDevice device = getOrBuildSwitchDevice(data, now);
+            SwitchConnectedDevice device = getOrBuildSwitchDevice(data, vlan, now);
 
             if (device == null) {
                 return;
@@ -115,15 +147,49 @@ public class PacketService {
             device.setSystemCapabilities(data.getSystemCapabilities());
             device.setManagementAddress(data.getManagementAddress());
             device.setTimeLastSeen(now);
+            device.setFlowId(flowId);
 
             switchConnectedDeviceRepository.createOrUpdate(device);
         });
     }
 
-    private SwitchConnectedDevice getOrBuildSwitchDevice(SwitchLldpInfoData data, Instant now) {
+    private Flow findFlowByTransitVlan(int vlan) {
+        Optional<TransitVlan> transitVlan = transitVlanRepository.findByVlan(vlan);
+
+        if (!transitVlan.isPresent()) {
+            log.info("Couldn't find flow encapsulation resources by Transit vlan '{}", vlan);
+            return null;
+        }
+        Optional<Flow> flow = flowRepository.findById(transitVlan.get().getFlowId());
+        if (!flow.isPresent()) {
+            log.warn("Couldn't find flow by flow ID '{}", transitVlan.get().getFlowId());
+            return null;
+        }
+        return flow.get();
+    }
+
+    private String getFlowIdForLldpVxlan(SwitchId switchId, int portNumber, int vlan) {
+        Optional<Flow> flow = flowRepository.findByEndpointAndVlan(switchId, portNumber, vlan);
+
+        if (flow.isPresent()) {
+            return flow.get().getFlowId();
+        } else {
+            // may be it's a full port flow
+            Optional<Flow> fullPortFlow = flowRepository.findByEndpointAndVlan(switchId, portNumber, FULL_PORT_VLAN);
+            if (fullPortFlow.isPresent()) {
+                return fullPortFlow.get().getFlowId();
+            } else {
+                log.warn("Couldn't find Flow for VXLAN encapsulated LLDP packet on Switch {}, port {}, vlan {}",
+                        switchId, portNumber, vlan);
+                return null;
+            }
+        }
+    }
+
+    private SwitchConnectedDevice getOrBuildSwitchDevice(SwitchLldpInfoData data, int vlan, Instant now) {
         Optional<SwitchConnectedDevice> device = switchConnectedDeviceRepository
                 .findByUniqueFieldCombination(
-                        data.getSwitchId(), data.getPortNumber(), data.getVlan(), data.getMacAddress(), LLDP,
+                        data.getSwitchId(), data.getPortNumber(), vlan, data.getMacAddress(), LLDP,
                         data.getChassisId(), data.getPortId());
 
         if (device.isPresent()) {
@@ -142,7 +208,7 @@ public class PacketService {
         return SwitchConnectedDevice.builder()
                 .switchObj(sw.get())
                 .portNumber(data.getPortNumber())
-                .vlan(data.getVlan())
+                .vlan(vlan)
                 .macAddress(data.getMacAddress())
                 .type(LLDP)
                 .chassisId(data.getChassisId())

@@ -214,6 +214,39 @@ public interface ISwitchManager extends IFloodlightService {
     long installIntermediateIngressRule(final DatapathId dpid, int port) throws SwitchOperationException;
 
     /**
+     * Install LLDP rule which will mark all LLDP packets received from Customer ports by metadata flag.
+     *
+     * @param dpid datapathId of the switch
+     * @param port customer port
+     * @throws SwitchOperationException Switch not found
+     */
+    long installLldpInputCustomerFlow(DatapathId dpid, int port) throws SwitchOperationException;
+
+    /**
+     * Install LLDP rule which will send LLDP packets received from Customer ports to controller.
+     *
+     * @param dpid datapathId of the switch
+     * @throws SwitchOperationException Switch not found
+     */
+    long installLldpIngressFlow(DatapathId dpid) throws SwitchOperationException;
+
+    /**
+     * Install LLDP rule which will send LLDP packets received from Customer ports to controller.
+     *
+     * @param dpid datapathId of the switch
+     * @throws SwitchOperationException Switch not found
+     */
+    long installLldpPostIngressFlow(DatapathId dpid) throws SwitchOperationException;
+
+    /**
+     * Install LLDP rule which will send LLDP packets incapsulated received from Customer ports to controller.
+     *
+     * @param dpid datapathId of the switch
+     * @throws SwitchOperationException Switch not found
+     */
+    long installLldpPostIngressVxlanFlow(DatapathId dpid) throws SwitchOperationException;
+
+    /**
      * Remove intermediate rule for isl on switch in table 0 to route ingress traffic.
      *
      * @param dpid datapathId of the switch
@@ -223,6 +256,15 @@ public interface ISwitchManager extends IFloodlightService {
     long removeIntermediateIngressRule(final DatapathId dpid, int port) throws SwitchOperationException;
 
     /**
+     * Remove LLDP rule which marks LLDP packet received from customer port by metadata.
+     *
+     * @param dpid datapathId of the switch
+     * @param port customer port
+     * @throws SwitchOperationException Switch not found
+     */
+    long removeLldpInputCustomerFlow(DatapathId dpid, int port) throws SwitchOperationException;
+
+    /**
      * Build intermidiate flowmod for ingress rule.
      *
      * @param dpid switch id
@@ -230,6 +272,15 @@ public interface ISwitchManager extends IFloodlightService {
      * @return modification command
      */
     OFFlowMod buildIntermediateIngressRule(DatapathId dpid, int port) throws SwitchNotFoundException;
+
+    /**
+     * Build LLDP rule which will mark LLDP packet received from customer port by metadata.
+     *
+     * @param dpid switch id
+     * @param port customer port
+     * @return modification command
+     */
+    OFFlowMod buildLldpInputCustomerFlow(DatapathId dpid, int port) throws SwitchNotFoundException;
 
     /**
      * Install default pass through rule for pre ingress table.
@@ -291,7 +342,6 @@ public interface ISwitchManager extends IFloodlightService {
      * @param inputVlanId input vlan to match on, 0 means not to match on vlan
      * @param transitTunnelId vlan or vni to add before outputing on outputPort
      * @param encapsulationType flow encapsulation type
-     * @param enableLldp        if True LLDP packets will be send to LLDP rule
      * @param multiTable multitable pipeline flag
      * @return transaction id
      * @throws SwitchOperationException Switch not found
@@ -300,21 +350,6 @@ public interface ISwitchManager extends IFloodlightService {
                             int outputPort, int inputVlanId,
                             int transitTunnelId, OutputVlanType outputVlanType, long meterId,
                             FlowEncapsulationType encapsulationType, boolean enableLldp, boolean multiTable)
-            throws SwitchOperationException;
-
-    /**
-     * Installs a flow to catch LLDP packets.
-     *
-     * @param dpid              datapathId of the switch
-     * @param inputPort         port to expect the packet on
-     * @param tunnelId          vlan or vni to match packet
-     * @param encapsulationType flow encapsulation type
-     * @param multiTable        switch operations mode
-     * @return transaction id
-     * @throws SwitchOperationException Switch not found
-     */
-    long installLldpIngressFlow(DatapathId dpid, Long cookie, int inputPort, int tunnelId, long meterId,
-                                FlowEncapsulationType encapsulationType, boolean multiTable)
             throws SwitchOperationException;
 
     /**

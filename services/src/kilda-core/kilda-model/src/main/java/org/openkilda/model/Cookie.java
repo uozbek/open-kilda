@@ -73,6 +73,9 @@ public class Cookie implements Comparable<Cookie>, Serializable {
     public static final long MULTITABLE_TRANSIT_DROP_COOKIE             = 0x0CL | DEFAULT_RULE_FLAG;
     public static final long LLDP_INPUT_PRE_DROP_COOKIE                 = 0x0DL | DEFAULT_RULE_FLAG;
     public static final long LLDP_TRANSIT_COOKIE                        = 0x0EL | DEFAULT_RULE_FLAG;
+    public static final long LLDP_INGRESS_COOKIE                        = 0x0FL | DEFAULT_RULE_FLAG;
+    public static final long LLDP_POST_INGRESS_COOKIE                   = 0x10L | DEFAULT_RULE_FLAG;
+    public static final long LLDP_POST_INGRESS_VXLAN_COOKIE             = 0x11L | DEFAULT_RULE_FLAG;
 
     // 9 bits cookie type "field"
     public static final long TYPE_MASK                               = 0x1FF0_0000_0000_0000L;
@@ -82,6 +85,7 @@ public class Cookie implements Comparable<Cookie>, Serializable {
     public static final long MULTITABLE_ISL_VXLAN_EGRESS_RULES_TYPE  = 0x0030_0000_0000_0000L;
     public static final long MULTITABLE_ISL_VXLAN_TRANSIT_RULES_TYPE = 0x0040_0000_0000_0000L;
     public static final long MULTITABLE_INGRESS_RULES_TYPE           = 0x0050_0000_0000_0000L;
+    public static final long LLDP_INPUT_CUSTOMER_TYPE                = 0x0060_0000_0000_0000L;
 
     private final long value;
 
@@ -121,6 +125,10 @@ public class Cookie implements Comparable<Cookie>, Serializable {
 
     public static long encodeIngressRulePassThrough(int port) {
         return port | Cookie.MULTITABLE_INGRESS_RULES_TYPE | Cookie.DEFAULT_RULE_FLAG;
+    }
+
+    public static long encodeLldpInputCustomer(int port) {
+        return port | Cookie.LLDP_INPUT_CUSTOMER_TYPE | Cookie.DEFAULT_RULE_FLAG;
     }
 
     /**
@@ -196,6 +204,10 @@ public class Cookie implements Comparable<Cookie>, Serializable {
      */
     public static boolean isFlowLldp(long value) {
         return (TYPE_MASK & value) == LLDP_FLOW_COOKIE_TYPE;
+    }
+
+    public static boolean isLldpInputCustomer(long value) {
+        return (TYPE_MASK & value) == LLDP_INPUT_CUSTOMER_TYPE;
     }
 
     public static boolean isIslVlanEgress(long value) {
