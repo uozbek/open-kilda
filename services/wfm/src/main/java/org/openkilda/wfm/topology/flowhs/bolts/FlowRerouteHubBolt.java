@@ -33,7 +33,6 @@ import org.openkilda.wfm.error.PipelineException;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
 import org.openkilda.wfm.share.history.model.FlowHistoryHolder;
-import org.openkilda.wfm.share.hubandspoke.HubBolt;
 import org.openkilda.wfm.share.utils.KeyProvider;
 import org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream;
 import org.openkilda.wfm.topology.flowhs.service.FlowRerouteHubCarrier;
@@ -46,7 +45,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-public class FlowRerouteHubBolt extends HubBolt implements FlowRerouteHubCarrier {
+public class FlowRerouteHubBolt extends FlowCrudHubBase implements FlowRerouteHubCarrier {
 
     private final FlowRerouteConfig config;
     private final PersistenceManager persistenceManager;

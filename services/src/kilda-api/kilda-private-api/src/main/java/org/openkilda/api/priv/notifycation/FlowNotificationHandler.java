@@ -13,23 +13,14 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.flowhs.service;
+package org.openkilda.api.priv.notifycation;
 
-import org.openkilda.api.priv.notifycation.FlowNotification;
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
-import org.openkilda.wfm.share.history.model.FlowHistoryHolder;
+public interface FlowNotificationHandler {
+    void routeFlowNotification(FlowNotification notification);
 
-public interface FlowGenericCarrier {
-    /**
-     * Sends commands to speaker.
-     * @param command command to be executed.
-     */
-    void sendSpeakerRequest(FlowSegmentRequest command);
+    void handleFlowNotification(FlowCreateNotification notification);
 
-    /**
-     * Sends main events to history bolt.
-     */
-    void sendHistoryUpdate(FlowHistoryHolder historyHolder);
+    void handleFlowNotification(FlowUpdateNotification notification);
 
-    void sendNotification(FlowNotification notification);
+    void handleFlowNotification(FlowDeleteNotification notification);
 }

@@ -1,4 +1,5 @@
-/* Copyright 2019 Telstra Open Source
+/*
+ * Copyright 2019 Telstra Open Source
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -13,23 +14,19 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.flowhs.service;
+package org.openkilda.wfm.topology.utils;
 
 import org.openkilda.api.priv.notifycation.FlowNotification;
-import org.openkilda.floodlight.api.request.FlowSegmentRequest;
-import org.openkilda.wfm.share.history.model.FlowHistoryHolder;
+import org.openkilda.wfm.CommandContext;
 
-public interface FlowGenericCarrier {
-    /**
-     * Sends commands to speaker.
-     * @param command command to be executed.
-     */
-    void sendSpeakerRequest(FlowSegmentRequest command);
+public class FlowNotificationKafkaTranslator extends GenericKafkaRecordTranslator<FlowNotification, FlowNotification> {
+    @Override
+    protected FlowNotification decodePayload(FlowNotification payload) {
+        return payload;
+    }
 
-    /**
-     * Sends main events to history bolt.
-     */
-    void sendHistoryUpdate(FlowHistoryHolder historyHolder);
-
-    void sendNotification(FlowNotification notification);
+    @Override
+    protected CommandContext makeContext(FlowNotification payload) {
+        return new CommandContext(payload.getContext().getCorrelationId());
+    }
 }

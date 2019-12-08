@@ -15,12 +15,16 @@
 
 package org.openkilda.wfm.topology.stats.bolts;
 
-import static org.openkilda.wfm.topology.stats.StatsComponentType.STATS_CACHE_FILTER_BOLT;
 import static org.openkilda.wfm.topology.stats.StatsComponentType.STATS_OFS_BOLT;
 import static org.openkilda.wfm.topology.stats.StatsStreamType.FLOW_STATS;
 import static org.openkilda.wfm.topology.stats.StatsStreamType.METER_STATS;
 import static org.openkilda.wfm.topology.stats.StatsTopology.STATS_FIELD;
 
+import org.openkilda.api.priv.notifycation.FlowCreateNotification;
+import org.openkilda.api.priv.notifycation.FlowDeleteNotification;
+import org.openkilda.api.priv.notifycation.FlowNotification;
+import org.openkilda.api.priv.notifycation.FlowNotificationHandler;
+import org.openkilda.api.priv.notifycation.FlowUpdateNotification;
 import org.openkilda.messaging.info.InfoData;
 import org.openkilda.messaging.info.stats.FlowStatsData;
 import org.openkilda.messaging.info.stats.FlowStatsEntry;
@@ -28,6 +32,7 @@ import org.openkilda.messaging.info.stats.MeterStatsData;
 import org.openkilda.messaging.info.stats.MeterStatsEntry;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
+import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FlowRepository;
@@ -38,8 +43,7 @@ import org.openkilda.wfm.topology.stats.CacheFlowEntry;
 import org.openkilda.wfm.topology.stats.MeasurePoint;
 import org.openkilda.wfm.topology.stats.MeterCacheKey;
 import org.openkilda.wfm.topology.stats.StatsComponentType;
-import org.openkilda.wfm.topology.stats.bolts.CacheFilterBolt.Commands;
-import org.openkilda.wfm.topology.stats.bolts.CacheFilterBolt.FieldsNames;
+import org.openkilda.wfm.topology.utils.KafkaRecordTranslator;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -54,7 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class CacheBolt extends AbstractBolt {
+public class CacheBolt extends AbstractBolt implements FlowNotificationHandler {
 
     public static final String COOKIE_CACHE_FIELD = "cookie_cache";
     public static final String METER_CACHE_FIELD = "meter_cache";
@@ -122,26 +126,22 @@ public class CacheBolt extends AbstractBolt {
         );
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void init() {
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
         initFlowCache(repositoryFactory.createFlowRepository());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void handleInput(Tuple tuple) throws PipelineException {
-        StatsComponentType componentId = StatsComponentType.valueOf(tuple.getSourceComponent());
+        String sourceComponent = tuple.getSourceComponent();
 
-        if (componentId == STATS_CACHE_FILTER_BOLT) {
+        if (sourceComponent.equals(StatsComponentType.INPUT_FLOW_NOTIFICATION.name())) {
             handleUpdateCache(tuple);
-        } else if (componentId == STATS_OFS_BOLT) {
+        } else if (sourceComponent.equals(STATS_OFS_BOLT.name())) {
             handleGetDataFromCache(tuple);
+        } else {
+            unhandledInput(tuple);
         }
     }
 
@@ -168,30 +168,10 @@ public class CacheBolt extends AbstractBolt {
         getOutput().emit(streamId, tuple, values);
     }
 
-    private void handleUpdateCache(Tuple tuple) {
-        Long cookie = tuple.getLongByField(FieldsNames.COOKIE.name());
-        Long meterId = tuple.getLongByField(FieldsNames.METER.name());
-        String flow = tuple.getStringByField(FieldsNames.FLOW.name());
-        SwitchId switchId = new SwitchId(tuple.getValueByField(FieldsNames.SWITCH.name()).toString());
-
-        Commands command = (Commands) tuple.getValueByField(FieldsNames.COMMAND.name());
-        MeasurePoint measurePoint = (MeasurePoint) tuple.getValueByField(FieldsNames.MEASURE_POINT.name());
-
-        switch (command) {
-            case UPDATE:
-                updateCookieFlowCache(cookie, flow, switchId, measurePoint);
-                updateSwitchMeterFlowCache(cookie, meterId, flow, switchId);
-                break;
-            case REMOVE:
-                cookieToFlow.remove(cookie);
-                switchAndMeterToFlow.remove(new MeterCacheKey(switchId, meterId));
-                break;
-            default:
-                logger.error("invalid command");
-                break;
-        }
-
-        logger.debug("updated cookieToFlow: {}", cookieToFlow);
+    private void handleUpdateCache(Tuple input) throws PipelineException {
+        FlowNotification notification = pullValue(
+                input, KafkaRecordTranslator.FIELD_ID_PAYLOAD, FlowNotification.class);
+        routeFlowNotification(notification);
     }
 
     @VisibleForTesting
@@ -221,13 +201,61 @@ public class CacheBolt extends AbstractBolt {
         return cache;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declareStream(FLOW_STATS.name(), statsWithCacheFields);
-        outputFieldsDeclarer.declareStream(METER_STATS.name(), statsWithCacheFields);
+    public void routeFlowNotification(FlowNotification notification) {
+        notification.route(this);
+    }
+
+    @Override
+    public void handleFlowNotification(FlowCreateNotification notification) {
+        updateCacheAdd(notification.getFlow());
+    }
+
+    @Override
+    public void handleFlowNotification(FlowUpdateNotification notification) {
+        updateCacheDelete(notification.getBefore());
+        updateCacheAdd(notification.getAfter());
+    }
+
+    @Override
+    public void handleFlowNotification(FlowDeleteNotification notification) {
+        updateCacheDelete(notification.getFlow());
+    }
+
+    private void updateCacheAdd(Flow flow) {
+        for (FlowPath path : flow.getPaths()) {
+            updateCacheAddPath(flow, path);
+        }
+    }
+
+    private void updateCacheDelete(Flow flow) {
+        for (FlowPath path : flow.getPaths()) {
+            updateCacheDeletePath(flow, path);
+        }
+    }
+
+    private void updateCacheAddPath(Flow flow, FlowPath path) {
+        SwitchId ingressSwitchId = path.getSrcSwitch().getSwitchId();
+        updateCookieFlowCache(
+                path.getCookie().getValue(), flow.getFlowId(), ingressSwitchId, MeasurePoint.INGRESS);
+        updateCookieFlowCache(
+                path.getCookie().getValue(), flow.getFlowId(), path.getDestSwitch().getSwitchId(), MeasurePoint.EGRESS);
+
+        MeterId meterId = path.getMeterId();
+        if (meterId != null) {
+            updateSwitchMeterFlowCache(
+                    path.getCookie().getValue(), meterId.getValue(), flow.getFlowId(), ingressSwitchId);
+        }
+    }
+
+    private void updateCacheDeletePath(Flow flow, FlowPath path) {
+        long rawCookie = path.getCookie().getValue();
+        cookieToFlow.remove(rawCookie);
+
+        MeterId meterId = path.getMeterId();
+        if (meterId != null) {
+            switchAndMeterToFlow.remove(new MeterCacheKey(path.getSrcSwitch().getSwitchId(), meterId.getValue()));
+        }
     }
 
     private void updateCookieFlowCache(
@@ -247,5 +275,11 @@ public class CacheBolt extends AbstractBolt {
         } else {
             switchAndMeterToFlow.put(key, current.replaceCookie(cookie));
         }
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
+        outputFieldsDeclarer.declareStream(FLOW_STATS.name(), statsWithCacheFields);
+        outputFieldsDeclarer.declareStream(METER_STATS.name(), statsWithCacheFields);
     }
 }

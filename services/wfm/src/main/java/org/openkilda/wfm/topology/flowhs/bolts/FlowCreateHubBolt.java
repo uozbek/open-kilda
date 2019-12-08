@@ -38,15 +38,17 @@ import org.openkilda.wfm.share.utils.KeyProvider;
 import org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream;
 import org.openkilda.wfm.topology.flowhs.service.FlowCreateHubCarrier;
 import org.openkilda.wfm.topology.flowhs.service.FlowCreateService;
+import org.openkilda.wfm.topology.utils.FlowNotificationKafkaTranslator;
 import org.openkilda.wfm.topology.utils.MessageKafkaTranslator;
 
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-public class FlowCreateHubBolt extends HubBolt implements FlowCreateHubCarrier {
+public class FlowCreateHubBolt extends FlowCrudHubBase implements FlowCreateHubCarrier {
 
     private final FlowCreateConfig config;
     private final PersistenceManager persistenceManager;

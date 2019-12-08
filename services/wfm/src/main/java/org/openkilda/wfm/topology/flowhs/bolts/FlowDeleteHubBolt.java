@@ -42,7 +42,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-public class FlowDeleteHubBolt extends HubBolt implements FlowDeleteHubCarrier {
+public class FlowDeleteHubBolt extends FlowCrudHubBase implements FlowDeleteHubCarrier {
 
     private final FlowDeleteConfig config;
     private final PersistenceManager persistenceManager;

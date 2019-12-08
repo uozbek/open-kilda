@@ -52,6 +52,10 @@ public interface KafkaTopicsConfig {
     @Default("kilda.flow.status")
     String getFlowStatusTopic();
 
+    @Key("flow.notification")
+    @Default("kilda.flow.notification.priv")
+    String getFlowNotificationTopic();
+
     @Key("northbound")
     @FallbackKey("kafka.northbound.topic")
     @Default("kilda.northbound.storm")

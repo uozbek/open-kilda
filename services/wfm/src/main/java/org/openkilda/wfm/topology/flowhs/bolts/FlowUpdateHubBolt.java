@@ -46,7 +46,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-public class FlowUpdateHubBolt extends HubBolt implements FlowUpdateHubCarrier {
+public class FlowUpdateHubBolt extends FlowCrudHubBase implements FlowUpdateHubCarrier {
 
     private final FlowUpdateConfig config;
     private final PersistenceManager persistenceManager;

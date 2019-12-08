@@ -25,12 +25,14 @@ import static org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream.SPEAKER_WO
 import static org.openkilda.wfm.topology.flowhs.FlowHsTopology.Stream.SPEAKER_WORKER_TO_HUB_UPDATE;
 import static org.openkilda.wfm.topology.flowhs.bolts.RouterBolt.FLOW_ID_FIELD;
 
+import org.openkilda.api.priv.notifycation.FlowNotification;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.Message;
 import org.openkilda.pce.PathComputerConfig;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.spi.PersistenceProvider;
 import org.openkilda.wfm.LaunchEnvironment;
+import org.openkilda.wfm.kafka.FlowNotificationSerializer;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesConfig;
 import org.openkilda.wfm.share.history.bolt.HistoryBolt;
 import org.openkilda.wfm.share.hubandspoke.CoordinatorBolt;
@@ -47,6 +49,8 @@ import org.openkilda.wfm.topology.flowhs.bolts.FlowUpdateHubBolt;
 import org.openkilda.wfm.topology.flowhs.bolts.FlowUpdateHubBolt.FlowUpdateConfig;
 import org.openkilda.wfm.topology.flowhs.bolts.RouterBolt;
 import org.openkilda.wfm.topology.flowhs.bolts.SpeakerWorkerBolt;
+import org.openkilda.wfm.topology.utils.FlowNotificationKafkaTranslator;
+import org.openkilda.wfm.topology.utils.MessageKafkaTranslator;
 
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.bolt.KafkaBolt;
@@ -92,6 +96,7 @@ public class FlowHsTopology extends AbstractTopology<FlowHsTopologyConfig> {
         coordinator(tb);
 
         northboundOutput(tb);
+        outputNotification(tb, parallelism);
 
         history(tb, persistenceManager);
 
@@ -324,6 +329,20 @@ public class FlowHsTopology extends AbstractTopology<FlowHsTopologyConfig> {
                 .shuffleGrouping(ComponentId.FLOW_DELETE_HUB.name(), Stream.HUB_TO_HISTORY_BOLT.name());
     }
 
+    private void outputNotification(TopologyBuilder topology, int scaleFactor) {
+        String topic = getConfig().getKafkaTopics().getFlowNotificationTopic();
+        KafkaBolt<String, FlowNotification> kafkaBolt = buildKafkaBolt(
+                topic, FlowNotification.class, FlowNotificationSerializer.class);
+
+        Fields grouping = new Fields(FlowNotificationKafkaTranslator.FIELD_ID_KEY);
+        topology.setBolt(ComponentId.NOTIFICATION.name(), kafkaBolt, scaleFactor)
+                .fieldsGrouping(ComponentId.FLOW_CREATE_HUB.name(), FlowCreateHubBolt.STREAM_NOTIFICATION_ID, grouping)
+                .fieldsGrouping(ComponentId.FLOW_UPDATE_HUB.name(), FlowUpdateHubBolt.STREAM_NOTIFICATION_ID, grouping)
+                .fieldsGrouping(
+                        ComponentId.FLOW_REROUTE_HUB.name(), FlowRerouteHubBolt.STREAM_NOTIFICATION_ID, grouping)
+                .fieldsGrouping(ComponentId.FLOW_DELETE_HUB.name(), FlowDeleteHubBolt.STREAM_NOTIFICATION_ID, grouping);
+    }
+
     public enum ComponentId {
         FLOW_SPOUT("flow.spout"),
         SPEAKER_WORKER_SPOUT("fl.worker.spout"),
@@ -342,7 +361,8 @@ public class FlowHsTopology extends AbstractTopology<FlowHsTopologyConfig> {
         NB_RESPONSE_SENDER("nb.kafka.bolt"),
         SPEAKER_REQUEST_SENDER("speaker.kafka.bolt"),
 
-        HISTORY_BOLT("flow.history.bolt");
+        HISTORY_BOLT("flow.history.bolt"),
+        NOTIFICATION("notification.output");
 
         private final String value;
 
