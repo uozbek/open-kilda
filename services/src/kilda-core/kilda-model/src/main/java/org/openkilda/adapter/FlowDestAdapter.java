@@ -18,10 +18,16 @@ package org.openkilda.adapter;
 import org.openkilda.model.DetectConnectedDevices;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEndpoint;
+import org.openkilda.model.Switch;
 
 public class FlowDestAdapter extends FlowSideAdapter {
     protected FlowDestAdapter(Flow flow) {
         super(flow);
+    }
+
+    @Override
+    public Switch getSwitch() {
+        return flow.getDestSwitch();
     }
 
     @Override

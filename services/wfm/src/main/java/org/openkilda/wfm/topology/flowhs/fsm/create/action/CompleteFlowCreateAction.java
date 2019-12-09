@@ -17,7 +17,10 @@ package org.openkilda.wfm.topology.flowhs.fsm.create.action;
 
 import static java.lang.String.format;
 
+import org.openkilda.api.priv.notifycation.FlowCreateNotification;
+import org.openkilda.messaging.MessageContext;
 import org.openkilda.messaging.error.ErrorType;
+import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPathStatus;
 import org.openkilda.model.FlowStatus;
 import org.openkilda.persistence.PersistenceManager;
@@ -28,21 +31,29 @@ import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm.Event;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm.State;
+import org.openkilda.wfm.topology.flowhs.utils.FlowNotificationProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CompleteFlowCreateAction extends FlowProcessingAction<FlowCreateFsm, State, Event, FlowCreateContext> {
+    private final FlowNotificationProvider notificationProvider;
     private final FlowOperationsDashboardLogger dashboardLogger;
 
     public CompleteFlowCreateAction(PersistenceManager persistenceManager,
                                     FlowOperationsDashboardLogger dashboardLogger) {
         super(persistenceManager);
+        this.notificationProvider = new FlowNotificationProvider(persistenceManager);
         this.dashboardLogger = dashboardLogger;
     }
 
     @Override
     protected void perform(State from, State to, Event event, FlowCreateContext context, FlowCreateFsm stateMachine) {
+        activate(stateMachine);
+        sendCreateNotification(stateMachine);
+    }
+
+    private void activate(FlowCreateFsm stateMachine) {
         persistenceManager.getTransactionManager().doInTransaction(() -> {
             String flowId = stateMachine.getFlowId();
             if (!flowRepository.exists(flowId)) {
@@ -61,5 +72,16 @@ public class CompleteFlowCreateAction extends FlowProcessingAction<FlowCreateFsm
             dashboardLogger.onFlowStatusUpdate(flowId, FlowStatus.UP);
             stateMachine.saveActionToHistory(format("The flow status was set to %s", FlowStatus.UP));
         });
+    }
+
+    private void sendCreateNotification(FlowCreateFsm stateMachine) {
+        String flowId = stateMachine.getFlowId();
+        Flow flow = notificationProvider.loadFlow(flowId)
+                .orElseThrow(() -> new FlowProcessingException(ErrorType.NOT_FOUND, String.format(
+                        "Unable to locate just created flow %s in persistent storage", flowId)));
+        MessageContext messageContext = new MessageContext(stateMachine.getCommandContext().getCorrelationId());
+        FlowCreateNotification notification = new FlowCreateNotification(messageContext, flow);
+
+        stateMachine.getCarrier().sendNotification(notification);
     }
 }
