@@ -308,5 +308,18 @@ To communicate with application OpenKilda uses public kafka topics:
 ![update-exclusions](./update_exclusions.png "Update app exclusions")
 
 
+# Switch Rules update
+
+Additional table for handling applications is added
+
+![apps_table](./apps_table.png "Applications Table")
+
+Extended Rules for Ingress Table
+
+![ingress_for_telescope](./ingress_for_telescope.png "Ingress Rule For Telescope")
+
+Extended Rules For Egress Table
+
+![egress_for_telescope](./egress_for_telescope.png "Egress Rule For Telescope")
 
 
