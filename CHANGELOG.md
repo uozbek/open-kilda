@@ -1,5 +1,44 @@
 # Changelog
 
+## v1.46.0 (11/12/2019)
+
+### Features:
+- [#3024](https://github.com/telstra/open-kilda/pull/3024) Feature: LLDP on switch (Issue: [#2917](https://github.com/telstra/open-kilda/issues/2917)) [**floodlight**][**northbound**][**storm-topologies**]
+  -  [#2916](https://github.com/telstra/open-kilda/pull/2916) Switch LLDP 1: Isl rules (Issue: [#2917](https://github.com/telstra/open-kilda/issues/2917)) [**floodlight**][**northbound**]
+  -  [#2918](https://github.com/telstra/open-kilda/pull/2918) Switch LLDP 2: switch connected device models (Issues: [#2916](https://github.com/telstra/open-kilda/issues/2916) [#2917](https://github.com/telstra/open-kilda/issues/2917))
+  -  [#2914](https://github.com/telstra/open-kilda/pull/2914) Switch LLDP 3: catching on ISL ports (Issues: [#2917](https://github.com/telstra/open-kilda/issues/2917) [#2918](https://github.com/telstra/open-kilda/issues/2918)) [**floodlight**]
+  -  [#2911](https://github.com/telstra/open-kilda/pull/2911) Switch LLDP 4: Added flow rules (Issues: [#2779](https://github.com/telstra/open-kilda/issues/2779) [#2827](https://github.com/telstra/open-kilda/issues/2827) [#2876](https://github.com/telstra/open-kilda/issues/2876) [#2917](https://github.com/telstra/open-kilda/issues/2917) [#2927](https://github.com/telstra/open-kilda/issues/2927)) [**floodlight**][**storm-topologies**]
+
+### Bug Fixes:
+-  [#3014](https://github.com/telstra/open-kilda/pull/3014) Fix NullPointerException [**storm-topologies**]
+-  [#2952](https://github.com/telstra/open-kilda/pull/2952) Fix validation of encapsulation_type in v2 FlowUpdate API (Issue: [#2937](https://github.com/telstra/open-kilda/issues/2937)) [**northbound**][**storm-topologies**]
+-  [#2937](https://github.com/telstra/open-kilda/pull/2937) Handle invalid encapsulation_type in v2 FlowCreate API (Issues: [#2650](https://github.com/telstra/open-kilda/issues/2650) [#2952](https://github.com/telstra/open-kilda/issues/2952)) [**northbound**][**storm-topologies**]
+
+### Improvements:
+-  [#2886](https://github.com/telstra/open-kilda/pull/2886) refactor tets with getSwithcFlow to cover #2885 (Issue: [#2885](https://github.com/telstra/open-kilda/issues/2885)) [**tests**]
+-  [#3023](https://github.com/telstra/open-kilda/pull/3023) Extend log message for missing rules [**floodlight**]
+-  [#2927](https://github.com/telstra/open-kilda/pull/2927) Add func tests for detecting lldp connected devices per-switch (Issue: [#2914](https://github.com/telstra/open-kilda/issues/2914)) [**tests**]
+-  [#2951](https://github.com/telstra/open-kilda/pull/2951) Limit number of tables for ovs switches [**floodlight**]
+
+### Other changes:
+-  [#3017](https://github.com/telstra/open-kilda/pull/3017) Ignore port history tests due to #3007 [**tests**]
+
+For the complete list of changes, check out [the commit log](https://github.com/telstra/open-kilda/compare/v1.45.0...v1.46.0).
+
+### Affected Components:
+ping, neo4j, nb, flow-hs, fl, connected, nbworker, flow
+
+### Upgrade notes:
+Consider using the following migration scripts to update db:
+
+- [1.19 migration-script](https://github.com/telstra/open-kilda/blob/v1.45.0/services/neo4j/migrations/1.19-switch-lldp-property/1-set-switch-lldp-switchproperty-flag.xml)
+- [1.20 migration-script](https://github.com/telstra/open-kilda/blob/v1.45.0/services/neo4j/migrations/1.20-switch-connected-devices/1-add-switch-connected-devices-index-and-constraint.xml)
+
+In case of issues these rollback scripts should be executed:
+
+- [1.19 rollback.cql](https://github.com/telstra/open-kilda/blob/v1.45.0/services/neo4j/migrations/1.19-switch-lldp-property/rollback.cql)
+- [1.20 rollback.cql](https://github.com/telstra/open-kilda/blob/v1.45.0/services/neo4j/migrations/1.20-switch-connected-devices/rollback.cql)
+
 ## v1.45.0 (10/12/2019)
 
 ### Features:
@@ -23,7 +62,6 @@
 -  [#2997](https://github.com/telstra/open-kilda/pull/2997) ignore fucn tests according to bugs [**tests**]
 -  [#3004](https://github.com/telstra/open-kilda/pull/3004) Revise flow priority reroute test with respect to h&s [**tests**]
 
-
 For the complete list of changes, check out [the commit log](https://github.com/telstra/open-kilda/compare/v1.44.1...v1.45.0).
 
 ### Affected Components:
@@ -37,7 +75,6 @@ Consider using the following migration scripts to update db:
 In case of issues these rollback scripts should be executed:
 
 - [1.18 rollback.cql](https://github.com/telstra/open-kilda/blob/v1.45.0/services/neo4j/migrations/1.18-path-computation-strategy/rollback.cql)
-
 
 ---
 
