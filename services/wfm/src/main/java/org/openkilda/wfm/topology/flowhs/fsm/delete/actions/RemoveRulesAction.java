@@ -102,11 +102,18 @@ public class RemoveRulesAction extends FlowProcessingAction<FlowDeleteFsm, State
             }
         }
 
-        SpeakerRemoveSegmentEmitter.INSTANCE.emitBatch(
-                stateMachine.getCarrier(), commands, stateMachine.getRemoveCommands());
-        stateMachine.getPendingCommands().addAll(stateMachine.getRemoveCommands().keySet());
+        if (commands.isEmpty()) {
+            stateMachine.saveActionToHistory("No need to remove old rules");
+            stateMachine.getPendingCommands().clear();
 
-        stateMachine.saveActionToHistory("Remove commands for rules have been sent");
+            stateMachine.fire(Event.RULES_REMOVED);
+        } else {
+            SpeakerRemoveSegmentEmitter.INSTANCE.emitBatch(
+                    stateMachine.getCarrier(), commands, stateMachine.getRemoveCommands());
+            stateMachine.getPendingCommands().addAll(stateMachine.getRemoveCommands().keySet());
+
+            stateMachine.saveActionToHistory("Remove commands for rules have been sent");
+        }
     }
 
     private FlowResources buildResources(Flow flow, FlowPath path, FlowPath oppositePath) {
