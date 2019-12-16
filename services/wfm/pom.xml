@@ -163,6 +163,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>flux-core</artifactId>
+            <version>${storm.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.squirrelframework</groupId>
             <artifactId>squirrel-foundation</artifactId>
             <version>${squirrelframework.version}</version>

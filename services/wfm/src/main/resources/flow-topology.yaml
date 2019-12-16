@@ -1,0 +1,17 @@
+# topology definition
+name: "flow-topology"
+
+# topology configuration
+config:
+  topology.workers: 1
+  topology.sleep.spout.wait.strategy.time.ms: 100
+
+# spout definitions
+spouts:
+  - id: "FLOW_KAFKA_SPOUT"
+    parallelism: 2
+
+# bolt definitions
+bolts:
+  - id: "FLOW_OPERATION_BOLT"
+    parallelism: 3

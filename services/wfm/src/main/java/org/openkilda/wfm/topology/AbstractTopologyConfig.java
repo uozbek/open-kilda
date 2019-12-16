@@ -33,13 +33,13 @@ public interface AbstractTopologyConfig {
     int getLocalExecutionTime();
 
     @Key("parallelism")
-    int getParallelism();
+    Integer getParallelism();
 
     @Key("parallelism.new")
-    int getNewParallelism();
+    Integer getNewParallelism();
 
     @Key("workers")
-    int getWorkers();
+    Integer getWorkers();
 
     @Key("disruptor.wait.timeout")
     Integer getDisruptorWaitTimeout();

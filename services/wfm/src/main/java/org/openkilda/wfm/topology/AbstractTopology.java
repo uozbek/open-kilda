@@ -42,6 +42,11 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.flux.model.BoltDef;
+import org.apache.storm.flux.model.PropertyDef;
+import org.apache.storm.flux.model.SpoutDef;
+import org.apache.storm.flux.model.TopologyDef;
+import org.apache.storm.flux.parser.FluxParser;
 import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
@@ -49,11 +54,18 @@ import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.spout.SleepSpoutWaitStrategy;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.topology.BoltDeclarer;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -78,14 +90,24 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
     protected final TopologyNamingStrategy topoNamingStrategy;
     protected final MultiPrefixConfigurationProvider configurationProvider;
 
+    protected final TopologyDef topologyDef;
     protected final T topologyConfig;
     private final KafkaConfig kafkaConfig;
 
     protected AbstractTopology(LaunchEnvironment env, Class<T> topologyConfigClass) {
+        this(env, null, topologyConfigClass);
+    }
+
+    protected AbstractTopology(LaunchEnvironment env, String topologyDefinitionName, Class<T> topologyConfigClass) {
         kafkaNamingStrategy = env.getKafkaNamingStrategy();
         topoNamingStrategy = env.getTopologyNamingStrategy();
 
-        String defaultTopologyName = getDefaultTopologyName();
+        String topologyClassName = getClass().getSimpleName().toLowerCase();
+        topologyDef = loadTopologyDef(Optional.ofNullable(topologyDefinitionName).orElse(topologyClassName),
+                env.getProperties());
+
+        String defaultTopologyName = Optional.ofNullable(topologyDef).map(TopologyDef::getName)
+                .orElse(topologyClassName);
         // Use the default topology name with naming strategy applied only if no specific name provided via CLI.
         topologyName = Optional.ofNullable(env.getTopologyName())
                 .orElse(topoNamingStrategy.stormTopologyName(defaultTopologyName));
@@ -101,8 +123,29 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
                 topologyConfig.getWorkers());
     }
 
-    protected String getDefaultTopologyName() {
-        return getClass().getSimpleName().toLowerCase();
+    private TopologyDef loadTopologyDef(String topologyDefinitionName, Properties properties) {
+        if (topologyDefinitionName == null) {
+            return null;
+        }
+
+        try {
+            File tmpPropsFile = File.createTempFile(topologyDefinitionName, "properties");
+            tmpPropsFile.deleteOnExit();
+            try (FileWriter propWriter = new FileWriter(tmpPropsFile)) {
+                properties.store(propWriter, topologyDefinitionName + " properties");
+            }
+
+            // TODO: Check resources for existence and read from a file if needed
+            String yamlResource = format("/%s.yaml", topologyDefinitionName);
+            if (FluxParser.class.getResourceAsStream(yamlResource) == null) {
+                return null;
+            }
+            return FluxParser.parseResource(yamlResource, false, true,
+                    tmpPropsFile.getAbsolutePath(), false);
+        } catch (Exception e) {
+            logger.info("Failed to load topology configuration (definition) file", e);
+            return null;
+        }
     }
 
     protected void setup() throws TException, NameCollisionException {
@@ -171,10 +214,11 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
         return kafka;
     }
 
-    protected Config makeStormConfig() {
+    private Config makeStormConfig() {
         Config stormConfig = new Config();
-
-        stormConfig.setNumWorkers(topologyConfig.getWorkers());
+        if (topologyConfig.getWorkers() != null) {
+            stormConfig.setNumWorkers(topologyConfig.getWorkers());
+        }
         if (topologyConfig.getDisruptorWaitTimeout() != null) {
             stormConfig.put(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS, topologyConfig.getDisruptorWaitTimeout());
         }
@@ -187,6 +231,10 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
         }
         if (topologyConfig.getUseLocalCluster()) {
             stormConfig.setMaxTaskParallelism(topologyConfig.getParallelism());
+        }
+
+        if (topologyDef != null) {
+            stormConfig.putAll(topologyDef.getConfig());
         }
 
         return stormConfig;
@@ -233,6 +281,25 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
         logger.info("Setup kafka spout: id={}, group={}, subscriptions={}",
                 spoutId, config.getConsumerGroupId(), config.getSubscription().getTopicsString());
         return new KafkaSpout<>(config);
+    }
+
+    protected void buildKafkaSpout(TopologyBuilder builder, String topic,
+                                   String spoutId) {
+        KafkaSpoutConfig<String, Message> config = getKafkaSpoutConfigBuilder(topic, spoutId).build();
+        logger.info("Setup kafka spout: id={}, group={}, subscriptions={}",
+                spoutId, config.getConsumerGroupId(), config.getSubscription().getTopicsString());
+        KafkaSpout<String, Message> spout = new KafkaSpout<>(config);
+
+        int parallelism = topologyConfig.getParallelism();
+        if (topologyDef != null) {
+            SpoutDef spoutDef = topologyDef.getSpoutDef(spoutId);
+            if (spoutDef != null) {
+                parallelism = spoutDef.getParallelism();
+                initObjectProperties(spout, spoutDef.getProperties());
+            }
+        }
+
+        builder.setSpout(spoutId, spout, parallelism);
     }
 
     /**
@@ -338,5 +405,50 @@ public abstract class AbstractTopology<T extends AbstractTopologyConfig> impleme
 
     private String makeKafkaGroupName(String spoutId) {
         return kafkaNamingStrategy.kafkaConsumerGroupName(format("%s__%s", topologyName, spoutId));
+    }
+
+    protected BoltDeclarer declareBolt(TopologyBuilder builder, IRichBolt bolt,
+                                       String boltId) {
+        int parallelism = topologyConfig.getParallelism();
+        if (topologyDef != null) {
+            BoltDef boltDef = topologyDef.getBoltDef(boltId);
+            if (boltDef != null) {
+                parallelism = boltDef.getParallelism();
+                initObjectProperties(bolt, boltDef.getProperties());
+            }
+        }
+
+        return builder.setBolt(boltId, bolt, parallelism);
+    }
+
+    private Object initObjectProperties(Object object, List<PropertyDef> properties) {
+        if (properties == null) {
+            return object;
+        }
+        for (PropertyDef onePropertyDef : properties) {
+            if (onePropertyDef.getValue() == null) {
+                throw new IllegalArgumentException("Unsupported property provided: " + onePropertyDef);
+            }
+
+            logger.debug("PropertyName : {}, Value :{}", onePropertyDef.getName(), onePropertyDef.getValue());
+            try {
+                setProperty(object, onePropertyDef.getName(), onePropertyDef.getValue());
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw new IllegalArgumentException("Failed to set property: " + onePropertyDef, e);
+            }
+        }
+        return object;
+    }
+
+    private void setProperty(Object obj, String fieldName, Object fieldValue)
+            throws InvocationTargetException, IllegalAccessException {
+        Method[] methods = obj.getClass().getMethods();
+        String methodName = "set" + Character.toUpperCase(fieldName.toCharArray()[0]) + fieldName.substring(1);
+        logger.debug("Method to lookup : {}", methodName);
+        for (Method oneMethod : methods) {
+            if (oneMethod.getName().equals(methodName)) {
+                oneMethod.invoke(obj, fieldValue);
+            }
+        }
     }
 }
