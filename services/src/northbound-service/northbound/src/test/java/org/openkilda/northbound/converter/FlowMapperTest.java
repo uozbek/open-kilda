@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import org.openkilda.messaging.command.flow.FlowRequest;
 import org.openkilda.messaging.payload.flow.FlowEncapsulationType;
 import org.openkilda.model.SwitchId;
+import org.openkilda.northbound.dto.v2.flows.DetectConnectedDevicesV2;
 import org.openkilda.northbound.dto.v2.flows.FlowEndpointV2;
 import org.openkilda.northbound.dto.v2.flows.FlowRequestV2;
 
@@ -40,6 +41,8 @@ public class FlowMapperTest {
     private static final Integer PRIORITY = 15;
     private static final String DESCRIPTION = "Description";
     private static final String ENCAPSULATION_TYPE = "transit_vlan";
+    private static final DetectConnectedDevicesV2 SRC_DETECT_CONNECTED_DEVICES = new DetectConnectedDevicesV2(true);
+    private static final DetectConnectedDevicesV2 DST_DETECT_CONNECTED_DEVICES = new DetectConnectedDevicesV2(false);
 
     private FlowMapper flowMapper = Mappers.getMapper(FlowMapper.class);
 
@@ -48,8 +51,8 @@ public class FlowMapperTest {
         FlowRequestV2 flowRequestV2 = FlowRequestV2.builder()
                 .flowId(FLOW_ID)
                 .encapsulationType(ENCAPSULATION_TYPE)
-                .source(new FlowEndpointV2(SRC_SWITCH_ID, SRC_PORT, SRC_VLAN))
-                .destination(new FlowEndpointV2(DST_SWITCH_ID, DST_PORT, DST_VLAN))
+                .source(new FlowEndpointV2(SRC_SWITCH_ID, SRC_PORT, SRC_VLAN, SRC_DETECT_CONNECTED_DEVICES))
+                .destination(new FlowEndpointV2(DST_SWITCH_ID, DST_PORT, DST_VLAN, DST_DETECT_CONNECTED_DEVICES))
                 .description(DESCRIPTION)
                 .maximumBandwidth(BANDWIDTH)
                 .maxLatency(LATENCY)
@@ -78,8 +81,8 @@ public class FlowMapperTest {
         FlowRequestV2 flowRequestV2 = FlowRequestV2.builder()
                 .flowId(FLOW_ID)
                 .encapsulationType("abc")
-                .source(new FlowEndpointV2(SRC_SWITCH_ID, SRC_PORT, SRC_VLAN))
-                .destination(new FlowEndpointV2(DST_SWITCH_ID, DST_PORT, DST_VLAN))
+                .source(new FlowEndpointV2(SRC_SWITCH_ID, SRC_PORT, SRC_VLAN, SRC_DETECT_CONNECTED_DEVICES))
+                .destination(new FlowEndpointV2(DST_SWITCH_ID, DST_PORT, DST_VLAN, DST_DETECT_CONNECTED_DEVICES))
                 .build();
         flowMapper.toFlowRequest(flowRequestV2);
     }

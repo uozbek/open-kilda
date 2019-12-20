@@ -89,6 +89,9 @@ public class RemoveRulesAction extends FlowProcessingAction<FlowDeleteFsm, State
                                 .removeCustomerPortRule(isRemoveCustomerPortSharedCatchRule(flow, path))
                                 .removeOppositeCustomerPortRule(
                                         isRemoveCustomerPortSharedCatchRule(flow, oppositePath))
+                                .removeCustomerPortLldpRule(isRemoveCustomerPortSharedLldpCatchRule(flow, path))
+                                .removeOppositeCustomerPortLldpRule(
+                                        isRemoveCustomerPortSharedLldpCatchRule(flow, oppositePath))
                                 .build();
                         commands.addAll(commandBuilder.buildAll(stateMachine.getCommandContext(), flow,
                                 path, oppositePath, speakerRequestBuildContext));
@@ -104,6 +107,7 @@ public class RemoveRulesAction extends FlowProcessingAction<FlowDeleteFsm, State
                     } else {
                         SpeakerRequestBuildContext speakerRequestBuildContext = SpeakerRequestBuildContext.builder()
                                 .removeCustomerPortRule(isRemoveCustomerPortSharedCatchRule(flow, path))
+                                .removeCustomerPortLldpRule(isRemoveCustomerPortSharedLldpCatchRule(flow, path))
                                 .build();
                         commands.addAll(commandBuilder.buildAll(
                                 stateMachine.getCommandContext(), flow, path, null, speakerRequestBuildContext));
@@ -157,6 +161,12 @@ public class RemoveRulesAction extends FlowProcessingAction<FlowDeleteFsm, State
     private boolean isRemoveCustomerPortSharedCatchRule(Flow flow, FlowPath path) {
         boolean isForward = flow.isForward(path);
         return isRemoveCustomerPortSharedCatchRule(flow.getFlowId(), path.getSrcSwitch().getSwitchId(),
+                isForward ? flow.getSrcPort() : flow.getDestPort());
+    }
+
+    private boolean isRemoveCustomerPortSharedLldpCatchRule(Flow flow, FlowPath path) {
+        boolean isForward = flow.isForward(path);
+        return isRemoveCustomerPortSharedLldpCatchRule(flow.getFlowId(), path.getSrcSwitch().getSwitchId(),
                 isForward ? flow.getSrcPort() : flow.getDestPort());
     }
 }

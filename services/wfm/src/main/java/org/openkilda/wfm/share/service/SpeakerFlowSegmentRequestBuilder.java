@@ -103,6 +103,8 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
             speakerRequestBuildContext = SpeakerRequestBuildContext.builder()
                     .removeCustomerPortRule(speakerRequestBuildContext.isRemoveOppositeCustomerPortRule())
                     .removeOppositeCustomerPortRule(speakerRequestBuildContext.isRemoveCustomerPortRule())
+                    .removeCustomerPortLldpRule(speakerRequestBuildContext.isRemoveOppositeCustomerPortLldpRule())
+                    .removeOppositeCustomerPortLldpRule(speakerRequestBuildContext.isRemoveCustomerPortLldpRule())
                     .build();
         }
         if (path == null) {
@@ -117,21 +119,24 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         }
 
         List<FlowSegmentRequestFactory> requests = new ArrayList<>(makePathRequests(path, context, encapsulation,
-                doIngress, doTransit, doEgress, speakerRequestBuildContext.isRemoveCustomerPortRule()));
+                doIngress, doTransit, doEgress, speakerRequestBuildContext.isRemoveCustomerPortRule(),
+                speakerRequestBuildContext.isRemoveCustomerPortLldpRule()));
         if (oppositePath != null) {
             if (!flow.isOneSwitchFlow()) {
                 encapsulation = getEncapsulation(
                         flow.getEncapsulationType(), oppositePath.getPathId(), path.getPathId());
             }
             requests.addAll(makePathRequests(oppositePath, context, encapsulation, doIngress, doTransit, doEgress,
-                    speakerRequestBuildContext.isRemoveOppositeCustomerPortRule()));
+                    speakerRequestBuildContext.isRemoveOppositeCustomerPortRule(),
+                    speakerRequestBuildContext.isRemoveOppositeCustomerPortLldpRule()));
         }
         return requests;
     }
 
     private List<FlowSegmentRequestFactory> makePathRequests(
             @NonNull FlowPath path, CommandContext context, FlowTransitEncapsulation encapsulation,
-            boolean doIngress, boolean doTransit, boolean doEgress, boolean removeCustomerPortSharedCatchRule) {
+            boolean doIngress, boolean doTransit, boolean doEgress, boolean removeCustomerPortSharedCatchRule,
+            boolean removeCustomerPortSharedLldpCatchRule) {
         final Flow flow = path.getFlow();
         final FlowSideAdapter ingressSide = FlowSideAdapter.makeIngressAdapter(flow, path);
         final FlowSideAdapter egressSide = FlowSideAdapter.makeEgressAdapter(flow, path);
@@ -143,7 +148,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
             if (lastSegment == null) {
                 if (doIngress) {
                     requests.add(makeIngressRequest(context, path, encapsulation, ingressSide, segment, egressSide,
-                            removeCustomerPortSharedCatchRule));
+                            removeCustomerPortSharedCatchRule, removeCustomerPortSharedLldpCatchRule));
                 }
             } else {
                 if (doTransit) {
@@ -160,7 +165,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
         } else if (doIngress) {
             // one switch flow (path without path segments)
             requests.add(makeOneSwitchRequest(context, path, ingressSide, egressSide,
-                    removeCustomerPortSharedCatchRule));
+                    removeCustomerPortSharedCatchRule, removeCustomerPortSharedLldpCatchRule));
         }
 
         return requests;
@@ -169,7 +174,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
     private FlowSegmentRequestFactory makeIngressRequest(
             CommandContext context, FlowPath path, FlowTransitEncapsulation encapsulation,
             FlowSideAdapter flowSide, PathSegment segment, FlowSideAdapter egressFlowSide,
-            boolean removeCustomerPortSharedCatchRule) {
+            boolean removeCustomerPortSharedCatchRule, boolean removeCustomerPortSharedLldpCatchRule) {
         PathSegmentSide segmentSide = makePathSegmentSourceSide(segment);
 
         UUID commandId = commandIdGenerator.generate();
@@ -188,6 +193,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
                 .islPort(segmentSide.getEndpoint().getPortNumber())
                 .encapsulation(encapsulation)
                 .removeCustomerPortSharedCatchRule(removeCustomerPortSharedCatchRule)
+                .removeCustomerPortSharedLldpCatchRule(removeCustomerPortSharedLldpCatchRule)
                 .build();
     }
 
@@ -246,7 +252,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
 
     private FlowSegmentRequestFactory makeOneSwitchRequest(
             CommandContext context, FlowPath path, FlowSideAdapter ingressSide, FlowSideAdapter egressSide,
-            boolean removeCustomerPortSharedCatchRule) {
+            boolean removeCustomerPortSharedCatchRule, boolean removeCustomerPortSharedLldpCatchRule) {
         Flow flow = ingressSide.getFlow();
 
         UUID commandId = commandIdGenerator.generate();
@@ -262,6 +268,7 @@ public class SpeakerFlowSegmentRequestBuilder implements FlowCommandBuilder {
                 .meterConfig(getMeterConfig(path))
                 .egressEndpoint(egressSide.getEndpoint())
                 .removeCustomerPortSharedCatchRule(removeCustomerPortSharedCatchRule)
+                .removeCustomerPortSharedLldpCatchRule(removeCustomerPortSharedLldpCatchRule)
                 .build();
     }
 

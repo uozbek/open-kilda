@@ -13,20 +13,23 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.share.model;
+package org.openkilda.wfm.topology.flowhs.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
 
 @Data
-@Builder
+@NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
-public class SpeakerRequestBuildContext {
-    private boolean removeCustomerPortRule;
-    private boolean removeOppositeCustomerPortRule;
-    private boolean removeCustomerPortLldpRule;
-    private boolean removeOppositeCustomerPortLldpRule;
+public class DetectConnectedDevices implements Serializable {
+    boolean srcLldp;
+    boolean srcArp;
+    boolean dstLldp;
+    boolean dstArp;
+
+    boolean srcSwitchLldp;
+    boolean dstSwitchLldp;
 }

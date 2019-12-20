@@ -22,11 +22,13 @@ import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.PathId;
 import org.openkilda.model.SwitchId;
+import org.openkilda.model.SwitchProperties;
 import org.openkilda.persistence.FetchStrategy;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FlowPathRepository;
 import org.openkilda.persistence.repositories.FlowRepository;
 import org.openkilda.persistence.repositories.RepositoryFactory;
+import org.openkilda.persistence.repositories.SwitchPropertiesRepository;
 import org.openkilda.wfm.topology.flowhs.exception.FlowProcessingException;
 import org.openkilda.wfm.topology.flowhs.fsm.common.FlowProcessingFsm;
 
@@ -35,6 +37,7 @@ import com.fasterxml.uuid.NoArgGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.squirrelframework.foundation.fsm.AnonymousAction;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,12 +50,14 @@ public abstract class FlowProcessingAction<T extends FlowProcessingFsm<T, S, E, 
     protected final PersistenceManager persistenceManager;
     protected final FlowRepository flowRepository;
     protected final FlowPathRepository flowPathRepository;
+    protected final SwitchPropertiesRepository switchPropertiesRepository;
 
     public FlowProcessingAction(PersistenceManager persistenceManager) {
         this.persistenceManager = persistenceManager;
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
         this.flowRepository = repositoryFactory.createFlowRepository();
         this.flowPathRepository = repositoryFactory.createFlowPathRepository();
+        this.switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
     }
 
     @Override
@@ -100,5 +105,27 @@ public abstract class FlowProcessingAction<T extends FlowProcessingFsm<T, S, E, 
                 .collect(Collectors.toSet());
 
         return flowIds.size() == 1 && flowIds.iterator().next().equals(flowId);
+    }
+
+    protected boolean isRemoveCustomerPortSharedLldpCatchRule(
+            String flowId, SwitchId ingressSwitchId, int ingressPort) {
+        List<Flow> flows = flowRepository.findByEndpoint(ingressSwitchId, ingressPort).stream()
+                .filter(f -> !f.getFlowId().equals(flowId))
+                .collect(Collectors.toList());
+
+        SwitchProperties properties = switchPropertiesRepository.findBySwitchId(ingressSwitchId)
+                .orElseThrow(() -> new FlowProcessingException(ErrorType.NOT_FOUND,
+                        format("Properties for switch %s not found", ingressSwitchId)));
+
+        if (properties.isSwitchLldp()) {
+            return flows.isEmpty();
+        }
+
+        List<Flow> flowsWitchLldp = flows.stream()
+                .filter(f -> f.getSrcPort() == ingressPort && f.getDetectConnectedDevices().isSrcLldp()
+                        || f.getDestPort() == ingressPort && f.getDetectConnectedDevices().isDstLldp())
+                .collect(Collectors.toList());
+
+        return flowsWitchLldp.isEmpty();
     }
 }

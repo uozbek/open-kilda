@@ -38,9 +38,10 @@ public class IngressFlowSegmentRequestFactory extends FlowSegmentRequestFactory 
     public IngressFlowSegmentRequestFactory(
             MessageContext messageContext, FlowSegmentMetadata metadata,
             FlowEndpoint endpoint, MeterConfig meterConfig, SwitchId egressSwitchId, int islPort,
-            FlowTransitEncapsulation encapsulation, boolean removeCustomerPortSharedCatchRule) {
+            FlowTransitEncapsulation encapsulation, boolean removeCustomerPortSharedCatchRule,
+            boolean removeCustomerPortSharedLldpCatchRule) {
         this(new RequestBlank(messageContext, metadata, endpoint, meterConfig, egressSwitchId, islPort, encapsulation,
-                removeCustomerPortSharedCatchRule));
+                removeCustomerPortSharedCatchRule, removeCustomerPortSharedLldpCatchRule));
     }
 
     private IngressFlowSegmentRequestFactory(IngressFlowSegmentRequest requestBlank) {
@@ -67,9 +68,10 @@ public class IngressFlowSegmentRequestFactory extends FlowSegmentRequestFactory 
         RequestBlank(
                 MessageContext context, FlowSegmentMetadata metadata,
                 FlowEndpoint endpoint, MeterConfig meterConfig, SwitchId egressSwitchId, int islPort,
-                FlowTransitEncapsulation encapsulation, boolean removeCustomerPortSharedCatchRule) {
+                FlowTransitEncapsulation encapsulation, boolean removeCustomerPortSharedCatchRule,
+                boolean removeCustomerPortSharedLldpCatchRule) {
             super(context, dummyCommandId, metadata, endpoint, meterConfig, egressSwitchId, islPort, encapsulation,
-                    removeCustomerPortSharedCatchRule);
+                    removeCustomerPortSharedCatchRule, removeCustomerPortSharedLldpCatchRule);
         }
     }
 }

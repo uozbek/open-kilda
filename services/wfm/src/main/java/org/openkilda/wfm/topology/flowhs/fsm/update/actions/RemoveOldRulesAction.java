@@ -21,11 +21,13 @@ import org.openkilda.model.FlowEncapsulationType;
 import org.openkilda.model.FlowPath;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.share.flow.resources.FlowResourcesManager;
+import org.openkilda.wfm.share.model.SpeakerRequestBuildContext;
 import org.openkilda.wfm.topology.flowhs.fsm.common.actions.FlowProcessingAction;
 import org.openkilda.wfm.topology.flowhs.fsm.update.FlowUpdateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.update.FlowUpdateFsm;
 import org.openkilda.wfm.topology.flowhs.fsm.update.FlowUpdateFsm.Event;
 import org.openkilda.wfm.topology.flowhs.fsm.update.FlowUpdateFsm.State;
+import org.openkilda.wfm.topology.flowhs.model.RequestedFlow;
 import org.openkilda.wfm.topology.flowhs.service.FlowCommandBuilder;
 import org.openkilda.wfm.topology.flowhs.service.FlowCommandBuilderFactory;
 import org.openkilda.wfm.topology.flowhs.utils.SpeakerRemoveSegmentEmitter;
@@ -53,7 +55,8 @@ public class RemoveOldRulesAction extends FlowProcessingAction<FlowUpdateFsm, St
         FlowPath oldPrimaryReverse = getFlowPath(stateMachine.getOldPrimaryReversePath());
         Flow flow = oldPrimaryForward.getFlow();
         Collection<FlowSegmentRequestFactory> commands = new ArrayList<>(commandBuilder.buildAll(
-                stateMachine.getCommandContext(), flow, oldPrimaryForward, oldPrimaryReverse));
+                stateMachine.getCommandContext(), flow, oldPrimaryForward, oldPrimaryReverse,
+                getSpeakerRequestBuildContext(stateMachine)));
 
         if (stateMachine.getOldProtectedForwardPath() != null && stateMachine.getOldProtectedReversePath() != null) {
             FlowPath oldForward = getFlowPath(stateMachine.getOldProtectedForwardPath());
@@ -68,5 +71,22 @@ public class RemoveOldRulesAction extends FlowProcessingAction<FlowUpdateFsm, St
         stateMachine.getRetriedCommands().clear();
 
         stateMachine.saveActionToHistory("Remove commands for old rules have been sent");
+    }
+
+    private SpeakerRequestBuildContext getSpeakerRequestBuildContext(FlowUpdateFsm stateMachine) {
+        RequestedFlow originalFlow = stateMachine.getOriginalFlow();
+        RequestedFlow targetFlow = stateMachine.getTargetFlow();
+
+        boolean removeCustomerPortLldpRule = originalFlow.getDetectConnectedDevices().isSrcLldp()
+                && !targetFlow.getDetectConnectedDevices().isSrcLldp() && isRemoveCustomerPortSharedLldpCatchRule(
+                        originalFlow.getFlowId(), originalFlow.getSrcSwitch(), originalFlow.getSrcPort());
+        boolean removeOppositeCustomerPortLldpRule = originalFlow.getDetectConnectedDevices().isDstLldp()
+                && !targetFlow.getDetectConnectedDevices().isDstLldp() && isRemoveCustomerPortSharedLldpCatchRule(
+                        originalFlow.getFlowId(), originalFlow.getDestSwitch(), originalFlow.getDestPort());
+
+        return SpeakerRequestBuildContext.builder()
+                .removeCustomerPortLldpRule(removeCustomerPortLldpRule)
+                .removeOppositeCustomerPortLldpRule(removeOppositeCustomerPortLldpRule)
+                .build();
     }
 }

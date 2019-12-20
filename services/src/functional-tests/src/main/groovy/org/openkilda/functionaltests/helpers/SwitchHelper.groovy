@@ -159,6 +159,9 @@ class SwitchHelper {
      */
     static SwitchPropertiesDto updateSwitchProperties(Switch sw, SwitchPropertiesDto switchProperties) {
         def response = northbound.updateSwitchProperties(sw.dpId, switchProperties)
+        Wrappers.sleep(3000)
+        northbound.synchronizeSwitch(sw.dpId, true)
+        Wrappers.sleep(3000)
         Wrappers.wait(Constants.RULES_INSTALLATION_TIME) {
             def actualHexCookie = []
             for (long cookie : northbound.getSwitchRules(sw.dpId).flowEntries*.cookie) {

@@ -38,8 +38,11 @@ public class OneSwitchFlowVerifyCommand extends OneSwitchFlowInstallCommand {
             @JsonProperty("endpoint") FlowEndpoint endpoint,
             @JsonProperty("meter_config") MeterConfig meterConfig,
             @JsonProperty("egress_endpoint") FlowEndpoint egressEndpoint,
-            @JsonProperty("remove_customer_port_shared_catch_rule") boolean removeCustomerPortSharedCatchRule) {
-        super(context, commandId, metadata, endpoint, meterConfig, egressEndpoint, removeCustomerPortSharedCatchRule);
+            @JsonProperty("remove_customer_port_shared_catch_rule") boolean removeCustomerPortSharedCatchRule,
+            @JsonProperty("remove_customer_port_shared_lldp_catch_rule")
+                    boolean removeCustomerPortSharedLldpCatchRule) {
+        super(context, commandId, metadata, endpoint, meterConfig, egressEndpoint, removeCustomerPortSharedCatchRule,
+                removeCustomerPortSharedLldpCatchRule);
     }
 
     @Override

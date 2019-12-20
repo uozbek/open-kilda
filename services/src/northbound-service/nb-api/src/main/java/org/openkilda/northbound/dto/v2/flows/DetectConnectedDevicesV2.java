@@ -13,20 +13,16 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.share.model;
+package org.openkilda.northbound.dto.v2.flows;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@Builder
 @AllArgsConstructor
-@EqualsAndHashCode
-public class SpeakerRequestBuildContext {
-    private boolean removeCustomerPortRule;
-    private boolean removeOppositeCustomerPortRule;
-    private boolean removeCustomerPortLldpRule;
-    private boolean removeOppositeCustomerPortLldpRule;
+@JsonNaming(value = SnakeCaseStrategy.class)
+public class DetectConnectedDevicesV2 {
+    boolean lldp;
 }

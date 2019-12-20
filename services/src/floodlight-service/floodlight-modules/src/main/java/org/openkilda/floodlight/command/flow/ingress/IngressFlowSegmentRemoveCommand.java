@@ -45,9 +45,11 @@ public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentCommand {
             @JsonProperty("egress_switch") SwitchId egressSwitchId,
             @JsonProperty("isl_port") int islPort,
             @JsonProperty("encapsulation") FlowTransitEncapsulation encapsulation,
-            @JsonProperty("remove_customer_port_shared_catch_rule") boolean removeCustomerPortSharedCatchRule) {
+            @JsonProperty("remove_customer_port_shared_catch_rule") boolean removeCustomerPortSharedCatchRule,
+            @JsonProperty("remove_customer_port_shared_lldp_catch_rule")
+                    boolean removeCustomerPortSharedLldpCatchRule) {
         super(context, commandId, metadata, endpoint, meterConfig, egressSwitchId, islPort, encapsulation,
-                removeCustomerPortSharedCatchRule);
+                removeCustomerPortSharedCatchRule, removeCustomerPortSharedLldpCatchRule);
     }
 
     @Override
@@ -71,6 +73,9 @@ public class IngressFlowSegmentRemoveCommand extends IngressFlowSegmentCommand {
         List<OFFlowMod> ofMessages = super.makeIngressModMessages(effectiveMeterId);
         if (removeCustomerPortSharedCatchRule) {
             ofMessages.add(getFlowModFactory().makeCustomerPortSharedCatchMessage());
+        }
+        if (removeCustomerPortSharedLldpCatchRule) {
+            ofMessages.add(getFlowModFactory().makeLldpInputCustomerFlowMessage());
         }
         return ofMessages;
     }

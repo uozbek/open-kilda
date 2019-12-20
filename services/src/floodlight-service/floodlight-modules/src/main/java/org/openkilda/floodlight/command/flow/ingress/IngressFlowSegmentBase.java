@@ -62,6 +62,7 @@ public abstract class IngressFlowSegmentBase extends FlowSegmentCommand {
     protected final MeterConfig meterConfig;
     protected final SwitchId egressSwitchId;
     protected final boolean removeCustomerPortSharedCatchRule;
+    protected final boolean removeCustomerPortSharedLldpCatchRule;
 
     // operation data
     @Getter(AccessLevel.PROTECTED)
@@ -71,12 +72,13 @@ public abstract class IngressFlowSegmentBase extends FlowSegmentCommand {
     IngressFlowSegmentBase(
             MessageContext messageContext, SwitchId switchId, UUID commandId, FlowSegmentMetadata metadata,
             @NonNull FlowEndpoint endpoint, MeterConfig meterConfig, @NonNull SwitchId egressSwitchId,
-            boolean removeCustomerPortSharedCatchRule) {
+            boolean removeCustomerPortSharedCatchRule, boolean removeCustomerPortSharedLldpCatchRule) {
         super(messageContext, switchId, commandId, metadata);
         this.endpoint = endpoint;
         this.meterConfig = meterConfig;
         this.egressSwitchId = egressSwitchId;
         this.removeCustomerPortSharedCatchRule = removeCustomerPortSharedCatchRule;
+        this.removeCustomerPortSharedLldpCatchRule = removeCustomerPortSharedLldpCatchRule;
     }
 
     @Override
