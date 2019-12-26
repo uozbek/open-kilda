@@ -287,11 +287,7 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
             SwitchProperties switchProperties = switchPropertiesRepository.findBySwitchId(switchId)
                     .orElseThrow(() -> new SwitchPropertiesNotFoundException(switchId));
 
-            if (!update.isMultiTable() && update.isSwitchLldp()) {
-                throw new IllegalSwitchPropertiesException(
-                        String.format("Illegal switch properties combination for switch %s. 'switchLldp' property "
-                                + "can be set to 'true' only if 'multiTable' property is 'true'.", switchId));
-            }
+            validateSwitchProperties(switchId, update);
 
             final boolean previousMultiTableFlag = switchProperties.isMultiTable();
             final boolean previousLldpFlag = switchProperties.isSwitchLldp();
@@ -307,6 +303,30 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
 
             return SwitchPropertiesMapper.INSTANCE.map(switchProperties);
         });
+    }
+
+    private void validateSwitchProperties(SwitchId switchId, SwitchProperties updatedSwitchProperties) {
+        if (!updatedSwitchProperties.isMultiTable()) {
+            if (updatedSwitchProperties.isSwitchLldp()) {
+                throw new IllegalSwitchPropertiesException(
+                        String.format("Illegal switch properties combination for switch %s. 'switchLldp' property "
+                                + "can be set to 'true' only if 'multiTable' property is 'true'.", switchId));
+            }
+
+            List<String> flowsWitchEnabledLldp = flowRepository.findByEndpointSwitchWithEnabledLldp(switchId).stream()
+                    .map(Flow::getFlowId)
+                    .collect(Collectors.toList());
+
+            if (!flowsWitchEnabledLldp.isEmpty()) {
+                throw new IllegalSwitchPropertiesException(
+                        String.format("Illegal switch properties combination for switch %s. "
+                                + "Detect Connected Devices feature is turn on for following flows [%s]. "
+                                + "For correct work of this feature switch property 'multiTable' must be set to 'true' "
+                                + "Please disable detecting of connected devices via LLDP for each flow before set "
+                                + "'multiTable' property to 'false'",
+                                switchId, String.join(", ", flowsWitchEnabledLldp)));
+            }
+        }
     }
 
     /**
