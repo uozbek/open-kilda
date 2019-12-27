@@ -463,9 +463,10 @@ class RecordHandler implements Runnable {
         long meterId = 0;
         if (command.getMeterId() != null && command.getMeterId() > 0) {
             meterId = command.getMeterId();
-
-            installMeter(DatapathId.of(command.getSwitchId().toLong()), meterId, command.getBandwidth(),
-                    command.getId());
+            if (command.isInstallMeter()) {
+                installMeter(DatapathId.of(command.getSwitchId().toLong()), meterId, command.getBandwidth(),
+                        command.getId());
+            }
         } else {
             logger.debug("Installing unmetered ingress flow. Switch: {}, cookie: {}",
                     command.getSwitchId(), command.getCookie());
@@ -670,9 +671,11 @@ class RecordHandler implements Runnable {
     private void installOneSwitchFlow(InstallOneSwitchFlow command) throws SwitchOperationException {
         long meterId = 0;
         if (command.getMeterId() != null && command.getMeterId() > 0) {
-            meterId = command.getMeterId();
-            installMeter(DatapathId.of(command.getSwitchId().toLong()), meterId, command.getBandwidth(),
-                    command.getId());
+            if (command.isInstallMeter()) {
+                meterId = command.getMeterId();
+                installMeter(DatapathId.of(command.getSwitchId().toLong()), meterId, command.getBandwidth(),
+                        command.getId());
+            }
         } else {
             logger.debug("Installing unmetered one switch flow. Switch: {}, cookie: {}",
                     command.getSwitchId(), command.getCookie());

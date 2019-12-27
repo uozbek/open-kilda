@@ -314,7 +314,7 @@ public class FlowCommandFactory {
                 flowPath.getCookie().getValue(), switchId, inPort,
                 outputPortNo, inVlan, encapsulationResources.getTransitEncapsulationId(),
                 encapsulationResources.getEncapsulationType(), getOutputVlanType(flow, flowPath),
-                flow.getBandwidth(), meterId, egressSwitchId, multiTable, enableLldp, flowPath.getApplications(),
+                flow.getBandwidth(), meterId, true, egressSwitchId, multiTable, enableLldp, flowPath.getApplications(),
                 appMetadata);
     }
 
@@ -378,7 +378,8 @@ public class FlowCommandFactory {
         Long meterId = Optional.ofNullable(flowPath.getMeterId()).map(MeterId::getValue).orElse(null);
         return new InstallOneSwitchFlow(transactionIdGenerator.generate(),
                 flow.getFlowId(), flowPath.getCookie().getValue(), switchId, inPort,
-                outPort, inVlan, outVlan, getOutputVlanType(flow, flowPath), flow.getBandwidth(), meterId, multiTable,
+                outPort, inVlan, outVlan, getOutputVlanType(flow, flowPath), flow.getBandwidth(), meterId,
+                true, multiTable,
                 enableLldp, flowPath.getApplications(), appMetadata);
     }
 

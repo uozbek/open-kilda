@@ -28,6 +28,7 @@ import org.openkilda.messaging.command.apps.FlowAddAppRequest;
 import org.openkilda.messaging.command.apps.FlowRemoveAppRequest;
 import org.openkilda.messaging.command.flow.InstallEgressFlow;
 import org.openkilda.messaging.command.flow.InstallIngressFlow;
+import org.openkilda.messaging.command.flow.InstallOneSwitchFlow;
 import org.openkilda.messaging.command.switches.InstallExclusionRequest;
 import org.openkilda.messaging.command.switches.InstallTelescopeRuleRequest;
 import org.openkilda.messaging.command.switches.RemoveExclusionRequest;
@@ -368,10 +369,15 @@ public class AppsManagerService {
     }
 
     private void updateOneSwitchFlowRules(Flow flow, EncapsulationResources encapsulationResources) {
-        carrier.emitSpeakerCommand(
-                flowCommandFactory.makeOneSwitchRule(flow, flow.getForwardPath(), encapsulationResources));
-        carrier.emitSpeakerCommand(
-                flowCommandFactory.makeOneSwitchRule(flow, flow.getReversePath(), encapsulationResources));
+        InstallOneSwitchFlow installOneSwitchFlow = flowCommandFactory.makeOneSwitchRule(flow, flow.getForwardPath(),
+                encapsulationResources);
+        installOneSwitchFlow.setInstallMeter(false);
+        carrier.emitSpeakerCommand(installOneSwitchFlow);
+
+        installOneSwitchFlow = flowCommandFactory.makeOneSwitchRule(flow, flow.getReversePath(),
+                encapsulationResources);
+        installOneSwitchFlow.setInstallMeter(false);
+        carrier.emitSpeakerCommand(installOneSwitchFlow);
     }
 
     private void sendSpeakerInstallTelescopeRuleCommands(Flow flow, FlowPath targetPath,
@@ -442,9 +448,10 @@ public class AppsManagerService {
             throw new IllegalStateException(
                     format("FlowSegment was not found for ingress flow rule, flowId: %s", flow.getFlowId()));
         }
-
-        return flowCommandFactory.buildInstallIngressFlow(flow, flowPath, ingressSegment.getSrcPort(),
-                encapsulationResources, ingressSegment.isSrcWithMultiTable());
+        InstallIngressFlow command = flowCommandFactory.buildInstallIngressFlow(flow, flowPath,
+                ingressSegment.getSrcPort(), encapsulationResources, ingressSegment.isSrcWithMultiTable());
+        command.setInstallMeter(false);
+        return command;
     }
 
     private InstallEgressFlow buildEgressRuleCommand(Flow flow, FlowPath flowPath,
@@ -468,7 +475,7 @@ public class AppsManagerService {
                         .orElseThrow(() -> new IllegalStateException(format("Flow %s does not have reverse path for %s",
                                 flow.getFlowId(), flowPath.getPathId()))),
                 flow.getEncapsulationType()).orElseThrow(() -> new IllegalStateException(
-                        format("Encapsulation resources are not found for path %s", flowPath)));
+                format("Encapsulation resources are not found for path %s", flowPath)));
     }
 
     private void requireSegments(List<PathSegment> segments) {

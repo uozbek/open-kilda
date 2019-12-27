@@ -113,6 +113,9 @@ public class InstallIngressFlow extends InstallTransitFlow {
     @JsonProperty("app_metadata")
     private Metadata appMetadata;
 
+    @JsonProperty("install_meter")
+    private boolean installMeter;
+
     /**
      * Instance constructor.
      *
@@ -149,6 +152,7 @@ public class InstallIngressFlow extends InstallTransitFlow {
                               @JsonProperty("output_vlan_type") final OutputVlanType outputVlanType,
                               @JsonProperty("bandwidth") final Long bandwidth,
                               @JsonProperty("meter_id") final Long meterId,
+                              @JsonProperty("install_meter") final boolean installMeter,
                               @JsonProperty("egress_switch_id") final SwitchId egressSwitchId,
                               @JsonProperty("multi_table") final boolean multiTable,
                               @JsonProperty("enable_lldp") final boolean enableLldp,
@@ -164,6 +168,7 @@ public class InstallIngressFlow extends InstallTransitFlow {
         setEgressSwitchId(egressSwitchId);
         setApplications(applications);
         setAppMetadata(appMetadata);
+        this.installMeter = installMeter;
     }
 
     /**
@@ -256,6 +261,22 @@ public class InstallIngressFlow extends InstallTransitFlow {
             throw new IllegalArgumentException("Meter id value should be positive");
         }
         this.meterId = meterId;
+    }
+
+    /**
+     * Get install meter flag.
+     * @return meter flag
+     */
+    public boolean isInstallMeter() {
+        return installMeter;
+    }
+
+    /**
+     * Set install meter flag.
+     * @param installMeter install meter flag
+     */
+    public void setInstallMeter(boolean installMeter) {
+        this.installMeter = installMeter;
     }
 
     /**
