@@ -2296,15 +2296,6 @@ public class SwitchManager implements IFloodlightModule, IFloodlightService, ISw
         return mb.build();
     }
 
-    private Match getLldpMatch(OFFactory ofFactory, int inputPort, int transitTunnelId,
-                               FlowEncapsulationType encapsulationType) {
-        Builder mb = ofFactory.buildMatch();
-        addMatchFlowToBuilder(mb, ofFactory, inputPort, transitTunnelId, encapsulationType, null);
-        mb.setExact(MatchField.ETH_DST, MacAddress.of(LLDP_MAC));
-        mb.setExact(MatchField.ETH_TYPE, EthType.LLDP);
-        return mb.build();
-    }
-
     private void addMatchFlowToBuilder(Builder builder, OFFactory ofFactory, int inputPort, int tunnelId,
                                        FlowEncapsulationType encapsulationType, DatapathId egressSwitchId) {
         builder.setExact(MatchField.IN_PORT, OFPort.of(inputPort));
